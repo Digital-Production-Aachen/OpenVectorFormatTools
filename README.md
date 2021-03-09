@@ -2,8 +2,8 @@
 This repository provides basic tooling to make working with the protobuf-based [OpenVectorFormat](https://github.com/Digital-Production-Aachen/OpenVectorFormat) easier.
 
 ## How to get
-* Pre-builds of the stand-alone tools can be downloaded from the release page: **TODO: INSERT LINK**
-* Pre-builds of the C# libraries are available on nuget: **TODO: INSERT LINK**
+* Pre-builds of the stand-alone tools can be downloaded from the release page: [Releases](https://github.com/Digital-Production-Aachen/OpenVectorFormatTools/releases/)
+* Pre-builds of the C# libraries are available on nuget: [Digital-Production-Aachen on nuget](https://www.nuget.org/profiles/Digital-Production-Aachen)
 * To integrate the source code into your C#-project directly, clone the repository and add the corresponding projects to your solution.
 
 ## Available tools
