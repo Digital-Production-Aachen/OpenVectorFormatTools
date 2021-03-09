@@ -9,10 +9,10 @@ This repository provides basic tooling to make working with the protobuf-based [
 ## Available tools
 Currently, the following tools are available:
 ### Readers / Writers
-A set of reader / writer libraries providing a simple interface to manage OpenVectorFormat-Jobs in your application. For further information, see here: **TODO: INSERT LINK**
+A set of reader / writer libraries providing a simple interface to manage OpenVectorFormat-Jobs in your application. For further information, see here: [Reader / Writer Libraries](https://github.com/Digital-Production-Aachen/OpenVectorFormatTools/blob/main/ReaderWriter)
 
 ### Plausibility / Consistency Checker (C# only currently)
- A tool to check basic consistency of a job, e.g. to check that the number of layers is consistent throughout the job. For further information, see here: **TODO: INSERT LINK**
+ A tool to check basic consistency of a job, e.g. to check that the number of layers is consistent throughout the job. For further information, see here: [Plausibility Checker](https://github.com/Digital-Production-Aachen/OpenVectorFormatTools/blob/main/PlausibilityChecker)
 
 ### Missing tools?
 Feel free to open an issue regarding any tools you would like to see - or start hacking and open a pull request for it to be integrated into this repository!
