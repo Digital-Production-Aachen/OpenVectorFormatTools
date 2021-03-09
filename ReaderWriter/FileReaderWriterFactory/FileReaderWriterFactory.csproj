@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net46</TargetFrameworks>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\3rdPartyFormatAdapters\ASP\ASPFileReaderWriterAdapter\ASPFileReaderWriterAdapter.csproj" />
+    <ProjectReference Include="..\3rdPartyFormatAdapters\CLI_ILT\ILTFileReaderAdapter\ILTFileReaderAdapter.csproj" />
+    <ProjectReference Include="..\3rdPartyFormatAdapters\CLI_ILT\ILTFileReaderInterfaces\ILTFileReaderInterfaces.csproj" />
+    <ProjectReference Include="..\3rdPartyFormatAdapters\CLI_ILT\iltFileReader\ILTFileReader.csproj" />
+    <ProjectReference Include="..\OVFReaderWriter\OVFReaderWriter.csproj" />
+  </ItemGroup>
+
+</Project>

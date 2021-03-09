@@ -1,0 +1,1 @@
+File reader with C# interface for reading .*ilt and *.cli files and offering access to the data in structured interfaces.

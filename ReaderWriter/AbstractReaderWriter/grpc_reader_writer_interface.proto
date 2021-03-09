@@ -1,0 +1,163 @@
+﻿// MIT License
+// 
+// Copyright (c) 2020 Digital-Production-Aachen
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+syntax = "proto3";
+package grpc_reader_writer_interface;
+
+import "submodules/OpenVectorFormat/open_vector_format.proto";
+
+// The service definition.
+service VectorFileHandler {
+  // Reading a job
+  rpc SimpleJobRead (SimpleJobReadRequest) returns (SimpleJobReadReply) {}
+  rpc PartialRead (stream PartialReadRequest) returns (stream PartialReadReply) {}
+    
+  // Writing a job
+  rpc SimpleJobWrite (SimpleJobWriteRequest) returns (SimpleJobWriteReply) {}
+  rpc PartialWrite (stream PartialWriteRequest) returns (stream PartialWriteReply) {}
+    
+  // Helper functions
+  rpc IsFormatSupported (IsFormatSupportedRequest) returns (IsFormatSupportedReply) {}
+}
+
+// ------- Messages for reader functions -------
+message SimpleJobReadRequest {
+  string job_uri = 1;
+}
+message SimpleJobReadReply {
+  string info_message = 1;
+  open_vector_format.Job job = 2;
+}
+
+// The names of the commands are the same as in the FileReader implementation of AbstractVectorFileHandler. Functionality, parameters etc. are also the same.
+enum PartialReadCommandMode {
+  OPEN_JOB = 0;
+  UNLOAD_JOB_FROM_MEMORY  = 1;
+  GET_JOB_SHELL = 2;
+  GET_PLANE = 3;
+  GET_VECTOR_BLOCK = 4;
+}
+
+message PartialReadRequest {
+  PartialReadCommandMode selected_command_mode = 1;
+      
+  // Will be included in response to make identification easier.
+  uint64 request_id = 2;
+	
+  // if true, this PartialReadRequest message will be included in the response for debugging.
+  bool reflect_request = 3;
+    
+  // must be set for PartialReadCommandMode.OpenJob
+  string job_uri = 4;
+    
+  // must be set for PartialReadCommandMode.GetPlane and PartialReadCommandMode.GetVectorBlock
+  int32 plane_index = 5;    
+    
+  // must be set for PartialReadCommandMode.GetVectorBlock
+  int32 vector_block_index = 6;
+}
+
+message PartialReadReply {
+  // only set in case there is extra information
+  string info_message = 1;
+    
+  // Corresponding request ID
+  uint64 request_id = 2;
+	
+  // Corresponding request for identification. Only set if requested in the PartialReadRequest.
+  PartialReadRequest request = 3;
+    
+  // set for PartialReadCommandMode.GetJobShell
+  open_vector_format.Job job_shell = 4;
+    
+  // set for PartialReadCommandMode.GetPlane
+  open_vector_format.WorkPlane work_plane = 5;
+    
+  // set for PartialReadCommandMode.GetVectorBlock
+  open_vector_format.VectorBlock vector_block = 6;
+    
+  // set for PartialReadCommandMode.FileLoadingFinished
+  bool loading_finished = 7;
+}
+
+// ------- Messages for writer functions -------
+
+message SimpleJobWriteRequest {
+  string job_uri = 1;
+  open_vector_format.Job job = 2;
+}
+message SimpleJobWriteReply {
+  string info_message = 1;
+}
+
+// The names of the commands are the same as in the FileWriter implementation of AbstractVectorFileHandler. Functionality, parameters etc. are also the same.
+enum PartialWriteCommandMode {
+  START_WRITE_PARTIAL = 0;
+  ADD_PLANE_PARTIAL = 1;
+  ADD_VECTOR_BLOCK_PARTIAL = 2;
+}
+
+message PartialWriteRequest {
+  PartialWriteCommandMode selected_command_mode = 1;
+    
+  // Will be included in response to make identification easier.
+  uint64 request_id = 2;
+    
+  // if true, this PartialWriteRequest message with all geometry data will be included in the response for debugging.
+  bool reflect_request = 3;
+    
+  // must be set for PartialWriteCommandMode.StartWritePartial
+  string job_uri = 4;
+  open_vector_format.Job job_shell = 5;
+    
+  // must be set for PartialWriteCommandMode.AddPlanePartial
+  open_vector_format.WorkPlane work_plane = 6;
+    
+  // must be set for PartialWriteCommandMode.AddVectorBlockPartial
+  open_vector_format.VectorBlock vector_block = 7;
+}
+
+
+message PartialWriteReply {
+  // Corresponding request ID
+  uint64 request_id = 1;
+        
+  // only set in case there is extra information
+  string info_message = 2;
+    
+  // only set if reflectRequest == true in input message
+  PartialWriteRequest request = 3;
+}
+
+// ------- Messages for helper functions -------
+// Request Message for IsFormatSupported. Should only contain file extension.
+message IsFormatSupportedRequest {
+  string file_extension = 1;
+}
+
+// Response Message for IsFormatSupported.
+message IsFormatSupportedReply {
+  bool read_support = 1;
+  bool write_support = 2;
+  string all_read_supported_formats = 3;
+  string all_write_supported_formats = 4;
+}

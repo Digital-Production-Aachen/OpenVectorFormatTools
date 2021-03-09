@@ -1,0 +1,16 @@
+syntax = "proto3";
+package OpenVectorFormat;
+
+// positions are 64bit values in bytes
+// only Int64 and not UInt64 because the length of a filestream is given bei Int64 (long) in C#.
+message JobLUT {
+  int64 jobShellPosition = 1;
+  repeated int64 workPlanePositions = 2;
+} 
+
+// positions are 64bit values in bytes
+// only Int64 and not UInt64 because the length of a filestream is given bei Int64 (long) in C#.
+message WorkPlaneLUT {
+  int64 workPlaneShellPosition = 1;
+  repeated int64 vectorBlocksPositions = 2;
+} 

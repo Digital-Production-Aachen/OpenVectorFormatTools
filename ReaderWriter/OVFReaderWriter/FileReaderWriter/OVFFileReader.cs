@@ -1,0 +1,373 @@
+/*
+---- Copyright Start ----
+
+This file is part of the OpenVectorFormatTools collection. This collection provides tools to facilitate the usage of the OpenVectorFormat.
+
+Copyright (C) 2021 Digital-Production-Aachen
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+---- Copyright End ----
+*/
+
+
+
+using OpenVectorFormat.AbstractReaderWriter;
+using OpenVectorFormat.Utils;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.MemoryMappedFiles;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace OpenVectorFormat.OVFReaderWriter
+{
+    internal enum FileReadOperation
+    {
+        None = 1,
+        Undefined = 2,
+        CompleteRead = 3,
+        Streaming = 4
+    }
+
+    public class OVFFileReader : FileReader
+    {
+        private IFileReaderWriterProgress progress;
+        private Stream _fs;
+        private long _streamlength;
+        private string _filename;
+        private MemoryMappedFile _mmf;
+
+        // Look-up-table for workPlane positions in filestream.
+        private JobLUT _jobLUT;
+
+        // List of Look-up-tables for vectorblock positions in the filestream for each workplane.
+        private WorkPlaneLUT[] _workPlaneLUTs;
+
+        /// <inheritdoc/>
+        public override Job JobShell => _jobShell;
+        private Job _jobShell;
+        private Job _job;
+        private int _numberOfLayers;
+        private int _numberOfCachedLayers = 0;
+
+
+        private CacheState _cacheState = CacheState.NotCached;
+
+        private FileReadOperation _fileOperationInProgress = FileReadOperation.None;
+
+        /// <inheritdoc/>
+        public new static List<string> SupportedFileFormats { get; } = new List<string>() { ".ovf" };
+
+        /// <inheritdoc/>
+        public override CacheState CacheState => _cacheState;
+
+        /// <inheritdoc/>
+        public override async Task OpenJobAsync(string filename, IFileReaderWriterProgress progress)
+        {
+            if (_fileOperationInProgress != FileReadOperation.None)
+            {
+                throw new InvalidOperationException("Another FileLoadingOperation is currently running. Please wait until it is finished.");
+            }
+            _fileOperationInProgress = FileReadOperation.Undefined;
+
+            this.progress = progress;
+
+            _fs = File.OpenRead(filename);
+            _streamlength = _fs.Length;
+            if (_fs.Length < 12)
+            {
+                _fs.Close();
+                throw new IOException("binary file is empty!");
+            }
+            else
+            {
+                _fs.Close();
+                _mmf = MemoryMappedFile.CreateFromFile(filename);
+                _fs = _mmf.CreateViewStream(0, 0, MemoryMappedFileAccess.Read);
+
+                byte[] magicNumberBuffer = new byte[Contract.magicNumber.Length];
+                _fs.Read(magicNumberBuffer, 0, magicNumberBuffer.Length);
+                byte[] LUTIndexBuffer = new byte[sizeof(Int64)];
+                _fs.Read(LUTIndexBuffer, 0, LUTIndexBuffer.Length);
+                long jobLUTindex = BitConverter.ToInt64(LUTIndexBuffer, 0);
+
+                if (!magicNumberBuffer.SequenceEqual(Contract.magicNumber) || jobLUTindex >= _fs.Length || jobLUTindex < -1)
+                {
+                    _fs.Close();
+                    throw new IOException("binary file is not an OVF file or corrupted!");
+                }
+                else
+                {
+                    if (jobLUTindex <= AutomatedCachingThresholdBytes)
+                    {
+                        _fileOperationInProgress = FileReadOperation.CompleteRead;
+                    }
+                    else
+                    {
+                        _fileOperationInProgress = FileReadOperation.Streaming;
+                    }
+
+                    await Task.Run(() =>
+                    {
+                        _readJobShell(jobLUTindex);
+                        progress.IsFinished = false;
+                        _workPlaneLUTs = new WorkPlaneLUT[_jobShell.NumWorkPlanes];
+                        for (int i_plane = 0; i_plane < _jobShell.NumWorkPlanes; i_plane++)
+                        {
+                            _readWorkPlaneLUT(i_plane);
+                        }
+                    });
+
+                    if (_fileOperationInProgress == FileReadOperation.CompleteRead)
+                    {
+                        await CacheJobToMemoryAsync();
+                        _cacheState = CacheState.CompleteJobCached;
+                    }
+                    else
+                    {
+                        _cacheState = CacheState.JobShellCached;
+                    }
+                }
+            }
+
+            void _readWorkPlaneLUT(int i_workPlane)
+            {
+                long wpLUTIndexIndex = _jobLUT.WorkPlanePositions[i_workPlane];
+                _fs.Position = wpLUTIndexIndex;
+
+                byte[] LUTIndexBuffer = new byte[sizeof(Int64)];
+                _fs.Read(LUTIndexBuffer, 0, LUTIndexBuffer.Length);
+                long wpLUTindex = BitConverter.ToInt64(LUTIndexBuffer, 0);
+                _fs.Position = wpLUTindex;
+                WorkPlaneLUT wpLUT = WorkPlaneLUT.Parser.ParseDelimitedFrom(_fs);
+
+                foreach (long pos in wpLUT.VectorBlocksPositions)
+                {
+                    if (pos > _fs.Length)
+                    {
+                        Dispose();
+                        throw new IOException("invalid vectorblock position detected in file");
+                    }
+                }
+
+                _workPlaneLUTs[i_workPlane] = wpLUT;
+            }
+
+            void _readJobShell(Int64 LUTindex)
+            {
+                // Read LUT
+                _fs.Position = LUTindex;
+                _jobLUT = JobLUT.Parser.ParseDelimitedFrom(_fs);
+                _fs.Position = _jobLUT.JobShellPosition;
+                _jobShell = Job.Parser.ParseDelimitedFrom(_fs);
+                CheckConsistence(_jobShell.NumWorkPlanes, _jobLUT.WorkPlanePositions.Count);
+                foreach (long pos in _jobLUT.WorkPlanePositions)
+                {
+                    if (pos > _fs.Length)
+                    {
+                        Dispose();
+                        throw new IOException("invalid workPlane position detected in file");
+                    }
+                }
+                //progress.IsFinished = true;
+            }
+
+            _filename = filename;
+        }
+
+        /// <inheritdoc/>
+        public override async Task<Job> CacheJobToMemoryAsync()
+        {
+            if (_cacheState == CacheState.CompleteJobCached && _job != null)
+            {
+                return _job;
+            }
+            else
+            {
+                _fs.Close();
+                progress.IsCancelled = false;
+                progress.IsFinished = false;
+
+                _job = _jobShell.Clone();
+                _numberOfLayers = _job.NumWorkPlanes;
+                Task<WorkPlane>[] tasks = new Task<WorkPlane>[_numberOfLayers];
+                Parallel.For(0, _numberOfLayers, j =>
+                {
+                    var localScopedNumber = j;
+                    tasks[j] = Task.Run(async () => { return await GetWorkPlaneAsync(localScopedNumber); });
+                });
+
+                var k = 0;
+                foreach (var taskedWorkplane in tasks)
+                {
+                    var workplane = await taskedWorkplane;
+                    _job.WorkPlanes.Add(workplane);
+                }
+                progress.Update("reading workPlane " + k, 100);
+                //progress.IsFinished = true;
+                _cacheState = CacheState.CompleteJobCached;
+                return _job;
+            }
+        }
+
+        /// <inheritdoc/>
+        public override async Task<WorkPlane> GetWorkPlaneAsync(int i_workPlane)
+        {
+            if (_jobShell.NumWorkPlanes < i_workPlane)
+            {
+                throw new ArgumentOutOfRangeException("i_workPlane " + i_workPlane.ToString() + " out of range for jobfile with " + _jobShell.NumWorkPlanes.ToString() + " workPlanes!");
+            }
+            if (_cacheState == CacheState.CompleteJobCached)
+            {
+                return _job.WorkPlanes[i_workPlane];
+            }
+            else
+            {
+                WorkPlaneLUT wpLUT = _workPlaneLUTs[i_workPlane];
+                var stream = CreateLocalStream(i_workPlane);
+
+                WorkPlane wp = GetWorkPlaneShell(i_workPlane, stream);
+
+                for (int i_block = 0; i_block < wp.NumBlocks; i_block++)
+                {
+                    wp.VectorBlocks.Add(await GetVectorBlock(i_workPlane, i_block, stream));
+                }
+                _numberOfCachedLayers++;
+                UpdateStatus();
+                return wp;
+            }
+        }
+        private void UpdateStatus()
+        {
+            progress.Update("reading workPlane " + _numberOfCachedLayers, (int)(((double)(_numberOfCachedLayers * 100)) / _numberOfLayers));
+        }
+        public override WorkPlane GetWorkPlaneShell(int i_workPlane)
+        {
+            return GetWorkPlaneShell(i_workPlane, null);
+        }
+
+        private WorkPlane GetWorkPlaneShell(int i_workPlane, Stream stream)
+        {
+            if (_jobShell.NumWorkPlanes < i_workPlane)
+            {
+                throw new ArgumentOutOfRangeException("i_workPlane " + i_workPlane.ToString() + " out of range for jobfile with " + _jobShell.NumWorkPlanes.ToString() + " workPlanes!");
+            }
+
+            if (CacheState == CacheState.CompleteJobCached)
+            {
+                WorkPlane wpShell = new WorkPlane();
+                ProtoUtils.CopyWithExclude(_job.WorkPlanes[i_workPlane], wpShell, new List<int> { WorkPlane.VectorBlocksFieldNumber });
+                return wpShell;
+            }
+            else
+            {
+                if (stream == null)
+                {
+                    stream = CreateLocalStream(i_workPlane);
+                }
+                WorkPlaneLUT wpLUT = _workPlaneLUTs[i_workPlane];
+                stream.Position = wpLUT.WorkPlaneShellPosition - GetStreamOffset(i_workPlane);
+                return WorkPlane.Parser.ParseDelimitedFrom(stream);
+            }
+        }
+        private Stream CreateLocalStream(int i_workPlane)
+        {
+            long end;
+            if (_numberOfLayers - i_workPlane > 1)
+            {
+                end = _workPlaneLUTs[i_workPlane + 1].VectorBlocksPositions[0] - 1;
+            }
+            else
+            {
+                end = _streamlength;
+            }
+            var start = _workPlaneLUTs[i_workPlane].VectorBlocksPositions[0];
+            var stream = _mmf.CreateViewStream(start, end - start, MemoryMappedFileAccess.Read);
+            return stream;
+        }
+        private long GetStreamOffset(int i_workPlane)
+        {
+            return _workPlaneLUTs[i_workPlane].VectorBlocksPositions[0];
+        }
+
+        /// <inheritdoc/>
+        public override async Task<VectorBlock> GetVectorBlockAsync(int i_workPlane, int i_vectorblock)
+        {
+            return await GetVectorBlock(i_workPlane, i_vectorblock, null);
+        }
+        private Task<VectorBlock> GetVectorBlock(int i_workPlane, int i_vectorblock, Stream stream)
+        {
+            if (_jobShell.NumWorkPlanes < i_workPlane)
+            {
+                throw new ArgumentOutOfRangeException("i_workPlane" + i_workPlane.ToString() + " out of range for job with " + _jobShell.NumWorkPlanes.ToString() + " workplanes!");
+            }
+            WorkPlaneLUT wpLut = _workPlaneLUTs[i_workPlane];
+            if (wpLut.VectorBlocksPositions.Count < i_vectorblock)
+            {
+                throw new ArgumentOutOfRangeException("i_vectorblock " + i_vectorblock.ToString() + " out of range for workPlane with " + wpLut.VectorBlocksPositions.Count.ToString() + " blocks!");
+            }
+
+            if (CacheState == CacheState.CompleteJobCached)
+            {
+                return Task.FromResult(_job.WorkPlanes[i_workPlane].VectorBlocks[i_vectorblock]);
+            }
+            else
+            {
+                if (stream == null)
+                {
+                    stream = CreateLocalStream(i_workPlane);
+                }
+                VectorBlock vb = new VectorBlock();
+                stream.Position = wpLut.VectorBlocksPositions[i_vectorblock] - GetStreamOffset(i_workPlane);
+                
+                vb = VectorBlock.Parser.ParseDelimitedFrom(stream);
+                
+                return Task.FromResult(vb);
+            }
+        }
+
+        private void CheckConsistence(int number1, int number2)
+        {
+            if (number1 != number2)
+            {
+                Dispose();
+                throw new IOException("inconsistence in file detected");
+            }
+        }
+
+        /// <inheritdoc/>
+        public override void UnloadJobFromMemory()
+        {
+            _cacheState = CacheState.NotCached;
+            _job = null;
+        }
+
+        /// <inheritdoc/>
+        public override void Dispose()
+        {
+            _job = null;
+            _fs?.Close();
+            _fileOperationInProgress = FileReadOperation.None;
+            _cacheState = CacheState.NotCached;
+        }
+
+        public override void CloseFile()
+        {
+            _fs?.Close();
+        }
+    }
+}
