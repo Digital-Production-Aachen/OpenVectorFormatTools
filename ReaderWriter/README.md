@@ -6,8 +6,8 @@ This folder contains tools for easy handling of OpenVectorFormat Jobs in your ap
 
 ### In C#
 
-* Unified interfaces used for all readers / writers are provided in the AbstractReaderWriter project.
-* For easy usage, a FileReaderWriterFactory library is provided. It offers easy access to all File-Reader and File-Writer implementations.
+* Unified interfaces used for all readers / writers are provided in the `AbstractReaderWriter` project.
+* For easy usage, the `FileReaderWriterFactory` library is provided. It offers easy access to all File-Reader and File-Writer implementations.
 * If you do not need File-Storage (e.g. for intermediate jobs), the `OVFReaderWriter` offers to classes to comfortably handle a job in-memory, also with the common interface from `AbstractReaderWriter`.
 
 Simple usage examples on how to read, write or convert a file:
@@ -106,7 +106,7 @@ If the job is very big and you do not want to keep it in memory all the time, us
 ### (.ovf) OpenVectorFormat Reference Implementation
 We strongly recommend to use this reference implementation whenever possible.
 
-It implements the common [FileReader](AbstractReaderWriter/FileReader.cs) and [FileWriter](AbstractReaderWriter/FileWriter.cs) provided by AbstractReaderWriter.
+It implements the common [`FileReader`](AbstractReaderWriter/FileReader.cs) and [`FileWriter`](AbstractReaderWriter/FileWriter.cs) provided by `AbstractReaderWriter`.
 It offers
 * Reading a job from and writing a job to a .ovf file
   * For big jobs, both reading and writing are streamable to minimize the memory requirements of your application
@@ -127,6 +127,11 @@ Important points:
   * LP
   * VG
   * VJ
+  * DS
+  * DL
+  * PA
+  * LI
+  * MO
   * ON
   * JP
   * GO
