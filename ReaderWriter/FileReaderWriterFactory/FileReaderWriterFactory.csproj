@@ -5,8 +5,26 @@
     <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <PackageId>OpenVectorFormat.FileReaderWriterFactory</PackageId>
+    <Description>
+      This package provides the OpenVectorFormat definitions and all the tooling needed to read and write files from / to various formats, including the .ovf reference implementation.
+    </Description>
+    <Authors>The OpenVectorFormat Authors</Authors>
+    <PackageLicenseExpression>LGPL-2.1-or-later</PackageLicenseExpression>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/Digital-Production-Aachen/OpenVectorFormatTools</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Digital-Production-Aachen/OpenVectorFormatTools</PackageProjectUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageIconUrl>https://github.com/Digital-Production-Aachen/OpenVectorFormatTools/blob/main/icon.png</PackageIconUrl>
+  </PropertyGroup>
+
   <ItemGroup>
-    <ProjectReference Include="..\3rdPartyFormatAdapters\ASP\ASPFileReaderWriterAdapter\ASPFileReaderWriterAdapter.csproj" />
+    <None Include="..\..\icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\3rdPartyFormatAdapters\ASP\ASPFileReaderWriter\ASPFileReaderWriter.csproj" />
     <ProjectReference Include="..\3rdPartyFormatAdapters\CLI_ILT\ILTFileReaderAdapter\ILTFileReaderAdapter.csproj" />
     <ProjectReference Include="..\3rdPartyFormatAdapters\CLI_ILT\ILTFileReaderInterfaces\ILTFileReaderInterfaces.csproj" />
     <ProjectReference Include="..\3rdPartyFormatAdapters\CLI_ILT\iltFileReader\ILTFileReader.csproj" />

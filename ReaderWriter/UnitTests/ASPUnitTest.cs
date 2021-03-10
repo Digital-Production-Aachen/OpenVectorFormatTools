@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using OpenVectorFormat.ASPFileReaderWriterAdapter;
+using OpenVectorFormat.ASPFileReaderWriter;
 using OpenVectorFormat.AbstractReaderWriter;
 using System.Collections.Generic;
 using System.IO;

@@ -32,7 +32,7 @@ using System.Threading.Tasks;
 using OpenVectorFormat.AbstractReaderWriter;
 using OpenVectorFormat.Utils;
 
-namespace OpenVectorFormat.ASPFileReaderWriterAdapter
+namespace OpenVectorFormat.ASPFileReaderWriter
 {
     public class ASPFileReader : FileReader
     {

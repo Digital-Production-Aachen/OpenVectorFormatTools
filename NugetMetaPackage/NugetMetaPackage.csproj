@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net46</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>OpenVectorFormat</PackageId>
+    <Description>
+      Meta package for the OpenVectorFormat. It includes the definition and all tooling. If you are not sur what you need, start with this.
+    </Description>
+    <Authors>The OpenVectorFormat Authors</Authors>
+    <PackageLicenseExpression>LGPL-2.1-or-later</PackageLicenseExpression>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/Digital-Production-Aachen/OpenVectorFormatTools</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Digital-Production-Aachen/OpenVectorFormatTools</PackageProjectUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageIconUrl>https://github.com/Digital-Production-Aachen/OpenVectorFormatTools/blob/main/icon.png</PackageIconUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PlausibilityChecker\PlausibilityChecker\PlausibilityChecker.csproj" />
+    <ProjectReference Include="..\ReaderWriter\3rdPartyFormatAdapters\ASP\ASPFileReaderWriter\ASPFileReaderWriter.csproj" />
+    <ProjectReference Include="..\ReaderWriter\3rdPartyFormatAdapters\CLI_ILT\ILTFileReaderAdapter\ILTFileReaderAdapter.csproj" />
+    <ProjectReference Include="..\ReaderWriter\3rdPartyFormatAdapters\CLI_ILT\ILTFileReaderInterfaces\ILTFileReaderInterfaces.csproj" />
+    <ProjectReference Include="..\ReaderWriter\3rdPartyFormatAdapters\CLI_ILT\iltFileReader\ILTFileReader.csproj" />
+    <ProjectReference Include="..\ReaderWriter\AbstractReaderWriter\AbstractReaderWriter.csproj" />
+    <ProjectReference Include="..\ReaderWriter\FileReaderWriterFactory\FileReaderWriterFactory.csproj" />
+    <ProjectReference Include="..\ReaderWriter\OVFDefinition\OVFDefinition.csproj" />
+    <ProjectReference Include="..\ReaderWriter\OVFReaderWriter\OVFReaderWriter.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -31,7 +31,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace OpenVectorFormat.ASPFileReaderWriterAdapter
+namespace OpenVectorFormat.ASPFileReaderWriter
 {
     public sealed class ParamLength : Attribute
     {

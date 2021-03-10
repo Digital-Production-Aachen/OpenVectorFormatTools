@@ -40,9 +40,9 @@ namespace OpenVectorFormat.FileReaderWriterFactory
             {
                 newFileWriter = new OVFReaderWriter.OVFFileWriter();
             }
-            else if (ASPFileReaderWriterAdapter.ASPFileWriter.SupportedFileFormats.Contains(extension, StringComparer.OrdinalIgnoreCase))
+            else if (ASPFileReaderWriter.ASPFileWriter.SupportedFileFormats.Contains(extension, StringComparer.OrdinalIgnoreCase))
             {
-                newFileWriter = new ASPFileReaderWriterAdapter.ASPFileWriter();
+                newFileWriter = new ASPFileReaderWriter.ASPFileWriter();
             }
             else
             {
@@ -56,7 +56,7 @@ namespace OpenVectorFormat.FileReaderWriterFactory
             get {
                 List<string> formats = new List<string>();
                 formats.AddRange(OVFReaderWriter.OVFFileWriter.SupportedFileFormats);
-                formats.AddRange(ASPFileReaderWriterAdapter.ASPFileWriter.SupportedFileFormats);
+                formats.AddRange(ASPFileReaderWriter.ASPFileWriter.SupportedFileFormats);
                 return formats;
             }
         }

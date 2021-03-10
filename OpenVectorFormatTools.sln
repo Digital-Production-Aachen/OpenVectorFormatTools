@@ -11,7 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnitTests", "ReaderWriter\U
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileReaderWriterFactory", "ReaderWriter\FileReaderWriterFactory\FileReaderWriterFactory.csproj", "{2E9E9D8F-80CD-4789-B484-8B2DFF432982}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ASPFileReaderWriterAdapter", "ReaderWriter\3rdPartyFormatAdapters\ASP\ASPFileReaderWriterAdapter\ASPFileReaderWriterAdapter.csproj", "{1F2ABF3F-A874-4221-9011-6C5BB9F9E8EB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ASPFileReaderWriter", "ReaderWriter\3rdPartyFormatAdapters\ASP\ASPFileReaderWriter\ASPFileReaderWriter.csproj", "{1F2ABF3F-A874-4221-9011-6C5BB9F9E8EB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FileReaderWriterFactoryGRPCWrapper", "ReaderWriter\FileReaderWriterFactoryGRPCWrapper\FileReaderWriterFactoryGRPCWrapper.csproj", "{2D25A68D-39DB-480D-ACC5-0978CD789101}"
 EndProject
@@ -34,6 +34,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CLI_ILT", "CLI_ILT", "{CE9DAE0F-0DDA-481A-9379-EE248BCAD8C0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FileReaderWriterFactory", "FileReaderWriterFactory", "{0675AEB6-C16F-4212-A05D-0DEB841BE125}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NugetMetaPackage", "NugetMetaPackage\NugetMetaPackage.csproj", "{05D529A1-4F1C-4843-97C1-DE8657A49910}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -139,6 +141,14 @@ Global
 		{A8731CCB-6DB4-43B3-80ED-09C73991D075}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A8731CCB-6DB4-43B3-80ED-09C73991D075}.Release|x64.ActiveCfg = Release|x64
 		{A8731CCB-6DB4-43B3-80ED-09C73991D075}.Release|x64.Build.0 = Release|x64
+		{05D529A1-4F1C-4843-97C1-DE8657A49910}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05D529A1-4F1C-4843-97C1-DE8657A49910}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05D529A1-4F1C-4843-97C1-DE8657A49910}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{05D529A1-4F1C-4843-97C1-DE8657A49910}.Debug|x64.Build.0 = Debug|Any CPU
+		{05D529A1-4F1C-4843-97C1-DE8657A49910}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05D529A1-4F1C-4843-97C1-DE8657A49910}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05D529A1-4F1C-4843-97C1-DE8657A49910}.Release|x64.ActiveCfg = Release|Any CPU
+		{05D529A1-4F1C-4843-97C1-DE8657A49910}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -6,9 +6,9 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <PackageId>OpenVectorFormat.AbstractReaderWriter</PackageId>
+    <PackageId>OpenVectorFormat.ASPFileReaderWriter</PackageId>
     <Description>
-      This package is provides the abstract interfaces for all readers / writers in the OpenVectorFormat framework.
+      This package is provides reader / writer functionality for .asp files.
     </Description>
     <Authors>The OpenVectorFormat Authors</Authors>
     <PackageLicenseExpression>LGPL-2.1-or-later</PackageLicenseExpression>
@@ -20,10 +20,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\icon.png" Pack="true" PackagePath="\"/>
+    <None Include="..\..\..\..\icon.png" Pack="true" PackagePath="\"/>
   </ItemGroup>
 
+
   <ItemGroup>
-    <ProjectReference Include="..\OVFDefinition\OVFDefinition.csproj" />
+    <ProjectReference Include="..\..\..\AbstractReaderWriter\AbstractReaderWriter.csproj" />
+    <ProjectReference Include="..\..\..\OVFDefinition\OVFDefinition.csproj" />
   </ItemGroup>
+
 </Project>

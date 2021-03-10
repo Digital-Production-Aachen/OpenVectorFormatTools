@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.1;net46;net461;net462;net47;net471</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.1;net46</TargetFrameworks>
 
     <IsPackable>false</IsPackable>
 
@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\3rdPartyFormatAdapters\ASP\ASPFileReaderWriterAdapter\ASPFileReaderWriterAdapter.csproj" />
+    <ProjectReference Include="..\3rdPartyFormatAdapters\ASP\ASPFileReaderWriter\ASPFileReaderWriter.csproj" />
     <ProjectReference Include="..\3rdPartyFormatAdapters\CLI_ILT\ILTFileReaderAdapter\ILTFileReaderAdapter.csproj" />
     <ProjectReference Include="..\3rdPartyFormatAdapters\CLI_ILT\iltFileReader\ILTFileReader.csproj" />
     <ProjectReference Include="..\AbstractReaderWriter\AbstractReaderWriter.csproj" />

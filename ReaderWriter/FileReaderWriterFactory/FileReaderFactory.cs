@@ -30,7 +30,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenVectorFormat.AbstractReaderWriter;
-using OpenVectorFormat.ASPFileReaderWriterAdapter;
+using OpenVectorFormat.ASPFileReaderWriter;
 
 namespace OpenVectorFormat.FileReaderWriterFactory
 {
@@ -51,9 +51,9 @@ namespace OpenVectorFormat.FileReaderWriterFactory
             {
                 newFileReader = new OVFReaderWriter.OVFFileReader();
             }
-            else if (ASPFileReaderWriterAdapter.ASPFileReader.SupportedFileFormats.Contains(extension, StringComparer.OrdinalIgnoreCase))
+            else if (ASPFileReaderWriter.ASPFileReader.SupportedFileFormats.Contains(extension, StringComparer.OrdinalIgnoreCase))
             {
-                newFileReader = new ASPFileReaderWriterAdapter.ASPFileReader();
+                newFileReader = new ASPFileReaderWriter.ASPFileReader();
             }
             else
             {
@@ -69,7 +69,7 @@ namespace OpenVectorFormat.FileReaderWriterFactory
                 formats.AddRange(OVFReaderWriter.OVFFileReader.SupportedFileFormats);
                 formats.AddRange(IltFileAccess.SupportedFileFormats);
                 formats.AddRange(CliFileAccess.SupportedFileFormats);
-                formats.AddRange(ASPFileReaderWriterAdapter.ASPFileReader.SupportedFileFormats);
+                formats.AddRange(ASPFileReaderWriter.ASPFileReader.SupportedFileFormats);
                 return formats;
             }
         }
