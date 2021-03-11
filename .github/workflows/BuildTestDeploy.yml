@@ -1,0 +1,59 @@
+name: OVFToolsBuildTestDeploy
+
+on: [push, pull_request]
+  
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    
+    steps:
+    - name: Setup python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+        architecture: 'x64'
+        
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+        
+    - name: Check license headers
+      run: python manage_license_headers.py ci
+      
+    - name: Setup Dotnet
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 2.1.x
+    
+    - name: Clean
+      run: |
+        dotnet clean
+        dotnet nuget locals all --clear
+      
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.2
+      
+    - name: Build
+      run: dotnet build --configuration Release
+      
+    - name: Test
+      run: |
+        $j = Start-Process -PassThru -Filepath 'dotnet' -WorkingDirectory $PWD -ArgumentList 'run --configuration Release --framework netcoreapp2.1 --project .\ReaderWriter\FileReaderWriterFactoryGRPCWrapper\FileReaderWriterFactoryGRPCWrapper.csproj background'
+        Start-Sleep -s 5
+        dotnet test --no-build --configuration Release
+        $j | Select-Object -Property Id | Stop-Process
+                  
+    - name: Nuget Deploy
+      if: startsWith(github.ref, 'refs/tags/v') # make sure deploy only runs on tags with version number
+      run: |
+        $env:RELEASE_VERSION=($env:GITHUB_REF).split("tags/v")[-1]
+        echo $env:RELEASE_VERSION
+        echo $env:GITHUB_SHA
+        mkdir nupkg
+        dotnet pack -p:PackageVersion=$env:RELEASE_VERSION -o nupkg -p:RepositoryCommit=$env:GITHUB_SHA --configuration Release
+        cd nupkg
+        dotnet nuget push "**/*.nupkg" --api-key ${{secrets.NUGET_DEPLOY_KEY}} --source "https://api.nuget.org/v3/index.json" --no-symbols true
+
