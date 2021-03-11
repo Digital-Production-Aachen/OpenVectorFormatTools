@@ -97,10 +97,10 @@ await FileConverter.ConvertAsync(soruceFile, targetFile, progress);
 
 
 ### Other languages
-Use the standalone `FileReaderWriterFactoryGRPCWrapper` (pre-build executable is available on the release page) - it provides the functionality of the `FileReaderWriterFactory` through an gRPC Service and can be easily integrated in most progamming languages. The service definition can be found here: [gRPC Service definition](AbstractReaderWriter/grpc_reader_writer_interface.proto). For more information on gRPC, see here: [gRPC](https://grpc.io/).
+For usage in other languages than C#, there are currently two options:
 
-To read / write a job all-at-once, call the `SimpleJobRead` or `SimpleJobWrite` procedures.
-If the job is very big and you do not want to keep it in memory all the time, use the `PartialJobRead` and `PartialJobWrite` procedures to open a stream and do the reading / writing in parts.
+* You can implement your on tooling based on the protobuf defintion for the OpenVectorFormat in you target language - get the definition [here](https://github.com/Digital-Production-Aachen/OpenVectorFormat)
+* Use the standalone [`FileReaderWriterFactoryGRPCWrapper`](FileReaderWriterFactoryGRPCWrapper) - it provides the functionality of the `FileReaderWriterFactory` through an gRPC Service and can be easily integrated in most progamming languages. For more information, see [here](FileReaderWriterFactoryGRPCWrapper).
 
 ## Supported file formats
 ### (.ovf) OpenVectorFormat Reference Implementation
