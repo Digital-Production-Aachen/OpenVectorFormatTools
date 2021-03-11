@@ -31,10 +31,10 @@ import re
 # path where a file with the license header to use is found
 header_path = "license_header.txt"
 
-# dictionary with file types to process and in and out markers for block commets
+# dictionary with file types to process and in and out markers for block comments
 file_types = {".cs": [r"/*", r"*/"], ".py": [r'"""', r'"""'], ".proto": [r"/*", r"*/"]}
 
-# list with files / directories to ignore. please use '/' seperator, will be replaced with system standard later.
+# list with files / directories to ignore. please use '/' as directory seperator, will be replaced with system standard later.
 # matching is done via regex against the relative file path.
 exclude_list = [
     ".*/bin/.*",
