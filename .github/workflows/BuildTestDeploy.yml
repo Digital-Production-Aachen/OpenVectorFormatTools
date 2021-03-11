@@ -53,7 +53,7 @@ jobs:
         echo $env:RELEASE_VERSION
         echo $env:GITHUB_SHA
         mkdir nupkg
-        dotnet pack -p:PackageVersion=$env:RELEASE_VERSION -o nupkg -p:RepositoryCommit=$env:GITHUB_SHA --configuration Release
+        dotnet pack -p:PackageVersion=$env:RELEASE_VERSION -o .\nupkg -p:RepositoryCommit=$env:GITHUB_SHA --configuration Release
         cd nupkg
         dotnet nuget push "**/*.nupkg" --api-key ${{secrets.NUGET_DEPLOY_KEY}} --source "https://api.nuget.org/v3/index.json" --no-symbols true
 
