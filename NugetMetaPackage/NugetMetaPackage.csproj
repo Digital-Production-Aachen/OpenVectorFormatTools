@@ -7,7 +7,7 @@
   <PropertyGroup>
     <PackageId>OpenVectorFormat</PackageId>
     <Description>
-      Meta package for the OpenVectorFormat. It includes the definition and all tooling. If you are not sur what you need, start with this.
+      Meta package for the OpenVectorFormat. It includes the definition and all tooling. If you are not sure what you need, start with this.
     </Description>
     <Authors>The OpenVectorFormat Authors</Authors>
     <PackageLicenseExpression>LGPL-2.1-or-later</PackageLicenseExpression>
