@@ -1,6 +1,6 @@
 # OpenVectorFormat: FileReaderWriterFactoryGRPCWrapper
 
-This project provides an standalone console-application that wraps the functionality of the `FileReaderWriterFactory` and exposes it as an gRPC service and can easily be integrated in most progamming languages. The service definition can be found [here](AbstractReaderWriter/grpc_reader_writer_interface.proto). For more information on gRPC, see here: [gRPC](https://grpc.io/).
+This project provides an standalone console-application that wraps the functionality of the `FileReaderWriterFactory` and exposes it as an gRPC service and can easily be integrated in most progamming languages. The service definition can be found [here](../AbstractReaderWriter/grpc_reader_writer_interface.proto). For more information on gRPC, see here: [gRPC](https://grpc.io/).
 
 To read / write a job all-at-once, call the `SimpleJobRead` or `SimpleJobWrite` procedures. If the job is very big and you do not want to keep it in memory all the time, use the `PartialJobRead` and `PartialJobWrite` procedures to open a stream and do the reading / writing in parts.
 
