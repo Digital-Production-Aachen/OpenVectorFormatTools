@@ -3,6 +3,8 @@ To enable selective streaming of various elements of a job from the file, the Jo
 
 The LUTs themselves are protobuf messages, the .proto file can be found at [protobuf/ovf_lut.proto](OVFReaderWriter/protobuf/ovf_lut.proto).
 
+All protobuf messages (LUTs, JobShell, WorkPlaneShells, VectorBlocks) are written to the file using the `WriteDelimitedTo` method and can be read using the `ParseDelimitedFrom` method in protobuf libraries.
+
 ## Structure overview
 
 | Length (bytes) | Description | Values | Annotation |
@@ -26,7 +28,7 @@ The LUTs themselves are protobuf messages, the .proto file can be found at [prot
 | var | JobShell (Job message with empty WorkPlane array) ||
 | var | JobLUT || 
 
-# JobLUT
+## JobLUT
 The JobLUT contains 
 - the position of the JobShell in the file
 - an array of starting positions for each WorkPlane. At this given position in the file, there is an Int64 which in turn gives the position for the WorkPlaneLUT. 
@@ -34,3 +36,10 @@ The JobLUT contains
 On the first glance, it might seem counter-intutive that there is one Int64 in front of every WorkPlane to indicate the position of the WorkPlaneLUT, instead of just writing the position of the WorkPlaneLUT in the array in the JobLUT directly.
 
 However, to speed up parsing of a job and parse multiple WorkPlanes at once, one can set up multiple sub-streams, one for each WorkPlane, and those sub-streams require the start and end of the part of the file they should work on. And by writing the starting position of the part of file for each WorkPlane into the WorkPlanePositions array in the JobLUT, the start and end position for the part of the file containing a specific WorkPlane is directly visible (see table above).
+
+## WorkPlaneLUT
+A WorkPlaneLUT contains
+- the position of the WorkPlaneShell in the file
+- an array of the starting positions for the VectorBlocks of this WorkPlane. 
+
+Here, the array of starting positions direclty indicates the starting position of a VectorBlock protobuf message that can be parsed directly.
