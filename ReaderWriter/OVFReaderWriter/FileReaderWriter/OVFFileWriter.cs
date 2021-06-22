@@ -121,6 +121,10 @@ namespace OpenVectorFormat.OVFReaderWriter
 
                     _jobLUT.WorkPlanePositions.Add(_fs.Position);
 
+                    long _workPlaneLUTIndex = _fs.Position;
+
+                    byte[] byteToWrite = ConvertToByteArrayLittleEndian((long)0);
+                    _fs.Write(byteToWrite, 0, byteToWrite.Length);
 
                     WorkPlaneLUT wpLUT = new WorkPlaneLUT();
 
@@ -137,10 +141,13 @@ namespace OpenVectorFormat.OVFReaderWriter
                     wpLUT.WorkPlaneShellPosition = _fs.Position;
                     _currentWorkPlaneShell.WriteDelimitedTo(_fs);
 
-
+                    long lutPosition = _fs.Position;
 
                     wpLUT.WriteDelimitedTo(_fs);
-
+                    _fs.Position = _workPlaneLUTIndex;
+                    byte[] lutPosBytes = ConvertToByteArrayLittleEndian(lutPosition);
+                    _fs.Write(lutPosBytes, 0, lutPosBytes.Length);
+                    _fs.Position = _fs.Length;
 
                     _jobShell.NumWorkPlanes++;
                 }
