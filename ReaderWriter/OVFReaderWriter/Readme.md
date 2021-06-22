@@ -5,16 +5,18 @@ The LUTs themselves are protobuf messages, the .proto file can be found at [prot
 
 ## Structure overview
 
-| Length (bytes) | Description | Values |
-|---|---|---|
+| Length (bytes) | Description | Values | Annotation |
+|---|---|---|---|
 | 4      | Magic number | [0x4c, 0x56, 0x46, 0x21] |
 | 8     | Position of Job LUT in File (Int64, LittleEndian)      |   |
+| 8 | Position of LUT for Workplane 0 in file (Int64, LittleEndian) | | Start of fielpart for WorkPlane 0 |
 | var | VectorBlock 0 of WorkPlane 0      |     |
 | var | VectorBlock 1 of WorkPlane 0      |     |
 | var | VectorBlock 2 of WorkPlane 0      |     |
 | ... | ...      | ...     |
 | var | WorkPlaneShell of WorkPlane 0 (WorkPlane message with empty vector-blocks array) | |
 | var | WorkPlane LUT for WorkPlane 0 | |
+| 8 | Position of LUT for Workplane 1 in file (Int64, LittleEndian) | |  Start of fielpart for WorkPlane 1 |
 | var | VectorBlock 0 of WorkPlane 1      |     |
 | var | VectorBlock 1 of WorkPlane 1      |     |
 | ... | ...      | ...     |
@@ -24,30 +26,11 @@ The LUTs themselves are protobuf messages, the .proto file can be found at [prot
 | var | JobShell (Job message with empty WorkPlane array) ||
 | var | JobLUT || 
 
-## JobLUT
-The JobLUT is positioned at the very end of the file. The starting position of the LUT is indicated by the Int64 at the begining of the file, right behind the magic number (see table above).
-
+# JobLUT
 The JobLUT contains 
-- the starting position of the JobShell
-- an array of starting positions for each WorkPlaneLUT
+- the position of the JobShell in the file
+- an array of starting positions for each WorkPlane. At this given position in the file, there is an Int64 which in turn gives the position for the WorkPlaneLUT. 
 
-After reading the JobLUT, the JobShell should be read. Furthermore, with the starting positions of the WorkPlaneLUTs, any WorkPlane or VectorBlock can be located in the file in arbitrary order.
+On the first glance, it might seem counter-intutive that there is one Int64 in front of every WorkPlane to indicate the position of the WorkPlaneLUT, instead of just writing the position of the WorkPlaneLUT in the array in the JobLUT directly.
 
-## WorkPlaneLUTs
-The WorkPlaneLUT is for a WorkPlane what the JobLUT is for the complete job. It is positioned at the very end of the WorkPlane, and the starting position of the WorkPlaneLUT can be found in the corresponding array provided by the JobLUT.
-
-The WorkPlaneLUT contains
-- the starting position of the WorkPlaneShell
-- an array of starting positions for each VectorBlock in the WorkPlane
-
-## How to read a job
-- Read the first 4 bytes and verify that they are correct (magic number). This is just a first consistency check to make sure that it is indeed an OpenVectorFormat file.
-- Read another 8 bits as Int64, LittleEndian for the JobLUT position
-- Read the JobLUT by parsing a JobLUT protobuf message from the JobLUT position in the file
-- Read the JobShell by parsing a Job protobuf message from the JobShell position provided by the JobLUT
-
-### Read WorkPlanes and VectorBlocks
-- Find the WorkPlaneLUT position from the WorkPlaneLUTs-position array in the JobLUT
-- Read the WorkPlaneLUT by parsing a WorkPlaneLUT protobuf message from the found position in the file
-- Read the WorkPlaneShell by parsing a WorkPlane protobuf message from the WorkPlaneShell position provided by the WorkPlaneLUT
-- Read the VectorBlocks as needed by parsing a VectorBlock protobuf message from the position provided by the VectorBlocksPosition array in the WorkPlaneLUT
+However, to speed up parsing of a job and parse multiple WorkPlanes at once, one can set up multiple sub-streams, one for each WorkPlane, and those sub-streams require the start and end of the part of the file they should work on. And by writing the starting position of the part of file for each WorkPlane into the WorkPlanePositions array in the JobLUT, the start and end position for the part of the file containing a specific WorkPlane is directly visible (see table above).
