@@ -85,7 +85,9 @@ namespace OpenVectorFormat.OVFReaderWriter
             {
                 _fs.Write(Contract.magicNumber, 0, Contract.magicNumber.Length);
                 _LUTPositionIndex = _fs.Position;
-                _fs.Write(BitConverter.GetBytes(Contract.defaultLUTIndex), 0, BitConverter.GetBytes(Contract.defaultLUTIndex).Length);
+                
+                byte[] _LutPositionIndexBytes = ConvertToByteArrayLittleEndian(Contract.defaultLUTIndex);
+                _fs.Write(_LutPositionIndexBytes, 0, _LutPositionIndexBytes.Length);
 
                 // Initialize workPlane lookup table
                 _jobLUT = new JobLUT();
@@ -119,9 +121,6 @@ namespace OpenVectorFormat.OVFReaderWriter
 
                     _jobLUT.WorkPlanePositions.Add(_fs.Position);
 
-                    long _workPlaneLUTIndex = _fs.Position;
-
-                    _fs.Write(BitConverter.GetBytes((long)0), 0, BitConverter.GetBytes((long)0).Length);
 
                     WorkPlaneLUT wpLUT = new WorkPlaneLUT();
 
@@ -138,12 +137,10 @@ namespace OpenVectorFormat.OVFReaderWriter
                     wpLUT.WorkPlaneShellPosition = _fs.Position;
                     _currentWorkPlaneShell.WriteDelimitedTo(_fs);
 
-                    long lutPosition = _fs.Position;
+
 
                     wpLUT.WriteDelimitedTo(_fs);
-                    _fs.Position = _workPlaneLUTIndex;
-                    _fs.Write(BitConverter.GetBytes(lutPosition), 0, BitConverter.GetBytes(lutPosition).Length);
-                    _fs.Position = _fs.Length;
+
 
                     _jobShell.NumWorkPlanes++;
                 }
@@ -180,11 +177,12 @@ namespace OpenVectorFormat.OVFReaderWriter
                     _jobLUT.JobShellPosition = _fs.Position;
                     _jobShell.WriteDelimitedTo(_fs);
                     // write LUT
-                    var LUTPosition = _fs.Position;
+                    long LUTPosition = _fs.Position;
                     _jobLUT.WriteDelimitedTo(_fs);
                     //update LUT position to finalize file and make it valid
                     _fs.Position = _LUTPositionIndex;
-                    _fs.Write(BitConverter.GetBytes((LUTPosition)), 0, BitConverter.GetBytes((LUTPosition)).Length);
+                    byte[] lutPosBytes = ConvertToByteArrayLittleEndian(LUTPosition);
+                    _fs.Write(lutPosBytes, 0, lutPosBytes.Length);
                     progress.IsFinished = true;
                 }
             }
@@ -220,6 +218,16 @@ namespace OpenVectorFormat.OVFReaderWriter
                 Dispose();
                 throw new IOException("inconsistence in file detected");
             }
+        }
+
+        private byte[] ConvertToByteArrayLittleEndian(long val)
+        {
+            byte[] bytes_val = BitConverter.GetBytes(val);
+            if (!BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(bytes_val);
+            }
+            return bytes_val;
         }
     }
 }
