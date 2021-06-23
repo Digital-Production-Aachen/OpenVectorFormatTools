@@ -2,7 +2,7 @@
 
 This folder contains tools for easy handling of OpenVectorFormat Jobs in your application.
 
-It implements the file storage concept described here: https://github.com/Digital-Production-Aachen/OpenVectorFormat#ovf-file-structure and allows for arbitrary access of WorkPlanes and VectorBlocks in a file, as well es parallel reading of multiple WorkPlanes / VectorBlocks.
+It implements the file storage concept described here: https://github.com/Digital-Production-Aachen/OpenVectorFormat#ovf-file-structure and allows for arbitrary access of WorkPlanes and VectorBlocks in a file, as well as parallel reading of multiple WorkPlanes / VectorBlocks.
 
 ## How to use?
 
