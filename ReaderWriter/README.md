@@ -2,6 +2,8 @@
 
 This folder contains tools for easy handling of OpenVectorFormat Jobs in your application.
 
+It implements the file storage concept described here: https://github.com/Digital-Production-Aachen/OpenVectorFormat#ovf-file-structure and allows for arbitrary access of WorkPlanes and VectorBlocks in a file, as well es parallel reading of multiple WorkPlanes / VectorBlocks.
+
 ## How to use?
 
 ### In C#
@@ -99,7 +101,7 @@ await FileConverter.ConvertAsync(soruceFile, targetFile, progress);
 ### Other languages
 For usage in other languages than C#, there are currently two options:
 
-* You can implement your on tooling based on the protobuf defintion for the OpenVectorFormat in you target language - get the definition [here](https://github.com/Digital-Production-Aachen/OpenVectorFormat)
+* You can implement your on tooling based on the protobuf defintion for the OpenVectorFormat in you target language - get the definition [here](https://github.com/Digital-Production-Aachen/OpenVectorFormat). Especially have a look at the description for the file storage [here](https://github.com/Digital-Production-Aachen/OpenVectorFormat#ovf-file-structure) since it is more than just serializing the protobuf message and dumping it into a file.
 * Use the standalone [`FileReaderWriterFactoryGRPCWrapper`](FileReaderWriterFactoryGRPCWrapper) - it provides the functionality of the `FileReaderWriterFactory` through an gRPC Service and can be easily integrated in most progamming languages. For more information, see [here](FileReaderWriterFactoryGRPCWrapper).
 
 ## Supported file formats
