@@ -4,6 +4,7 @@ To enable selective streaming of various elements of a job from the file, the Jo
 The LUTs themselves are protobuf messages, the .proto file can be found at [protobuf/ovf_lut.proto](OVFReaderWriter/protobuf/ovf_lut.proto).
 
 All protobuf messages (LUTs, JobShell, WorkPlaneShells, VectorBlocks) are written to the file using the `WriteDelimitedTo` method and can be read using the `ParseDelimitedFrom` method in protobuf libraries.
+The writeDelimited methods first read / write the length in bytes of the protobuf message from / to the stream as VarInt32 (defined by protobuf) and then parse the data. They are not available in all language implementations default libraries, reading and writing of the length might have to be implemented manually. Some help to this can be found here: https://stackoverflow.com/questions/2340730/are-there-c-equivalents-for-the-protocol-buffers-delimited-i-o-functions-in-ja/22927149#22927149
 
 ## Structure overview
 
