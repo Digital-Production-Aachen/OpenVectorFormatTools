@@ -38,9 +38,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    
-    <!-- Explicitly include our helloworld.proto file by adding this line: -->
-    <Protobuf Include="protobuf\ovf_lut.proto" />
   </ItemGroup>
 
   <ItemGroup>

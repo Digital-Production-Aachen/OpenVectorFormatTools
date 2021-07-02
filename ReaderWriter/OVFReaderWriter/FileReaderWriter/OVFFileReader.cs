@@ -103,6 +103,10 @@ namespace OpenVectorFormat.OVFReaderWriter
                 _fs.Read(magicNumberBuffer, 0, magicNumberBuffer.Length);
                 byte[] LUTIndexBuffer = new byte[sizeof(Int64)];
                 _fs.Read(LUTIndexBuffer, 0, LUTIndexBuffer.Length);
+                if (!BitConverter.IsLittleEndian)
+                {
+                    Array.Reverse(LUTIndexBuffer);
+                }
                 long jobLUTindex = BitConverter.ToInt64(LUTIndexBuffer, 0);
 
                 if (!magicNumberBuffer.SequenceEqual(Contract.magicNumber) || jobLUTindex >= _fs.Length || jobLUTindex < -1)
@@ -151,6 +155,10 @@ namespace OpenVectorFormat.OVFReaderWriter
 
                 byte[] LUTIndexBuffer = new byte[sizeof(Int64)];
                 _fs.Read(LUTIndexBuffer, 0, LUTIndexBuffer.Length);
+                if (!BitConverter.IsLittleEndian)
+                {
+                    Array.Reverse(LUTIndexBuffer);
+                }
                 long wpLUTindex = BitConverter.ToInt64(LUTIndexBuffer, 0);
                 _fs.Position = wpLUTindex;
                 WorkPlaneLUT wpLUT = WorkPlaneLUT.Parser.ParseDelimitedFrom(_fs);

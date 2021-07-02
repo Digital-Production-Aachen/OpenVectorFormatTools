@@ -29,7 +29,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
 
-    <Protobuf Include="../../submodules/OpenVectorFormat/open_vector_format.proto" />
+	  <Protobuf Include="../../submodules/OpenVectorFormat/open_vector_format.proto" />
+	  <Protobuf Include="../../submodules/OpenVectorFormat/ovf_lut.proto" />
 
   </ItemGroup>
 </Project>
