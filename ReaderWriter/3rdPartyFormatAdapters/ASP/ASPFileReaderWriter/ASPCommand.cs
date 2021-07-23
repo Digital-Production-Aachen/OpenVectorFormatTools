@@ -246,8 +246,7 @@ namespace OpenVectorFormat.ASPFileReaderWriter
             string[] serializedCmdsArray = serializedCmds.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
             foreach (string s in serializedCmdsArray)
             {
-
-                if (s.StartsWith("//") || s.StartsWith("#"))
+                if (s.StartsWith("//") || s.StartsWith("#") || s.Trim() == string.Empty)
                 {
                     continue;
                 }
