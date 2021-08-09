@@ -16,7 +16,7 @@
 #include <google/protobuf/port_def.inc>
 
 PROTOBUF_PRAGMA_INIT_SEG
-namespace OpenVectorFormat {
+namespace open_vector_format {
 constexpr JobLUT::JobLUT(
   ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
   : workplanepositions_()
@@ -45,47 +45,49 @@ struct WorkPlaneLUTDefaultTypeInternal {
   };
 };
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT WorkPlaneLUTDefaultTypeInternal _WorkPlaneLUT_default_instance_;
-}  // namespace OpenVectorFormat
+}  // namespace open_vector_format
 static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_ovf_5flut_2eproto[2];
 static constexpr ::PROTOBUF_NAMESPACE_ID::EnumDescriptor const** file_level_enum_descriptors_ovf_5flut_2eproto = nullptr;
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_ovf_5flut_2eproto = nullptr;
 
 const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_ovf_5flut_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
   ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::OpenVectorFormat::JobLUT, _internal_metadata_),
+  PROTOBUF_FIELD_OFFSET(::open_vector_format::JobLUT, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::OpenVectorFormat::JobLUT, jobshellposition_),
-  PROTOBUF_FIELD_OFFSET(::OpenVectorFormat::JobLUT, workplanepositions_),
+  PROTOBUF_FIELD_OFFSET(::open_vector_format::JobLUT, jobshellposition_),
+  PROTOBUF_FIELD_OFFSET(::open_vector_format::JobLUT, workplanepositions_),
   ~0u,  // no _has_bits_
-  PROTOBUF_FIELD_OFFSET(::OpenVectorFormat::WorkPlaneLUT, _internal_metadata_),
+  PROTOBUF_FIELD_OFFSET(::open_vector_format::WorkPlaneLUT, _internal_metadata_),
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::OpenVectorFormat::WorkPlaneLUT, workplaneshellposition_),
-  PROTOBUF_FIELD_OFFSET(::OpenVectorFormat::WorkPlaneLUT, vectorblockspositions_),
+  PROTOBUF_FIELD_OFFSET(::open_vector_format::WorkPlaneLUT, workplaneshellposition_),
+  PROTOBUF_FIELD_OFFSET(::open_vector_format::WorkPlaneLUT, vectorblockspositions_),
 };
 static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-  { 0, -1, sizeof(::OpenVectorFormat::JobLUT)},
-  { 7, -1, sizeof(::OpenVectorFormat::WorkPlaneLUT)},
+  { 0, -1, sizeof(::open_vector_format::JobLUT)},
+  { 7, -1, sizeof(::open_vector_format::WorkPlaneLUT)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::OpenVectorFormat::_JobLUT_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::OpenVectorFormat::_WorkPlaneLUT_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::open_vector_format::_JobLUT_default_instance_),
+  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::open_vector_format::_WorkPlaneLUT_default_instance_),
 };
 
 const char descriptor_table_protodef_ovf_5flut_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\rovf_lut.proto\022\020OpenVectorFormat\">\n\006Job"
-  "LUT\022\030\n\020jobShellPosition\030\001 \001(\003\022\032\n\022workPla"
-  "nePositions\030\002 \003(\003\"M\n\014WorkPlaneLUT\022\036\n\026wor"
-  "kPlaneShellPosition\030\001 \001(\003\022\035\n\025vectorBlock"
-  "sPositions\030\002 \003(\003b\006proto3"
+  "\n\rovf_lut.proto\022\022open_vector_format\">\n\006J"
+  "obLUT\022\030\n\020jobShellPosition\030\001 \001(\003\022\032\n\022workP"
+  "lanePositions\030\002 \003(\003\"M\n\014WorkPlaneLUT\022\036\n\026w"
+  "orkPlaneShellPosition\030\001 \001(\003\022\035\n\025vectorBlo"
+  "cksPositions\030\002 \003(\003B=Z;github.com/digital"
+  "-production-aachen/openvectorformat/prot"
+  "ob\006proto3"
   ;
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_ovf_5flut_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_ovf_5flut_2eproto = {
-  false, false, 184, descriptor_table_protodef_ovf_5flut_2eproto, "ovf_lut.proto", 
+  false, false, 249, descriptor_table_protodef_ovf_5flut_2eproto, "ovf_lut.proto", 
   &descriptor_table_ovf_5flut_2eproto_once, nullptr, 0, 2,
   schemas, file_default_instances, TableStruct_ovf_5flut_2eproto::offsets,
   file_level_metadata_ovf_5flut_2eproto, file_level_enum_descriptors_ovf_5flut_2eproto, file_level_service_descriptors_ovf_5flut_2eproto,
@@ -98,7 +100,7 @@ descriptor_table_ovf_5flut_2eproto_metadata_getter(int index) {
 
 // Force running AddDescriptors() at dynamic initialization time.
 PROTOBUF_ATTRIBUTE_INIT_PRIORITY static ::PROTOBUF_NAMESPACE_ID::internal::AddDescriptorsRunner dynamic_init_dummy_ovf_5flut_2eproto(&descriptor_table_ovf_5flut_2eproto);
-namespace OpenVectorFormat {
+namespace open_vector_format {
 
 // ===================================================================
 
@@ -111,14 +113,14 @@ JobLUT::JobLUT(::PROTOBUF_NAMESPACE_ID::Arena* arena)
   workplanepositions_(arena) {
   SharedCtor();
   RegisterArenaDtor(arena);
-  // @@protoc_insertion_point(arena_constructor:OpenVectorFormat.JobLUT)
+  // @@protoc_insertion_point(arena_constructor:open_vector_format.JobLUT)
 }
 JobLUT::JobLUT(const JobLUT& from)
   : ::PROTOBUF_NAMESPACE_ID::Message(),
       workplanepositions_(from.workplanepositions_) {
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   jobshellposition_ = from.jobshellposition_;
-  // @@protoc_insertion_point(copy_constructor:OpenVectorFormat.JobLUT)
+  // @@protoc_insertion_point(copy_constructor:open_vector_format.JobLUT)
 }
 
 void JobLUT::SharedCtor() {
@@ -126,7 +128,7 @@ jobshellposition_ = PROTOBUF_LONGLONG(0);
 }
 
 JobLUT::~JobLUT() {
-  // @@protoc_insertion_point(destructor:OpenVectorFormat.JobLUT)
+  // @@protoc_insertion_point(destructor:open_vector_format.JobLUT)
   SharedDtor();
   _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
@@ -146,7 +148,7 @@ void JobLUT::SetCachedSize(int size) const {
 }
 
 void JobLUT::Clear() {
-// @@protoc_insertion_point(message_clear_start:OpenVectorFormat.JobLUT)
+// @@protoc_insertion_point(message_clear_start:open_vector_format.JobLUT)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -204,7 +206,7 @@ failure:
 
 ::PROTOBUF_NAMESPACE_ID::uint8* JobLUT::_InternalSerialize(
     ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:OpenVectorFormat.JobLUT)
+  // @@protoc_insertion_point(serialize_to_array_start:open_vector_format.JobLUT)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -227,12 +229,12 @@ failure:
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:OpenVectorFormat.JobLUT)
+  // @@protoc_insertion_point(serialize_to_array_end:open_vector_format.JobLUT)
   return target;
 }
 
 size_t JobLUT::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:OpenVectorFormat.JobLUT)
+// @@protoc_insertion_point(message_byte_size_start:open_vector_format.JobLUT)
   size_t total_size = 0;
 
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
@@ -271,22 +273,22 @@ size_t JobLUT::ByteSizeLong() const {
 }
 
 void JobLUT::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:OpenVectorFormat.JobLUT)
+// @@protoc_insertion_point(generalized_merge_from_start:open_vector_format.JobLUT)
   GOOGLE_DCHECK_NE(&from, this);
   const JobLUT* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<JobLUT>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:OpenVectorFormat.JobLUT)
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:open_vector_format.JobLUT)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:OpenVectorFormat.JobLUT)
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:open_vector_format.JobLUT)
     MergeFrom(*source);
   }
 }
 
 void JobLUT::MergeFrom(const JobLUT& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:OpenVectorFormat.JobLUT)
+// @@protoc_insertion_point(class_specific_merge_from_start:open_vector_format.JobLUT)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
@@ -299,14 +301,14 @@ void JobLUT::MergeFrom(const JobLUT& from) {
 }
 
 void JobLUT::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:OpenVectorFormat.JobLUT)
+// @@protoc_insertion_point(generalized_copy_from_start:open_vector_format.JobLUT)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void JobLUT::CopyFrom(const JobLUT& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:OpenVectorFormat.JobLUT)
+// @@protoc_insertion_point(class_specific_copy_from_start:open_vector_format.JobLUT)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -339,14 +341,14 @@ WorkPlaneLUT::WorkPlaneLUT(::PROTOBUF_NAMESPACE_ID::Arena* arena)
   vectorblockspositions_(arena) {
   SharedCtor();
   RegisterArenaDtor(arena);
-  // @@protoc_insertion_point(arena_constructor:OpenVectorFormat.WorkPlaneLUT)
+  // @@protoc_insertion_point(arena_constructor:open_vector_format.WorkPlaneLUT)
 }
 WorkPlaneLUT::WorkPlaneLUT(const WorkPlaneLUT& from)
   : ::PROTOBUF_NAMESPACE_ID::Message(),
       vectorblockspositions_(from.vectorblockspositions_) {
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   workplaneshellposition_ = from.workplaneshellposition_;
-  // @@protoc_insertion_point(copy_constructor:OpenVectorFormat.WorkPlaneLUT)
+  // @@protoc_insertion_point(copy_constructor:open_vector_format.WorkPlaneLUT)
 }
 
 void WorkPlaneLUT::SharedCtor() {
@@ -354,7 +356,7 @@ workplaneshellposition_ = PROTOBUF_LONGLONG(0);
 }
 
 WorkPlaneLUT::~WorkPlaneLUT() {
-  // @@protoc_insertion_point(destructor:OpenVectorFormat.WorkPlaneLUT)
+  // @@protoc_insertion_point(destructor:open_vector_format.WorkPlaneLUT)
   SharedDtor();
   _internal_metadata_.Delete<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
@@ -374,7 +376,7 @@ void WorkPlaneLUT::SetCachedSize(int size) const {
 }
 
 void WorkPlaneLUT::Clear() {
-// @@protoc_insertion_point(message_clear_start:OpenVectorFormat.WorkPlaneLUT)
+// @@protoc_insertion_point(message_clear_start:open_vector_format.WorkPlaneLUT)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
@@ -432,7 +434,7 @@ failure:
 
 ::PROTOBUF_NAMESPACE_ID::uint8* WorkPlaneLUT::_InternalSerialize(
     ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
-  // @@protoc_insertion_point(serialize_to_array_start:OpenVectorFormat.WorkPlaneLUT)
+  // @@protoc_insertion_point(serialize_to_array_start:open_vector_format.WorkPlaneLUT)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
@@ -455,12 +457,12 @@ failure:
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
-  // @@protoc_insertion_point(serialize_to_array_end:OpenVectorFormat.WorkPlaneLUT)
+  // @@protoc_insertion_point(serialize_to_array_end:open_vector_format.WorkPlaneLUT)
   return target;
 }
 
 size_t WorkPlaneLUT::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:OpenVectorFormat.WorkPlaneLUT)
+// @@protoc_insertion_point(message_byte_size_start:open_vector_format.WorkPlaneLUT)
   size_t total_size = 0;
 
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
@@ -499,22 +501,22 @@ size_t WorkPlaneLUT::ByteSizeLong() const {
 }
 
 void WorkPlaneLUT::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:OpenVectorFormat.WorkPlaneLUT)
+// @@protoc_insertion_point(generalized_merge_from_start:open_vector_format.WorkPlaneLUT)
   GOOGLE_DCHECK_NE(&from, this);
   const WorkPlaneLUT* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<WorkPlaneLUT>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:OpenVectorFormat.WorkPlaneLUT)
+  // @@protoc_insertion_point(generalized_merge_from_cast_fail:open_vector_format.WorkPlaneLUT)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:OpenVectorFormat.WorkPlaneLUT)
+  // @@protoc_insertion_point(generalized_merge_from_cast_success:open_vector_format.WorkPlaneLUT)
     MergeFrom(*source);
   }
 }
 
 void WorkPlaneLUT::MergeFrom(const WorkPlaneLUT& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:OpenVectorFormat.WorkPlaneLUT)
+// @@protoc_insertion_point(class_specific_merge_from_start:open_vector_format.WorkPlaneLUT)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
@@ -527,14 +529,14 @@ void WorkPlaneLUT::MergeFrom(const WorkPlaneLUT& from) {
 }
 
 void WorkPlaneLUT::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:OpenVectorFormat.WorkPlaneLUT)
+// @@protoc_insertion_point(generalized_copy_from_start:open_vector_format.WorkPlaneLUT)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void WorkPlaneLUT::CopyFrom(const WorkPlaneLUT& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:OpenVectorFormat.WorkPlaneLUT)
+// @@protoc_insertion_point(class_specific_copy_from_start:open_vector_format.WorkPlaneLUT)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -557,13 +559,13 @@ void WorkPlaneLUT::InternalSwap(WorkPlaneLUT* other) {
 
 
 // @@protoc_insertion_point(namespace_scope)
-}  // namespace OpenVectorFormat
+}  // namespace open_vector_format
 PROTOBUF_NAMESPACE_OPEN
-template<> PROTOBUF_NOINLINE ::OpenVectorFormat::JobLUT* Arena::CreateMaybeMessage< ::OpenVectorFormat::JobLUT >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::OpenVectorFormat::JobLUT >(arena);
+template<> PROTOBUF_NOINLINE ::open_vector_format::JobLUT* Arena::CreateMaybeMessage< ::open_vector_format::JobLUT >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::open_vector_format::JobLUT >(arena);
 }
-template<> PROTOBUF_NOINLINE ::OpenVectorFormat::WorkPlaneLUT* Arena::CreateMaybeMessage< ::OpenVectorFormat::WorkPlaneLUT >(Arena* arena) {
-  return Arena::CreateMessageInternal< ::OpenVectorFormat::WorkPlaneLUT >(arena);
+template<> PROTOBUF_NOINLINE ::open_vector_format::WorkPlaneLUT* Arena::CreateMaybeMessage< ::open_vector_format::WorkPlaneLUT >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::open_vector_format::WorkPlaneLUT >(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

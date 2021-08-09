@@ -54,24 +54,24 @@ struct TableStruct_ovf_5flut_2eproto {
 };
 extern const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_ovf_5flut_2eproto;
 ::PROTOBUF_NAMESPACE_ID::Metadata descriptor_table_ovf_5flut_2eproto_metadata_getter(int index);
-namespace OpenVectorFormat {
+namespace open_vector_format {
 class JobLUT;
 struct JobLUTDefaultTypeInternal;
 extern JobLUTDefaultTypeInternal _JobLUT_default_instance_;
 class WorkPlaneLUT;
 struct WorkPlaneLUTDefaultTypeInternal;
 extern WorkPlaneLUTDefaultTypeInternal _WorkPlaneLUT_default_instance_;
-}  // namespace OpenVectorFormat
+}  // namespace open_vector_format
 PROTOBUF_NAMESPACE_OPEN
-template<> ::OpenVectorFormat::JobLUT* Arena::CreateMaybeMessage<::OpenVectorFormat::JobLUT>(Arena*);
-template<> ::OpenVectorFormat::WorkPlaneLUT* Arena::CreateMaybeMessage<::OpenVectorFormat::WorkPlaneLUT>(Arena*);
+template<> ::open_vector_format::JobLUT* Arena::CreateMaybeMessage<::open_vector_format::JobLUT>(Arena*);
+template<> ::open_vector_format::WorkPlaneLUT* Arena::CreateMaybeMessage<::open_vector_format::WorkPlaneLUT>(Arena*);
 PROTOBUF_NAMESPACE_CLOSE
-namespace OpenVectorFormat {
+namespace open_vector_format {
 
 // ===================================================================
 
 class JobLUT PROTOBUF_FINAL :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:OpenVectorFormat.JobLUT) */ {
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:open_vector_format.JobLUT) */ {
  public:
   inline JobLUT() : JobLUT(nullptr) {}
   virtual ~JobLUT();
@@ -161,7 +161,7 @@ class JobLUT PROTOBUF_FINAL :
   void InternalSwap(JobLUT* other);
   friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
   static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
-    return "OpenVectorFormat.JobLUT";
+    return "open_vector_format.JobLUT";
   }
   protected:
   explicit JobLUT(::PROTOBUF_NAMESPACE_ID::Arena* arena);
@@ -217,7 +217,7 @@ class JobLUT PROTOBUF_FINAL :
   void _internal_set_jobshellposition(::PROTOBUF_NAMESPACE_ID::int64 value);
   public:
 
-  // @@protoc_insertion_point(class_scope:OpenVectorFormat.JobLUT)
+  // @@protoc_insertion_point(class_scope:open_vector_format.JobLUT)
  private:
   class _Internal;
 
@@ -233,7 +233,7 @@ class JobLUT PROTOBUF_FINAL :
 // -------------------------------------------------------------------
 
 class WorkPlaneLUT PROTOBUF_FINAL :
-    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:OpenVectorFormat.WorkPlaneLUT) */ {
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:open_vector_format.WorkPlaneLUT) */ {
  public:
   inline WorkPlaneLUT() : WorkPlaneLUT(nullptr) {}
   virtual ~WorkPlaneLUT();
@@ -323,7 +323,7 @@ class WorkPlaneLUT PROTOBUF_FINAL :
   void InternalSwap(WorkPlaneLUT* other);
   friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
   static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
-    return "OpenVectorFormat.WorkPlaneLUT";
+    return "open_vector_format.WorkPlaneLUT";
   }
   protected:
   explicit WorkPlaneLUT(::PROTOBUF_NAMESPACE_ID::Arena* arena);
@@ -379,7 +379,7 @@ class WorkPlaneLUT PROTOBUF_FINAL :
   void _internal_set_workplaneshellposition(::PROTOBUF_NAMESPACE_ID::int64 value);
   public:
 
-  // @@protoc_insertion_point(class_scope:OpenVectorFormat.WorkPlaneLUT)
+  // @@protoc_insertion_point(class_scope:open_vector_format.WorkPlaneLUT)
  private:
   class _Internal;
 
@@ -411,7 +411,7 @@ inline ::PROTOBUF_NAMESPACE_ID::int64 JobLUT::_internal_jobshellposition() const
   return jobshellposition_;
 }
 inline ::PROTOBUF_NAMESPACE_ID::int64 JobLUT::jobshellposition() const {
-  // @@protoc_insertion_point(field_get:OpenVectorFormat.JobLUT.jobShellPosition)
+  // @@protoc_insertion_point(field_get:open_vector_format.JobLUT.jobShellPosition)
   return _internal_jobshellposition();
 }
 inline void JobLUT::_internal_set_jobshellposition(::PROTOBUF_NAMESPACE_ID::int64 value) {
@@ -420,7 +420,7 @@ inline void JobLUT::_internal_set_jobshellposition(::PROTOBUF_NAMESPACE_ID::int6
 }
 inline void JobLUT::set_jobshellposition(::PROTOBUF_NAMESPACE_ID::int64 value) {
   _internal_set_jobshellposition(value);
-  // @@protoc_insertion_point(field_set:OpenVectorFormat.JobLUT.jobShellPosition)
+  // @@protoc_insertion_point(field_set:open_vector_format.JobLUT.jobShellPosition)
 }
 
 // repeated int64 workPlanePositions = 2;
@@ -437,19 +437,19 @@ inline ::PROTOBUF_NAMESPACE_ID::int64 JobLUT::_internal_workplanepositions(int i
   return workplanepositions_.Get(index);
 }
 inline ::PROTOBUF_NAMESPACE_ID::int64 JobLUT::workplanepositions(int index) const {
-  // @@protoc_insertion_point(field_get:OpenVectorFormat.JobLUT.workPlanePositions)
+  // @@protoc_insertion_point(field_get:open_vector_format.JobLUT.workPlanePositions)
   return _internal_workplanepositions(index);
 }
 inline void JobLUT::set_workplanepositions(int index, ::PROTOBUF_NAMESPACE_ID::int64 value) {
   workplanepositions_.Set(index, value);
-  // @@protoc_insertion_point(field_set:OpenVectorFormat.JobLUT.workPlanePositions)
+  // @@protoc_insertion_point(field_set:open_vector_format.JobLUT.workPlanePositions)
 }
 inline void JobLUT::_internal_add_workplanepositions(::PROTOBUF_NAMESPACE_ID::int64 value) {
   workplanepositions_.Add(value);
 }
 inline void JobLUT::add_workplanepositions(::PROTOBUF_NAMESPACE_ID::int64 value) {
   _internal_add_workplanepositions(value);
-  // @@protoc_insertion_point(field_add:OpenVectorFormat.JobLUT.workPlanePositions)
+  // @@protoc_insertion_point(field_add:open_vector_format.JobLUT.workPlanePositions)
 }
 inline const ::PROTOBUF_NAMESPACE_ID::RepeatedField< ::PROTOBUF_NAMESPACE_ID::int64 >&
 JobLUT::_internal_workplanepositions() const {
@@ -457,7 +457,7 @@ JobLUT::_internal_workplanepositions() const {
 }
 inline const ::PROTOBUF_NAMESPACE_ID::RepeatedField< ::PROTOBUF_NAMESPACE_ID::int64 >&
 JobLUT::workplanepositions() const {
-  // @@protoc_insertion_point(field_list:OpenVectorFormat.JobLUT.workPlanePositions)
+  // @@protoc_insertion_point(field_list:open_vector_format.JobLUT.workPlanePositions)
   return _internal_workplanepositions();
 }
 inline ::PROTOBUF_NAMESPACE_ID::RepeatedField< ::PROTOBUF_NAMESPACE_ID::int64 >*
@@ -466,7 +466,7 @@ JobLUT::_internal_mutable_workplanepositions() {
 }
 inline ::PROTOBUF_NAMESPACE_ID::RepeatedField< ::PROTOBUF_NAMESPACE_ID::int64 >*
 JobLUT::mutable_workplanepositions() {
-  // @@protoc_insertion_point(field_mutable_list:OpenVectorFormat.JobLUT.workPlanePositions)
+  // @@protoc_insertion_point(field_mutable_list:open_vector_format.JobLUT.workPlanePositions)
   return _internal_mutable_workplanepositions();
 }
 
@@ -482,7 +482,7 @@ inline ::PROTOBUF_NAMESPACE_ID::int64 WorkPlaneLUT::_internal_workplaneshellposi
   return workplaneshellposition_;
 }
 inline ::PROTOBUF_NAMESPACE_ID::int64 WorkPlaneLUT::workplaneshellposition() const {
-  // @@protoc_insertion_point(field_get:OpenVectorFormat.WorkPlaneLUT.workPlaneShellPosition)
+  // @@protoc_insertion_point(field_get:open_vector_format.WorkPlaneLUT.workPlaneShellPosition)
   return _internal_workplaneshellposition();
 }
 inline void WorkPlaneLUT::_internal_set_workplaneshellposition(::PROTOBUF_NAMESPACE_ID::int64 value) {
@@ -491,7 +491,7 @@ inline void WorkPlaneLUT::_internal_set_workplaneshellposition(::PROTOBUF_NAMESP
 }
 inline void WorkPlaneLUT::set_workplaneshellposition(::PROTOBUF_NAMESPACE_ID::int64 value) {
   _internal_set_workplaneshellposition(value);
-  // @@protoc_insertion_point(field_set:OpenVectorFormat.WorkPlaneLUT.workPlaneShellPosition)
+  // @@protoc_insertion_point(field_set:open_vector_format.WorkPlaneLUT.workPlaneShellPosition)
 }
 
 // repeated int64 vectorBlocksPositions = 2;
@@ -508,19 +508,19 @@ inline ::PROTOBUF_NAMESPACE_ID::int64 WorkPlaneLUT::_internal_vectorblockspositi
   return vectorblockspositions_.Get(index);
 }
 inline ::PROTOBUF_NAMESPACE_ID::int64 WorkPlaneLUT::vectorblockspositions(int index) const {
-  // @@protoc_insertion_point(field_get:OpenVectorFormat.WorkPlaneLUT.vectorBlocksPositions)
+  // @@protoc_insertion_point(field_get:open_vector_format.WorkPlaneLUT.vectorBlocksPositions)
   return _internal_vectorblockspositions(index);
 }
 inline void WorkPlaneLUT::set_vectorblockspositions(int index, ::PROTOBUF_NAMESPACE_ID::int64 value) {
   vectorblockspositions_.Set(index, value);
-  // @@protoc_insertion_point(field_set:OpenVectorFormat.WorkPlaneLUT.vectorBlocksPositions)
+  // @@protoc_insertion_point(field_set:open_vector_format.WorkPlaneLUT.vectorBlocksPositions)
 }
 inline void WorkPlaneLUT::_internal_add_vectorblockspositions(::PROTOBUF_NAMESPACE_ID::int64 value) {
   vectorblockspositions_.Add(value);
 }
 inline void WorkPlaneLUT::add_vectorblockspositions(::PROTOBUF_NAMESPACE_ID::int64 value) {
   _internal_add_vectorblockspositions(value);
-  // @@protoc_insertion_point(field_add:OpenVectorFormat.WorkPlaneLUT.vectorBlocksPositions)
+  // @@protoc_insertion_point(field_add:open_vector_format.WorkPlaneLUT.vectorBlocksPositions)
 }
 inline const ::PROTOBUF_NAMESPACE_ID::RepeatedField< ::PROTOBUF_NAMESPACE_ID::int64 >&
 WorkPlaneLUT::_internal_vectorblockspositions() const {
@@ -528,7 +528,7 @@ WorkPlaneLUT::_internal_vectorblockspositions() const {
 }
 inline const ::PROTOBUF_NAMESPACE_ID::RepeatedField< ::PROTOBUF_NAMESPACE_ID::int64 >&
 WorkPlaneLUT::vectorblockspositions() const {
-  // @@protoc_insertion_point(field_list:OpenVectorFormat.WorkPlaneLUT.vectorBlocksPositions)
+  // @@protoc_insertion_point(field_list:open_vector_format.WorkPlaneLUT.vectorBlocksPositions)
   return _internal_vectorblockspositions();
 }
 inline ::PROTOBUF_NAMESPACE_ID::RepeatedField< ::PROTOBUF_NAMESPACE_ID::int64 >*
@@ -537,7 +537,7 @@ WorkPlaneLUT::_internal_mutable_vectorblockspositions() {
 }
 inline ::PROTOBUF_NAMESPACE_ID::RepeatedField< ::PROTOBUF_NAMESPACE_ID::int64 >*
 WorkPlaneLUT::mutable_vectorblockspositions() {
-  // @@protoc_insertion_point(field_mutable_list:OpenVectorFormat.WorkPlaneLUT.vectorBlocksPositions)
+  // @@protoc_insertion_point(field_mutable_list:open_vector_format.WorkPlaneLUT.vectorBlocksPositions)
   return _internal_mutable_vectorblockspositions();
 }
 
@@ -549,7 +549,7 @@ WorkPlaneLUT::mutable_vectorblockspositions() {
 
 // @@protoc_insertion_point(namespace_scope)
 
-}  // namespace OpenVectorFormat
+}  // namespace open_vector_format
 
 // @@protoc_insertion_point(global_scope)
 
