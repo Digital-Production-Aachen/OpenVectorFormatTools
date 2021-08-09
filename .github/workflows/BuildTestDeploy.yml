@@ -3,11 +3,8 @@ name: OVFToolsBuildTestDeploy
 on: [push, pull_request]
   
 jobs:
-  build:
+  check_license:
     runs-on: windows-latest
-    env:
-      DOTNET_CLI_TELEMETRY_OPTOUT: true
-    
     steps:
     - name: Setup python
       uses: actions/setup-python@v2
@@ -22,32 +19,56 @@ jobs:
         
     - name: Check license headers
       run: python manage_license_headers.py ci
-      
-    - name: Setup Dotnet
+    
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    
+    steps:
+    
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+        
+    - name: Setup Dotnet sdk
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 2.1.x
-    
-    - name: Clean
+                
+    - name: Test Linux
+      if: contains(matrix.os, 'ubuntu')
       run: |
-        dotnet clean
-        dotnet nuget locals all --clear
-      
+        dotnet build --configuration Release --framework netcoreapp2.1 ReaderWriter/FileReaderWriterFactoryGRPCWrapper/FileReaderWriterFactoryGRPCWrapper.csproj
+        dotnet build --configuration Release --framework netcoreapp2.1 ReaderWriter/UnitTests/UnitTests.csproj
+        dotnet build --configuration Release --framework netcoreapp2.1 PlausibilityChecker/PlausibilityCheckerUnitTests/PlausibilityCheckerUnitTests.csproj
+        dotnet run --configuration Release --framework netcoreapp2.1 --project ReaderWriter/FileReaderWriterFactoryGRPCWrapper/FileReaderWriterFactoryGRPCWrapper.csproj background &
+        grpcpid="$!"
+        echo "started grpc server"
+        sleep 5s
+        dotnet test --no-build --configuration Release --framework netcoreapp2.1
+        kill $grpcpid
+        
     - name: Add msbuild to PATH
+      if: contains(matrix.os, 'windows')
       uses: microsoft/setup-msbuild@v1.0.2
-      
-    - name: Build
-      run: dotnet build --configuration Release
-      
-    - name: Test
+                  
+    - name: Test Windows
+      if: contains(matrix.os, 'windows')
       run: |
+        dotnet build --configuration Release
         $j = Start-Process -PassThru -Filepath 'dotnet' -WorkingDirectory $PWD -ArgumentList 'run --configuration Release --framework netcoreapp2.1 --project .\ReaderWriter\FileReaderWriterFactoryGRPCWrapper\FileReaderWriterFactoryGRPCWrapper.csproj background'
         Start-Sleep -s 5
         dotnet test --no-build --configuration Release
         $j | Select-Object -Property Id | Stop-Process
+
                   
     - name: Nuget Deploy
-      if: startsWith(github.ref, 'refs/tags/v') # make sure deploy only runs on tags with version number
+      if: startsWith(github.ref, 'refs/tags/v') && contains(matrix.os, 'windows') # make sure deploy only runs on tags with version number
       run: |
         $env:RELEASE_VERSION=($env:GITHUB_REF).split("tags/v")[-1]
         echo $env:RELEASE_VERSION
