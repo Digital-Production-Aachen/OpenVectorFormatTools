@@ -24,7 +24,7 @@ namespace open_vector_format
 		/// </summary>
 		/// <param name="filename">name of the file to open</param>
 		/// <param name="proress">status update interface to be called</param>
-		virtual int OpenJobAsync(string filename);
+		virtual int open_job_async(string filename);
 
 		/// <summary>
 		/// Retrieves the complete job with all workplane data.
@@ -33,13 +33,13 @@ namespace open_vector_format
 		/// <see cref="CacheState"/> will be set to CompleteJobCached.
 		/// </summary>
 		/// <returns>Complete job with all <see cref="WorkPlane"/>s and <see cref="VectorBlock"/>s.</returns>
-		virtual int CacheJobToMemoryAsync(Job* job);
+		virtual int cache_job_to_memory_async(Job* job);
 
 		/// <summary>
 		/// Unloads stored vector data from memory. If the data is queried again, it needs to be read from the disk again.
 		/// <see cref="CacheState"/> will be set to NotCached.
 		/// </summary>
-		virtual int UnloadJobFromMemory();
+		virtual int unload_job_from_memory();
 
 		/// <summary>Gets the current caching state of the file.</summary>
 		virtual CacheState get_cache_state();
@@ -53,14 +53,12 @@ namespace open_vector_format
 		/// https://stackoverflow.com/questions/34128872/google-protobuf-maximum-size
 		/// Messages bigger than 2GB cannot be serialized and not be transmitted as one block.
 		/// </summary>
-		long long AutomatedCachingThresholdBytes = 67108864;
+		long long automated_caching_threshold_bytes = 67108864;
 
 
 
-		virtual int CloseFile();
+		virtual int close_file();
 
 		virtual ~FileReader() {}
-
-
 	};
 }

@@ -18,16 +18,19 @@
     <ClInclude Include="framework.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="open_vector_format.pb.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ovf_lut.pb.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="IReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FileReader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OVFFileReader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="open_vector_format.pb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ovf_lut.pb.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

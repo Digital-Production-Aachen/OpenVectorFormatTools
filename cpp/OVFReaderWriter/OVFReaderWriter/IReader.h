@@ -17,19 +17,19 @@ namespace open_vector_format
         /// <summary>Retrieves workPlane point data on demand, delegating ownership of the data to the caller. The complete WorkPlane needs to be cached into memory for this operation.</summary>
         /// <param name="i_workPlane">index of workPlane</param>
         /// <returns>Requested WorkPlane with all associated VectorBlocks.</returns>
-        virtual int GetWorkPlaneAsync(int i_workPlane, WorkPlane* workplane);
+        virtual int get_work_plane_async(int i_workPlane, WorkPlane* workplane);
 
         /// <summary>Retrieves WorkPlaneShell with all the meta-data, without the actual vectorblocks, delegating ownership of the data to the caller.</summary>
         /// <param name="i_workPlane">index of workPlane</param>
         /// <returns>Requested WorkPlane with all associated VectorBlocks</returns>
-        virtual int GetWorkPlaneShell(int i_workPlane, WorkPlane* workplane_shell);
+        virtual int get_work_plane_shell(int i_workPlane, WorkPlane* workplane_shell);
 
         /// <summary>Retrieves vector block point data on demand, delegating ownership of the data to the caller.</summary>
         /// <param name="i_workPlane">index of workPlane</param>
         /// <param name="i_vectorblock">index of vectorblock</param>
         /// <returns>Requested VectorBlock</returns>
-        virtual int GetVectorBlockAsync(int i_workPlane, int i_vectorblock, VectorBlock* vectorblock);
+        virtual int get_vector_block_async(int i_workPlane, int i_vectorblock, VectorBlock* vectorblock);
 
-        virtual ~IReader() {}
+        //virtual ~IReader() {}
     };
 }
