@@ -193,7 +193,7 @@ namespace OpenVectorFormat.OVFReaderWriter
                     progress.IsFinished = true;
                 }
             }
-            _fs?.Close();
+            _fs?.Dispose();
             _fs = null;
             _currentWorkPlaneShell = null;
             _jobLUT = null;
