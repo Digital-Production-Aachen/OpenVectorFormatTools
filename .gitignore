@@ -6,11 +6,14 @@ bin
 obj
 .vs
 
-# Ignore NuGet Packages
+# Ignore files
 *.nupkg
 
 # The packages folder can be ignored because of Package Restore
 **/[Pp]ackages/*
+**/[Dd]ebug/*
+**/x64/*
+**/x86/*
 
 # except build/, which is used as an MSBuild target.
 !**/[Pp]ackages/build/
