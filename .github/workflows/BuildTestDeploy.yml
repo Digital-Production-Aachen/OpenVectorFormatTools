@@ -20,7 +20,7 @@ jobs:
     - name: Check license headers
       run: python manage_license_headers.py ci
     
-  build:
+  build_and_test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -65,10 +65,33 @@ jobs:
         Start-Sleep -s 5
         dotnet test --no-build --configuration Release
         $j | Select-Object -Property Id | Stop-Process
-
+        
+  publish_nuget:
+    needs: [check_license, build_and_test]
+    if: startsWith(github.ref, 'refs/tags/v') # make sure deploy only runs on tags with version number
+    runs-on: windows-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+        
+    - name: Setup Dotnet sdk
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 2.1.x
+        
+    - name: Add msbuild to PATH
+      uses: microsoft/setup-msbuild@v1.0.2
+                  
+    - name: Build Windows
+      run: |
+        dotnet build --configuration Release
                   
     - name: Nuget Deploy
-      if: startsWith(github.ref, 'refs/tags/v') && contains(matrix.os, 'windows') # make sure deploy only runs on tags with version number
       run: |
         $env:RELEASE_VERSION=($env:GITHUB_REF).split("tags/v")[-1]
         echo $env:RELEASE_VERSION
