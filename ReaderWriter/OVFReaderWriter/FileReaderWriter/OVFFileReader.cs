@@ -90,12 +90,12 @@ namespace OpenVectorFormat.OVFReaderWriter
             _streamlength = _fs.Length;
             if (_fs.Length < 12)
             {
-                _fs.Close();
+                _fs.Dispose();
                 throw new IOException("binary file is empty!");
             }
             else
             {
-                _fs.Close();
+                _fs.Dispose();
                 _mmf = MemoryMappedFile.CreateFromFile(filename);
                 _fs = _mmf.CreateViewStream(0, 0, MemoryMappedFileAccess.Read);
 
@@ -206,7 +206,7 @@ namespace OpenVectorFormat.OVFReaderWriter
             }
             else
             {
-                _fs.Close();
+                _fs.Dispose();
                 progress.IsCancelled = false;
                 progress.IsFinished = false;
 
@@ -246,17 +246,20 @@ namespace OpenVectorFormat.OVFReaderWriter
             else
             {
                 WorkPlaneLUT wpLUT = _workPlaneLUTs[i_workPlane];
-                var stream = CreateLocalStream(i_workPlane);
-
-                WorkPlane wp = GetWorkPlaneShell(i_workPlane, stream);
-
-                for (int i_block = 0; i_block < wp.NumBlocks; i_block++)
+                using (var stream = CreateLocalStream(i_workPlane))
                 {
-                    wp.VectorBlocks.Add(await GetVectorBlock(i_workPlane, i_block, stream));
+
+                    WorkPlane wp = GetWorkPlaneShell(i_workPlane, stream);
+
+                    for (int i_block = 0; i_block < wp.NumBlocks; i_block++)
+                    {
+                        wp.VectorBlocks.Add(await GetVectorBlock(i_workPlane, i_block, stream));
+                    }
+
+                    _numberOfCachedLayers++;
+                    UpdateStatus();
+                    return wp;
                 }
-                _numberOfCachedLayers++;
-                UpdateStatus();
-                return wp;
             }
         }
         private void UpdateStatus()
@@ -283,12 +286,15 @@ namespace OpenVectorFormat.OVFReaderWriter
             }
             else
             {
+                bool closeStream = false;
                 if (stream == null)
                 {
+                    closeStream = true;
                     stream = CreateLocalStream(i_workPlane);
                 }
                 WorkPlaneLUT wpLUT = _workPlaneLUTs[i_workPlane];
                 stream.Position = wpLUT.WorkPlaneShellPosition - GetStreamOffset(i_workPlane);
+                if (closeStream) stream.Dispose();
                 return WorkPlane.Parser.ParseDelimitedFrom(stream);
             }
         }
@@ -335,15 +341,17 @@ namespace OpenVectorFormat.OVFReaderWriter
             }
             else
             {
+                bool closeStream = false;
                 if (stream == null)
                 {
+                    closeStream = true;
                     stream = CreateLocalStream(i_workPlane);
                 }
                 VectorBlock vb = new VectorBlock();
                 stream.Position = wpLut.VectorBlocksPositions[i_vectorblock] - GetStreamOffset(i_workPlane);
                 
                 vb = VectorBlock.Parser.ParseDelimitedFrom(stream);
-                
+                if(closeStream) stream.Dispose();
                 return Task.FromResult(vb);
             }
         }
@@ -368,7 +376,8 @@ namespace OpenVectorFormat.OVFReaderWriter
         public override void Dispose()
         {
             _job = null;
-            _fs?.Close();
+            _fs?.Dispose();
+            _mmf?.Dispose();
             _fileOperationInProgress = FileReadOperation.None;
             _cacheState = CacheState.NotCached;
         }
