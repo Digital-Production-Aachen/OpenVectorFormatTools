@@ -242,32 +242,23 @@ namespace OpenVectorFormat.ASPFileReaderWriter
         /// <param name="serializedCmds">The string representation of various asp commands seperated by line breaks.</param>
         public void Parse(string serializedCmds)
         {
-            Exception warning = null;
             Clear();
             string[] serializedCmdsArray = serializedCmds.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
             foreach (string s in serializedCmdsArray)
             {
-                try
+                if (s.StartsWith("//") || s.StartsWith("#") || s.Trim() == string.Empty)
                 {
-                    if (s.StartsWith("//") || s.StartsWith("#"))
-                    {
-                        continue;
-                    }
-                    var cmd = Command.TryParse(s);
-                    if (cmd != null)
-                    {
-                        Add(cmd);
-                    }
-                    else
-                    {
-                        warning = new Exception();
-                    }
+                    continue;
                 }
-                catch { }
-            }
-            if (warning != null)
-            {
-                throw (warning);
+                var cmd = Command.TryParse(s);
+                if (cmd != null)
+                {
+                    Add(cmd);
+                }
+                else
+                {
+                    throw new FormatException("Error parsing asp command " + s);
+                }
             }
         }
     }

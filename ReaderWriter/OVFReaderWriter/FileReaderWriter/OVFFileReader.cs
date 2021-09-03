@@ -55,8 +55,6 @@ namespace OpenVectorFormat.OVFReaderWriter
         // Look-up-table for workPlane positions in filestream.
         private JobLUT _jobLUT;
 
-        private List<long> _workplaneLUTIndices = new List<long>();
-
         // List of Look-up-tables for vectorblock positions in the filestream for each workplane.
         private WorkPlaneLUT[] _workPlaneLUTs;
 
@@ -93,12 +91,12 @@ namespace OpenVectorFormat.OVFReaderWriter
             _streamlength = _fs.Length;
             if (_fs.Length < 12)
             {
-                _fs.Close();
+                _fs.Dispose();
                 throw new IOException("binary file is empty!");
             }
             else
             {
-                _fs.Close();
+                _fs.Dispose();
                 _mmf = MemoryMappedFile.CreateFromFile(filename);
                 _fs = _mmf.CreateViewStream(0, 0, MemoryMappedFileAccess.Read);
 
@@ -135,7 +133,6 @@ namespace OpenVectorFormat.OVFReaderWriter
                         _workPlaneLUTs = new WorkPlaneLUT[_jobShell.NumWorkPlanes];
                         for (int i_plane = 0; i_plane < _jobShell.NumWorkPlanes; i_plane++)
                         {
-                            Debug.WriteLine(i_plane);
                             _readWorkPlaneLUT(i_plane);
                         }
                     });
@@ -167,7 +164,6 @@ namespace OpenVectorFormat.OVFReaderWriter
                 }
                 long wpLUTindex = BitConverter.ToInt64(LUTIndexBuffer, 0);
                 _fs.Position = wpLUTindex;
-                _workplaneLUTIndices.Add(wpLUTindex);
                 WorkPlaneLUT wpLUT = WorkPlaneLUT.Parser.ParseDelimitedFrom(_fs);
 
                 foreach (long pos in wpLUT.VectorBlocksPositions)
@@ -213,7 +209,7 @@ namespace OpenVectorFormat.OVFReaderWriter
             }
             else
             {
-                _fs.Close();
+                _fs.Dispose();
                 progress.IsCancelled = false;
                 progress.IsFinished = false;
 
@@ -259,17 +255,20 @@ namespace OpenVectorFormat.OVFReaderWriter
             else
             {
                 WorkPlaneLUT wpLUT = _workPlaneLUTs[i_workPlane];
-                var stream = CreateLocalStream(i_workPlane);
-
-                WorkPlane wp = GetWorkPlaneShell(i_workPlane, stream);
-
-                for (int i_block = 0; i_block < wp.NumBlocks; i_block++)
+                using (var stream = CreateLocalStream(i_workPlane))
                 {
-                    wp.VectorBlocks.Add(await GetVectorBlock(i_workPlane, i_block, stream));
+
+                    WorkPlane wp = GetWorkPlaneShell(i_workPlane, stream);
+
+                    for (int i_block = 0; i_block < wp.NumBlocks; i_block++)
+                    {
+                        wp.VectorBlocks.Add(await GetVectorBlock(i_workPlane, i_block, stream));
+                    }
+
+                    _numberOfCachedLayers++;
+                    UpdateStatus();
+                    return wp;
                 }
-                _numberOfCachedLayers++;
-                UpdateStatus();
-                return wp;
             }
         }
         private void UpdateStatus()
@@ -296,16 +295,20 @@ namespace OpenVectorFormat.OVFReaderWriter
             }
             else
             {
+                bool closeStream = false;
                 if (stream == null)
                 {
+                    closeStream = true;
                     stream = CreateLocalStream(i_workPlane);
                 }
                 WorkPlaneLUT wpLUT = _workPlaneLUTs[i_workPlane];
                 var offset = GetStreamOffset(i_workPlane);
                 var pos = wpLUT.WorkPlaneShellPosition;
-                var newPos = pos - offset;
                 stream.Position = pos - offset;
-                return WorkPlane.Parser.ParseDelimitedFrom(stream);
+
+                var wp = WorkPlane.Parser.ParseDelimitedFrom(stream);
+                if (closeStream) stream.Dispose();
+                return wp;
             }
         }
         private Stream CreateLocalStream(int i_workPlane)
@@ -320,10 +323,7 @@ namespace OpenVectorFormat.OVFReaderWriter
                 end = _jobLUT.WorkPlanePositions[i_workPlane + 1] - 1;
             }
 
-            //_workPlaneLUTs[i_workPlane + 1].WorkPlaneShellPosition;//.VectorBlocksPositions[0] - 1;
-
             var start = _jobLUT.WorkPlanePositions[i_workPlane];
-                        //_workplaneLUTIndices[i_workPlane];
             var stream = _mmf.CreateViewStream(start, end - start, MemoryMappedFileAccess.Read);
             return stream;
         }
@@ -356,15 +356,17 @@ namespace OpenVectorFormat.OVFReaderWriter
             }
             else
             {
+                bool closeStream = false;
                 if (stream == null)
                 {
+                    closeStream = true;
                     stream = CreateLocalStream(i_workPlane);
                 }
                 VectorBlock vb = new VectorBlock();
                 stream.Position = wpLut.VectorBlocksPositions[i_vectorblock] - GetStreamOffset(i_workPlane);
                 
                 vb = VectorBlock.Parser.ParseDelimitedFrom(stream);
-                
+                if(closeStream) stream.Dispose();
                 return Task.FromResult(vb);
             }
         }
@@ -388,9 +390,9 @@ namespace OpenVectorFormat.OVFReaderWriter
         /// <inheritdoc/>
         public override void Dispose()
         {
-            _mmf.Dispose();
             _job = null;
-            _fs?.Close();
+            _fs?.Dispose();
+            _mmf?.Dispose();
             _fileOperationInProgress = FileReadOperation.None;
             _cacheState = CacheState.NotCached;
         }
