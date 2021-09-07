@@ -194,7 +194,6 @@ namespace OpenVectorFormat.OVFReaderWriter
                         throw new IOException("invalid workPlane position detected in file");
                     }
                 }
-                //progress.IsFinished = true;
             }
 
             _filename = filename;
@@ -215,27 +214,20 @@ namespace OpenVectorFormat.OVFReaderWriter
 
                 _job = _jobShell.Clone();
                 _numberOfLayers = _job.NumWorkPlanes;
-                //Task<WorkPlane>[] tasks = new Task<WorkPlane>[_numberOfLayers];
-                //Parallel.For(0, _numberOfLayers, j =>
-                //{
-                //    var localScopedNumber = j;
-                //    tasks[j] = Task.Run( () => { return GetWorkPlaneAsync(localScopedNumber); });
-                //});
-
-                for (int i = 0; i < _numberOfLayers; i++)
+                Task<WorkPlane>[] tasks = new Task<WorkPlane>[_numberOfLayers];
+                Parallel.For(0, _numberOfLayers, j =>
                 {
-                    var workplane = await GetWorkPlaneAsync(i);
-                    _job.WorkPlanes.Add(workplane);
+                    var localScopedNumber = j;
+                    tasks[j] = GetWorkPlaneAsync(localScopedNumber);
+                });
+
+                await Task.WhenAll(tasks);
+
+                foreach (var taskedWorkplane in tasks)
+                {
+                    _job.WorkPlanes.Add(taskedWorkplane.Result);
                 }
 
-                //var k = 0;
-                //foreach (var taskedWorkplane in tasks)
-                //{
-                //    var workplane = await taskedWorkplane;
-                //    _job.WorkPlanes.Add(workplane);
-                //}
-                //progress.Update("reading workPlane " + k, 100);
-                //progress.IsFinished = true;
                 _cacheState = CacheState.CompleteJobCached;
                 return _job;
             }
@@ -302,10 +294,7 @@ namespace OpenVectorFormat.OVFReaderWriter
                     stream = CreateLocalStream(i_workPlane);
                 }
                 WorkPlaneLUT wpLUT = _workPlaneLUTs[i_workPlane];
-                var offset = GetStreamOffset(i_workPlane);
-                var pos = wpLUT.WorkPlaneShellPosition;
-                stream.Position = pos - offset;
-
+                stream.Position = wpLUT.WorkPlaneShellPosition - GetStreamOffset(i_workPlane);
                 var wp = WorkPlane.Parser.ParseDelimitedFrom(stream);
                 if (closeStream) stream.Dispose();
                 return wp;
@@ -314,7 +303,7 @@ namespace OpenVectorFormat.OVFReaderWriter
         private Stream CreateLocalStream(int i_workPlane)
         {
             long end;
-            if (i_workPlane+1 == _numberOfLayers)
+            if (i_workPlane+1 == _jobShell.NumWorkPlanes)
             {
                 end = _streamlength;
             }
@@ -325,12 +314,12 @@ namespace OpenVectorFormat.OVFReaderWriter
 
             var start = _jobLUT.WorkPlanePositions[i_workPlane];
             var stream = _mmf.CreateViewStream(start, end - start, MemoryMappedFileAccess.Read);
+
             return stream;
         }
         private long GetStreamOffset(int i_workPlane)
         {
             return _jobLUT.WorkPlanePositions[i_workPlane];
-            //_workplaneLUTIndices[i_workPlane];
         }
 
         /// <inheritdoc/>
