@@ -28,6 +28,7 @@ using OpenVectorFormat.AbstractReaderWriter;
 using OpenVectorFormat.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Linq;
@@ -125,7 +126,7 @@ namespace OpenVectorFormat.OVFReaderWriter
                         _fileOperationInProgress = FileReadOperation.Streaming;
                     }
 
-                    await Task.Run(() =>
+                    var task = Task.Run(() =>
                     {
                         _readJobShell(jobLUTindex);
                         progress.IsFinished = false;
@@ -135,6 +136,8 @@ namespace OpenVectorFormat.OVFReaderWriter
                             _readWorkPlaneLUT(i_plane);
                         }
                     });
+
+                    task.GetAwaiter().GetResult();
 
                     if (_fileOperationInProgress == FileReadOperation.CompleteRead)
                     {
@@ -191,7 +194,6 @@ namespace OpenVectorFormat.OVFReaderWriter
                         throw new IOException("invalid workPlane position detected in file");
                     }
                 }
-                //progress.IsFinished = true;
             }
 
             _filename = filename;
@@ -216,17 +218,16 @@ namespace OpenVectorFormat.OVFReaderWriter
                 Parallel.For(0, _numberOfLayers, j =>
                 {
                     var localScopedNumber = j;
-                    tasks[j] = Task.Run(async () => { return await GetWorkPlaneAsync(localScopedNumber); });
+                    tasks[j] = GetWorkPlaneAsync(localScopedNumber);
                 });
 
-                var k = 0;
+                await Task.WhenAll(tasks);
+
                 foreach (var taskedWorkplane in tasks)
                 {
-                    var workplane = await taskedWorkplane;
-                    _job.WorkPlanes.Add(workplane);
+                    _job.WorkPlanes.Add(taskedWorkplane.Result);
                 }
-                progress.Update("reading workPlane " + k, 100);
-                //progress.IsFinished = true;
+
                 _cacheState = CacheState.CompleteJobCached;
                 return _job;
             }
@@ -294,28 +295,31 @@ namespace OpenVectorFormat.OVFReaderWriter
                 }
                 WorkPlaneLUT wpLUT = _workPlaneLUTs[i_workPlane];
                 stream.Position = wpLUT.WorkPlaneShellPosition - GetStreamOffset(i_workPlane);
+                var wp = WorkPlane.Parser.ParseDelimitedFrom(stream);
                 if (closeStream) stream.Dispose();
-                return WorkPlane.Parser.ParseDelimitedFrom(stream);
+                return wp;
             }
         }
         private Stream CreateLocalStream(int i_workPlane)
         {
             long end;
-            if (_numberOfLayers - i_workPlane > 1)
-            {
-                end = _workPlaneLUTs[i_workPlane + 1].VectorBlocksPositions[0] - 1;
-            }
-            else
+            if (i_workPlane+1 == _jobShell.NumWorkPlanes)
             {
                 end = _streamlength;
             }
-            var start = _workPlaneLUTs[i_workPlane].VectorBlocksPositions[0];
+            else
+            {
+                end = _jobLUT.WorkPlanePositions[i_workPlane + 1] - 1;
+            }
+
+            var start = _jobLUT.WorkPlanePositions[i_workPlane];
             var stream = _mmf.CreateViewStream(start, end - start, MemoryMappedFileAccess.Read);
+
             return stream;
         }
         private long GetStreamOffset(int i_workPlane)
         {
-            return _workPlaneLUTs[i_workPlane].VectorBlocksPositions[0];
+            return _jobLUT.WorkPlanePositions[i_workPlane];
         }
 
         /// <inheritdoc/>
