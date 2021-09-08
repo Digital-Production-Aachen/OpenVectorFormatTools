@@ -33,7 +33,7 @@ namespace OVFFileConverterGUI
 
         private delegate void ProgressbarUpdateDelegate(string message, int value);
 
-        private void button1_Click(object sender, EventArgs e)
+        private async void button1_Click(object sender, EventArgs e)
         {
             string path;
             string pathOut;
@@ -61,7 +61,16 @@ namespace OVFFileConverterGUI
             {
                 return;
             }
-            OpenVectorFormat.FileReaderWriterFactory.FileConverter.ConvertAsync(new System.IO.FileInfo(path), new System.IO.FileInfo(pathOut), this);
+            try
+            {
+                await OpenVectorFormat.FileReaderWriterFactory.FileConverter.ConvertAsync(new System.IO.FileInfo(path), new System.IO.FileInfo(pathOut), this);
+                progressBar1.Value = 100;
+            }
+            catch(NotSupportedException ex)
+            {
+                MessageBox.Show(ex.Message);
+                progressBar1.Value = 0;
+            }
         }
     }
 }

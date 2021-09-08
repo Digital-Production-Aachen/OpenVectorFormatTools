@@ -186,6 +186,7 @@ namespace OpenVectorFormat.OVFReaderWriter
                 _fs.Position = _jobLUT.JobShellPosition;
                 _jobShell = Job.Parser.ParseDelimitedFrom(_fs);
                 CheckConsistence(_jobShell.NumWorkPlanes, _jobLUT.WorkPlanePositions.Count);
+                _numberOfLayers = _jobShell.NumWorkPlanes;
                 foreach (long pos in _jobLUT.WorkPlanePositions)
                 {
                     if (pos > _fs.Length)
