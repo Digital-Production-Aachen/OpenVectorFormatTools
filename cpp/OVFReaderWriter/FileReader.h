@@ -1,6 +1,7 @@
 #pragma once
 #include "IReader.h"
 #include <stdlib.h>
+#include <list>
 
 using namespace std;
 using namespace open_vector_format;
@@ -24,7 +25,7 @@ namespace open_vector_format
 		/// </summary>
 		/// <param name="filename">name of the file to open</param>
 		/// <param name="proress">status update interface to be called</param>
-		virtual int open_job_async(string filename);
+		virtual void open_job_async(string filename, Job** job) = 0;
 
 		/// <summary>
 		/// Retrieves the complete job with all workplane data.
@@ -33,19 +34,19 @@ namespace open_vector_format
 		/// <see cref="CacheState"/> will be set to CompleteJobCached.
 		/// </summary>
 		/// <returns>Complete job with all <see cref="WorkPlane"/>s and <see cref="VectorBlock"/>s.</returns>
-		virtual int cache_job_to_memory_async(Job* job);
+		virtual void cache_job_to_memory_async() = 0;
 
 		/// <summary>
 		/// Unloads stored vector data from memory. If the data is queried again, it needs to be read from the disk again.
 		/// <see cref="CacheState"/> will be set to NotCached.
 		/// </summary>
-		virtual int unload_job_from_memory();
+		virtual void unload_job_from_memory() = 0;
 
 		/// <summary>Gets the current caching state of the file.</summary>
-		virtual CacheState get_cache_state();
+		virtual CacheState get_cache_state() = 0;
 
 		/// <summary>List of all file extensins supported by this reader (format ".xxx")</summary>
-		virtual list<string> get_supported_file_formats();
+		virtual list<string> get_supported_file_formats() = 0;
 
 		/// <summary>
 		/// Determines up to which serialized size jobs get automatically cached into memory automatically when reading. Default is 64MB.
@@ -55,9 +56,7 @@ namespace open_vector_format
 		/// </summary>
 		long long automated_caching_threshold_bytes = 67108864;
 
-
-
-		virtual int close_file();
+		virtual void close_file()  = 0;
 
 		virtual ~FileReader() {}
 	};
