@@ -192,19 +192,15 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                         {
                             //order:  x1, y1, z1, x2, y2, z2;
                             string[] sDimensions = match.Groups[1].Value.Split(',');
+
                             float[] fDimensions = new float[6];
-                            int i = 0;
-                            //continue;
-                            foreach (string dim in sDimensions)
+                            for (int i = 0; i < sDimensions.Length && i < fDimensions.Length; i++)
                             {
-                                fDimensions[i] = float.Parse(dim, NumberStyles.Any, CultureInfo.InvariantCulture);
-                                i++;
+                                string dim = sDimensions[i];
+                                if (dim != "")
+                                    fDimensions[i] = float.Parse(dim, NumberStyles.Any, CultureInfo.InvariantCulture);
                             }
-                            //                      Dimension(float x1, float y1, float z1, float x2, float y2, float z2)
-                            if (fDimensions.Length == 6)
-                                this.header.Dimension = new Dimension(fDimensions[0], fDimensions[1], fDimensions[2], fDimensions[3], fDimensions[4], fDimensions[5]);
-                            else
-                                throw new FileLoadException("Dimension could not be determined");
+                            this.header.Dimension = new Dimension(fDimensions[0], fDimensions[1], fDimensions[2], fDimensions[3], fDimensions[4], fDimensions[5]);
                         }
 
                         if ((match = Regex.Match(line, @"\$\$LAYERS\/(\d*)")).Success)
