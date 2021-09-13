@@ -54,8 +54,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         public void TestCliFilesAddParams(FileInfo fileName)
         {
             FileReaderWriterFactory.FileConverter converter = new FileReaderWriterFactory.FileConverter();
-            var targetFile = new FileInfo(fileName.FullName + ".ovf");
-            //var targetFile = new FileInfo(Path.GetTempFileName() + ".ovf");
+            var targetFile = new FileInfo(Path.GetTempFileName() + ".ovf");
 
             converter.SupportPostfix = "_support";
             converter.FallbackContouringParams = new MarkingParams() { LaserSpeedInMmPerS = 400, LaserPowerInW = 150 };
