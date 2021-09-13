@@ -194,8 +194,8 @@ namespace OpenVectorFormat.FileReaderWriterFactory
                                     }
                                 }
                             }
-                            await writer.AppendWorkPlaneAsync(workplane);
                         }
+                        await writer.AppendWorkPlaneAsync(workplane);
                     }
                 }
                 #endregion
