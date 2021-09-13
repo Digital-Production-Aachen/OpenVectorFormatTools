@@ -48,6 +48,21 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             TestCLIFile(cliFile);
         }
 
+        [DynamicData("CliFiles")]
+        [DataTestMethod]
+        public void TestCliFilesAddParams(FileInfo fileName)
+        {
+            FileReaderWriterFactory.FileConverter converter = new FileReaderWriterFactory.FileConverter();
+            var targetFile = new FileInfo(fileName.FullName + ".ovf");
+
+            converter.SupportPostfix = "_support";
+            converter.FallbackContouringParams = new MarkingParams() { LaserSpeedInMmPerS = 400, LaserPowerInW = 150 };
+            converter.FallbackHatchingParams = new MarkingParams() { LaserSpeedInMmPerS = 900, LaserPowerInW = 250 };
+            converter.FallbackSupportContouringParams = new MarkingParams() { LaserSpeedInMmPerS = 600, LaserPowerInW = 250 };
+            converter.FallbackSupportHatchingParams = new MarkingParams() { LaserSpeedInMmPerS = 1500, LaserPowerInW = 400 };
+            converter.ConvertAsyncAddParams(fileName, targetFile, new FileReaderWriterFactory.FileReaderWriterProgress()).Wait();
+        }
+
         [DynamicData("IltFiles")]
         [DataTestMethod]
         public void TestIltFiles(FileInfo fileName)
