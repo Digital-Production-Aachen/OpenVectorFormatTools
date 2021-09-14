@@ -50,8 +50,7 @@ jobs:
         grpcpid="$!"
         echo "started grpc server"
         sleep 5s
-        dotnet test PlausibilityChecker/PlausibilityCheckerUnitTests/PlausibilityCheckerUnitTests.csproj --no-build --configuration Release --framework netcoreapp2.1
-        dotnet test ReaderWriter/UnitTests/UnitTests.csproj --no-build --configuration Release --framework netcoreapp2.1
+        dotnet test --no-build --configuration Release --framework netcoreapp2.1
         kill $grpcpid
         
     - name: Add msbuild to PATH
@@ -64,7 +63,7 @@ jobs:
         dotnet build --configuration Release
         $j = Start-Process -PassThru -Filepath 'dotnet' -WorkingDirectory $PWD -ArgumentList 'run --configuration Release --framework netcoreapp2.1 --project .\ReaderWriter\FileReaderWriterFactoryGRPCWrapper\FileReaderWriterFactoryGRPCWrapper.csproj background'
         Start-Sleep -s 5
-        dotnet test --no-build --configuration Release -v diag
+        dotnet test --no-build --configuration Release
         $j | Select-Object -Property Id | Stop-Process
         
   publish_nuget:
