@@ -210,7 +210,7 @@ namespace OpenVectorFormat.OVFReaderWriter
             // Add all workPlanes already contained in the job
             foreach (var workPlane in job.WorkPlanes)
             {
-                progress.Update("workPlane " + workPlane.WorkPlaneNumber + "added", (int)((double)workPlane.WorkPlaneNumber / (double)job.WorkPlanes.Count * 100));
+                progress.Update("workPlane " + workPlane.WorkPlaneNumber + " added! ", (int)((double)workPlane.WorkPlaneNumber / (double)job.WorkPlanes.Count * 100));
                 await AppendWorkPlaneAsync(workPlane);
             }
             Dispose();

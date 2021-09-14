@@ -36,14 +36,14 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         /// </summary>
         internal static Job HandleJobCompareWithASPTarget(Job originalJob, Job convertedJob)
         {
-            Console.WriteLine("ASP Compare Handler start");
+            // Console.WriteLine("ASP Compare Handler start");
             List<VectorBlock.VectorDataOneofCase> cases_2d = new List<VectorBlock.VectorDataOneofCase>() { VectorBlock.VectorDataOneofCase.Hatches, VectorBlock.VectorDataOneofCase.LineSequence, VectorBlock.VectorDataOneofCase.PointSequence };
             for (int i_workPlane = 0; i_workPlane < originalJob.NumWorkPlanes; i_workPlane++)
             {
                 for (int i_vb = 0; i_vb < originalJob.WorkPlanes[i_workPlane].NumBlocks; i_vb++)
                 {
-                    Console.WriteLine("workplane " + i_workPlane.ToString());
-                    Console.WriteLine("block" + i_vb.ToString());
+                    // Console.WriteLine("workplane " + i_workPlane.ToString());
+                    // Console.WriteLine("block" + i_vb.ToString());
  
                     if (cases_2d.Contains(originalJob.WorkPlanes[i_workPlane].VectorBlocks[i_vb].VectorDataCase))
                     {
@@ -100,7 +100,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 }
             }
             convertedJob.JobMetaData = originalJob.JobMetaData;
-            Console.WriteLine("ASP Compare Handler end");
+            // Console.WriteLine("ASP Compare Handler end");
             return convertedJob;
         }
     }

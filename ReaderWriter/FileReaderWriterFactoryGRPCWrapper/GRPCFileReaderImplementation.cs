@@ -47,7 +47,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
         /// <returns>SimpleJobReadOutput with message and <see cref="Job"/></returns>
         public override async Task<SimpleJobReadReply> SimpleJobRead(SimpleJobReadRequest readRequest, ServerCallContext context)
         {
-            Console.WriteLine("\"SimpleJobRead\" called");
+            Console.WriteLine("\"SimpleJobRead\" called for " + readRequest.JobUri);
             string filename = readRequest.JobUri;
 
             string extension = Path.GetExtension(filename);
@@ -72,7 +72,6 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
 
         public override async Task PartialRead(Grpc.Core.IAsyncStreamReader<PartialReadRequest> requestStream, Grpc.Core.IServerStreamWriter<PartialReadReply> responseStream, Grpc.Core.ServerCallContext context)
         {
-            Console.WriteLine("\"PartialRead\" called");
             bool disposeReader = false;
             bool readerStarted = false;
             string jobURI = null;
@@ -87,7 +86,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
                 switch (inputMsg.SelectedCommandMode)
                 {
                     case PartialReadCommandMode.OpenJob:
-                        Console.WriteLine("\"OpenJob\" command called");
+                        Console.WriteLine("\"OpenJob\" command called for " + inputMsg.JobUri);
 
                         jobURI = inputMsg.JobUri;
                         string extension = Path.GetExtension(jobURI);
@@ -118,7 +117,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
                         break;
 
                     case PartialReadCommandMode.UnloadJobFromMemory:
-                        Console.WriteLine("\"UnloadJobFromMemory\" command called");
+                        // Console.WriteLine("\"UnloadJobFromMemory\" command called");
 
                         if (!readerStarted)
                         {
@@ -138,7 +137,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
                         break;
 
                     case PartialReadCommandMode.GetJobShell:
-                        Console.WriteLine("\"GetJobShell\" command called");
+                        // Console.WriteLine("\"GetJobShell\" command called");
 
                         if (!readerStarted)
                         {
@@ -158,7 +157,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
                         break;
 
                     case PartialReadCommandMode.GetPlane:
-                        Console.WriteLine("\"GetPlane\" command called");
+                        // Console.WriteLine("\"GetPlane\" command called");
 
                         if (!readerStarted)
                         {
@@ -178,7 +177,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
                         break;
 
                     case PartialReadCommandMode.GetVectorBlock:
-                        Console.WriteLine("\"GetVectorBlock\" command called");
+                        // Console.WriteLine("\"GetVectorBlock\" command called");
 
                         if (!readerStarted)
                         {

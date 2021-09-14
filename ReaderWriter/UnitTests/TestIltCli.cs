@@ -31,6 +31,7 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using OpenVectorFormat.ILTFileReader.Controller;
 using OpenVectorFormat.ILTFileReader;
+using OpenVectorFormat.Plausibility;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
@@ -46,6 +47,48 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             CliFileAccess cliFile = new CliFileAccess();
             cliFile.OpenFile(fileName.FullName);
             TestCLIFile(cliFile);
+        }
+
+        [DynamicData("CliFiles")]
+        [DataTestMethod]
+        public void TestCliFilesAddParams(FileInfo fileName)
+        {
+            FileReaderWriterFactory.FileConverter converter = new FileReaderWriterFactory.FileConverter();
+            var targetFile = new FileInfo(Path.GetTempFileName() + ".ovf");
+
+            converter.SupportPostfix = "_support";
+            converter.FallbackContouringParams = new MarkingParams() { LaserSpeedInMmPerS = 400, LaserPowerInW = 150 };
+            converter.FallbackHatchingParams = new MarkingParams() { LaserSpeedInMmPerS = 900, LaserPowerInW = 250 };
+            converter.FallbackSupportContouringParams = new MarkingParams() { LaserSpeedInMmPerS = 600, LaserPowerInW = 250 };
+            converter.FallbackSupportHatchingParams = new MarkingParams() { LaserSpeedInMmPerS = 1500, LaserPowerInW = 400 };
+            converter.ConvertAsyncAddParams(fileName, targetFile, new FileReaderWriterFactory.FileReaderWriterProgress()).Wait();
+            CheckJob(targetFile);
+        }
+
+        private void CheckJob(FileInfo testFile)
+        {
+            using (var reader = FileReaderWriterFactory.FileReaderFactory.CreateNewReader(testFile.Extension))
+            {
+                reader.OpenJobAsync(testFile.FullName, new FileReaderWriterFactory.FileReaderWriterProgress());
+                var job = reader.CacheJobToMemoryAsync().GetAwaiter().GetResult();
+
+                CheckerConfig config = new CheckerConfig
+                {
+                    CheckLineSequencesClosed = CheckAction.CHECKERROR,
+                    CheckMarkingParamsKeys = CheckAction.CHECKERROR,
+                    CheckPartKeys = CheckAction.CHECKERROR,
+                    CheckPatchKeys = CheckAction.DONTCHECK,
+                    CheckVectorBlocksNonEmpty = CheckAction.CHECKERROR,
+                    CheckWorkPlanesNonEmpty = CheckAction.CHECKERROR,
+
+                    ErrorHandling = ErrorHandlingMode.THROWEXCEPTION
+                };
+
+                CheckerResult checkResult = PlausibilityChecker.CheckJob(job, config).GetAwaiter().GetResult();
+                Assert.AreEqual(OverallResult.ALLSUCCEDED, checkResult.Result);
+                Assert.AreEqual(0, checkResult.Errors.Count);
+                Assert.AreEqual(0, checkResult.Warnings.Count);
+            }
         }
 
         [DynamicData("IltFiles")]

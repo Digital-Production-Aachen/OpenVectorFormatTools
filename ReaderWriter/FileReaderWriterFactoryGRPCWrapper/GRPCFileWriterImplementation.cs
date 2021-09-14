@@ -50,7 +50,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
         /// <returns>SimpleJobWriteOutput message</returns>
         public async override Task<SimpleJobWriteReply> SimpleJobWrite(SimpleJobWriteRequest saveRequest, ServerCallContext context)
         {
-            Console.WriteLine("\"SimpleJobWrite\" called");
+            Console.WriteLine("\"SimpleJobWrite\" called for " + saveRequest.JobUri);
             string filename = saveRequest.JobUri;
             string extension = Path.GetExtension(filename);
             if (!FileWriterFactory.SupportedFileFormats.Contains(extension))
@@ -76,7 +76,6 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
 
         public override async Task PartialWrite(Grpc.Core.IAsyncStreamReader<PartialWriteRequest> requestStream, Grpc.Core.IServerStreamWriter<PartialWriteReply> responseStream, Grpc.Core.ServerCallContext context)
         {
-            Console.WriteLine("\"PartialWrite\" called");
             bool disposeWriter = false;
 
             bool writerStarted = false;
@@ -93,7 +92,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
                 switch (inputMsg.SelectedCommandMode)
                 {
                     case PartialWriteCommandMode.StartWritePartial:
-                        Console.WriteLine("\t\"StartWritePartial\" command called");
+                        Console.WriteLine("\t\"StartWritePartial\" command called for " + inputMsg.JobUri);
 
                         if (inputMsg.JobUri == string.Empty)
                         {
@@ -123,7 +122,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
                         break;
 
                     case PartialWriteCommandMode.AddPlanePartial:
-                        Console.WriteLine("\t\"AddPlanePartial\" command called");
+                        // Console.WriteLine("\t\"AddPlanePartial\" command called");
                         if (!writerStarted)
                         {
                             writer?.Dispose();
@@ -142,7 +141,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
                         break;
 
                     case PartialWriteCommandMode.AddVectorBlockPartial:
-                        Console.WriteLine("\t\"AddVectorBlockPartial\" command called");
+                        // Console.WriteLine("\t\"AddVectorBlockPartial\" command called");
                         if (!writerStarted)
                         {
                             writer?.Dispose();

@@ -80,7 +80,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 FileInfo target = new FileInfo(Path.GetTempFileName() + extension);
                 Console.WriteLine("Converting from {0} to {1}", testFile.Extension, target.Extension);
 
-                await FileConverter.ConvertAsync(testFile, target, progress);
+                FileConverter.ConvertAsync(testFile, target, progress).Wait();
                 FileReader originalReader = FileReaderFactory.CreateNewReader(testFile.Extension);
                 FileReader convertedReader = FileReaderFactory.CreateNewReader(target.Extension);
                 await originalReader.OpenJobAsync(testFile.FullName, progress);
@@ -101,6 +101,8 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 }
 
                 Assert.AreEqual(originalJob, convertedJob);
+                originalReader.Dispose();
+                convertedReader.Dispose();
             }
         }
 

@@ -45,7 +45,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
         /// <returns>IsFormatSupportedOutput message detailing if Reading / Writing of format is supported, and string of all supported formats.</returns>
         public override Task<IsFormatSupportedReply> IsFormatSupported(IsFormatSupportedRequest request, ServerCallContext context)
         {
-            Console.WriteLine("\"IsFormatSupported\" called with format " + request.FileExtension);
+            //Console.WriteLine("\"IsFormatSupported\" called with format " + request.FileExtension);
             string fileExtension = request.FileExtension;
             string[] tmpArray = fileExtension.Split('.');
             fileExtension = tmpArray[tmpArray.Length - 1];
