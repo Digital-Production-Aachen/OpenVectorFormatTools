@@ -50,7 +50,8 @@ jobs:
         grpcpid="$!"
         echo "started grpc server"
         sleep 5s
-        dotnet test --no-build --configuration Release --framework netcoreapp2.1
+        dotnet test --no-build --configuration Release --framework netcoreapp2.1 -v diag
+        kill $grpcpid
         
     - name: Add msbuild to PATH
       if: contains(matrix.os, 'windows')
