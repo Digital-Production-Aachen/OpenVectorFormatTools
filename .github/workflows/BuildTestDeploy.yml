@@ -89,6 +89,7 @@ jobs:
                   
     - name: Build Windows
       run: |
+        dotnet sln OpenVectorFormatTools.sln remove OVFFileConverterGUI/OVFFileConverterGUI.csproj
         dotnet build --configuration Release
                   
     - name: Nuget Deploy
