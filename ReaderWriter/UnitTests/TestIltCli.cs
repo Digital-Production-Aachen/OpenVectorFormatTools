@@ -74,7 +74,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
 
                 CheckerConfig config = new CheckerConfig
                 {
-                    CheckLineSequencesClosed = CheckAction.CHECKERROR,
+                    CheckLineSequencesClosed = CheckAction.DONTCHECK,
                     CheckMarkingParamsKeys = CheckAction.CHECKERROR,
                     CheckPartKeys = CheckAction.CHECKERROR,
                     CheckPatchKeys = CheckAction.DONTCHECK,

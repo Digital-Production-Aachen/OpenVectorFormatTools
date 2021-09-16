@@ -39,6 +39,13 @@ namespace OpenVectorFormat.ILTFileReader.Model
             this.isLong = isLong;
             this.VectorBlocks = new List<IVectorBlock>();
         }
+
+        public Layer(float height)
+        {
+            Height = height;
+            this.VectorBlocks = new List<IVectorBlock>();
+        }
+
         public long OffsetInFile
         {
             get;
