@@ -33,6 +33,8 @@ namespace OpenVectorFormat.ILTFileReader.Model
 {
     class Polyline: VectorBlock,ILTFileReader.IPolyline
     {
+        private bool isASCII = false;
+        private float[] coordinates;
         public Polyline(long offsetInFile, int id, Direction dir, int n, bool isLong, BinaryReader reader)
         {
             OffsetInFile = offsetInFile;
@@ -43,11 +45,23 @@ namespace OpenVectorFormat.ILTFileReader.Model
             this.reader = reader;
         }
 
+        public Polyline(int id, Direction dir, int n, float[] coordinates)
+        {
+            Id = id;
+            this.N = n;
+            this.Dir = dir;
+            isASCII = true;
+            this.coordinates = coordinates;
+        }
+        
+
        override public float[] Coordinates
         {
             get
             {
-                if (IsLong)
+                if (isASCII)
+                    return coordinates;
+                else if (IsLong)
                     return readHelper.readFloatArray(reader, OffsetInFile, N * 2 * 4);
                 else
                     return readHelper.readFloatArrayFromUshorts(reader, OffsetInFile, N * 2 * 2);

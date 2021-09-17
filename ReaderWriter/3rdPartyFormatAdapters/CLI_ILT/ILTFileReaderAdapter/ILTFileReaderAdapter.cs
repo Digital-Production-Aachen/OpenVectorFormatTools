@@ -566,7 +566,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                     var yDif = Math.Abs(coords[3] - coords[5]);
                     if (xDif < minJumpLength && yDif < minJumpLength)
                     {
-                        fakeHatches = true;
+                        //fakeHatches = true;
                     }
                 }
 

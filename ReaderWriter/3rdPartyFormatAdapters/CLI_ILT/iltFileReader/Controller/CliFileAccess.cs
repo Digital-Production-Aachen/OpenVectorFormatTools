@@ -64,7 +64,19 @@ namespace OpenVectorFormat.ILTFileReader.Controller
         {
             sR = new StreamReader(filePath);
             Header = ReadHeader();
-            Geometry = new Geometry(ReadBinaryContent());
+            IList<ILayer> layers;
+            switch (header.DataFormat)
+            {
+                case DataFormatType.binary:
+                    layers = ReadBinaryContent();
+                    break;
+                case DataFormatType.ASCII:
+                    layers = ReadASCIIContent();
+                    break;
+                default:
+                    throw new FileLoadException("unknown format type");
+            }
+            Geometry = new Geometry(layers);
         }
 
         public enum BinaryWriteStyle
@@ -150,7 +162,6 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                         if (line.Equals("$$ASCII"))
                         {
                             this.header.DataFormat = DataFormatType.ASCII;
-                            throw new FileLoadException("ASCII Format is not supported at the moment");
                         }
 
                         if ((match = Regex.Match(line, @"\$\$UNITS\/(.*)")).Success)
@@ -312,6 +323,59 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                 }
             }
 
+            return layers;
+        }
+
+        private IList<ILayer> ReadASCIIContent()
+        {
+            String line;
+            IList<ILayer> layers = new List<ILayer>();
+            Layer currentLayer = null;
+            //read first line
+            if (this.sR.ReadLine() != "$$GEOMETRYSTART") throw new FileLoadException("no geometry found");
+            while ((line = this.sR.ReadLine()) != null)
+            {
+                //optimization: hatches are most common, polylines 2nd
+                if (line.StartsWith(@"$$HATCHES/"))
+                {
+                    var numberStrings = line.Substring(10).Split(',');
+                    if (numberStrings.Length < 4)
+                    {
+                        throw new FileLoadException("invalid hatches: " + line);
+                    }
+                    int id = int.Parse(numberStrings[0], NumberStyles.Any, CultureInfo.InvariantCulture);
+                    int n = int.Parse(numberStrings[1], NumberStyles.Any, CultureInfo.InvariantCulture);
+                    float[] coordinates = new float[numberStrings.Length-2];
+                    for(int i=0; i< coordinates.Length; i++)
+                    {
+                        coordinates[i] = float.Parse(numberStrings[i+2], NumberStyles.Any, CultureInfo.InvariantCulture);
+                    }
+                    currentLayer.VectorBlocks.Add(new Hatches(id, n, coordinates));
+                }
+                if (line.StartsWith(@"$$POLYLINE/"))
+                {
+                    var numberStrings = line.Substring(11).Split(',');
+                    if (numberStrings.Length < 5)
+                    {
+                        throw new FileLoadException("invalid hatches: " + line);
+                    }
+                    int id = int.Parse(numberStrings[0], NumberStyles.Any, CultureInfo.InvariantCulture);
+                    Direction dir = (Direction) int.Parse(numberStrings[1], NumberStyles.Any, CultureInfo.InvariantCulture);
+                    int n = int.Parse(numberStrings[2], NumberStyles.Any, CultureInfo.InvariantCulture);
+                    float[] coordinates = new float[numberStrings.Length - 3];
+                    for (int i = 0; i < coordinates.Length; i++)
+                    {
+                        coordinates[i] = float.Parse(numberStrings[i + 3], NumberStyles.Any, CultureInfo.InvariantCulture);
+                    }
+                    currentLayer.VectorBlocks.Add(new Polyline(id, dir, n, coordinates));
+                }
+                if (line.StartsWith(@"$$LAYER/"))
+                {
+                    float height = float.Parse(line.Substring(8), NumberStyles.Any, CultureInfo.InvariantCulture);
+                    currentLayer = new Layer(height);
+                    layers.Add(currentLayer);
+                }
+            }
             return layers;
         }
 

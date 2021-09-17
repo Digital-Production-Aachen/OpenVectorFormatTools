@@ -33,8 +33,8 @@ namespace OpenVectorFormat.ILTFileReader.Model
 {
     class Hatches : VectorBlock, ILTFileReader.IHatches
     {
-
-        public float[] coordinates;
+        private bool isASCII = false;
+        private float[] coordinates;
 
         public Hatches(long offsetInFile, int id, int n, bool isLong, BinaryReader reader)
         {
@@ -45,12 +45,22 @@ namespace OpenVectorFormat.ILTFileReader.Model
             this.reader = reader;
         }
 
+        public Hatches(int id, int n, float[] coordinates)
+        {
+            Id = id;
+            N = n;
+            isASCII = true;
+            this.coordinates = coordinates;
+        }
+
 
         override public float[] Coordinates
         {
             get
             {
-                if (IsLong)
+                if (isASCII)
+                    return coordinates;
+                else if (IsLong)
                     return readHelper.readFloatArray(reader, OffsetInFile, N * 4 * 4);
                 else
                     return readHelper.readFloatArrayFromUshorts(reader, OffsetInFile, N * 4 * 2);
