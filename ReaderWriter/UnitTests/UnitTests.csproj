@@ -49,6 +49,9 @@
     <None Update="TestFiles\Elephant_ASCII.cli">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="TestFiles\frustrum_ASCII.cli">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestFiles\s_Cylinder_ex.cli">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
