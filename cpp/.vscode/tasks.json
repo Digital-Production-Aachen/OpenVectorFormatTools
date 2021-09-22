@@ -1,0 +1,21 @@
+// Modified to enable debugging using bazel
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Bazel Build (Debug)",
+      "type": "shell",
+      "command": "bazel  build --cxxopt='-std=c++17' OVFReaderWriter:OVFReaderWriter_test -c dbg",
+      "windows": {
+        "command": "bazel build --cxxopt='-std=c++17' OVFReaderWriter:OVFReaderWriter_test --experimental_enable_runfiles -c dbg"
+      },
+      "osx": {
+        "command": "bazel build --cxxopt='-std=c++17' OVFReaderWriter:OVFReaderWriter_test -c dbg --spawn_strategy=standalone",
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}
