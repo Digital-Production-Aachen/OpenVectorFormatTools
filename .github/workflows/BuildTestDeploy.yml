@@ -38,7 +38,7 @@ jobs:
     - name: Setup Dotnet sdk
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 2.1.x
+        dotnet-version: 6.0.x
                 
     - name: Test Linux
       if: contains(matrix.os, 'ubuntu')
