@@ -31,7 +31,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
     internal static class Config
     {
         static internal string IP { get; set; } = string.Empty;
-        static internal long Port { get; set; } = -1;
+        static internal int Port { get; set; } = -1;
         static internal long AutomatedCachingThresholdBytes { get; set; } = -1;
     }
 }

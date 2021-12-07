@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 
-using Grpc.Core;
+using Grpc.Net.Client;
 using GrpcReaderWriterInterface;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using System.IO;
 using OpenVectorFormat.FileReaderWriterFactory;
 using OpenVectorFormat.AbstractReaderWriter;
+using Grpc.Core;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
@@ -43,7 +44,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         {
             string ip = "127.0.0.1";
             uint port = 50051;
-            Channel channel = new Channel(ip + ":" + port.ToString(), ChannelCredentials.Insecure);
+            using GrpcChannel channel = GrpcChannel.ForAddress("http://" + ip + ":" + port.ToString());
 
             VectorFileHandler.VectorFileHandlerClient client = new VectorFileHandler.VectorFileHandlerClient(channel);
             foreach (string extension in FileWriterFactory.SupportedFileFormats)
@@ -75,7 +76,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         {
             string ip = "127.0.0.1";
             uint port = 50051;
-            Channel channel = new Channel(ip + ":" + port.ToString(), ChannelCredentials.Insecure);
+            using GrpcChannel channel = GrpcChannel.ForAddress("http://" + ip + ":" + port.ToString());
 
             VectorFileHandler.VectorFileHandlerClient client = new VectorFileHandler.VectorFileHandlerClient(channel);
 
