@@ -50,7 +50,7 @@ jobs:
         grpcpid="$!"
         echo "started grpc server"
         sleep 5s
-        dotnet test --no-build --configuration Release --framework net6 --filter TestGRPCWrapper
+        dotnet test --no-build --configuration Release --framework net6
         kill $grpcpid
         
     - name: Add msbuild to PATH
