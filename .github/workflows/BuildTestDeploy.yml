@@ -24,7 +24,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest]
+        os: [windows-latest, ubuntu-latest]
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: true
     
@@ -46,11 +46,11 @@ jobs:
         dotnet build --configuration Release --framework net6 ReaderWriter/FileReaderWriterFactoryGRPCWrapper/FileReaderWriterFactoryGRPCWrapper.csproj
         dotnet build --configuration Release --framework net6 ReaderWriter/UnitTests/UnitTests.csproj
         dotnet build --configuration Release --framework net6 PlausibilityChecker/PlausibilityCheckerUnitTests/PlausibilityCheckerUnitTests.csproj
-        dotnet run --configuration Release --framework net6 --project ReaderWriter/FileReaderWriterFactoryGRPCWrapper/FileReaderWriterFactoryGRPCWrapper.csproj background &
+        dotnet run --configuration Release --framework net6 --project ReaderWriter/FileReaderWriterFactoryGRPCWrapper/FileReaderWriterFactoryGRPCWrapper.csproj &
         grpcpid="$!"
         echo "started grpc server"
         sleep 5s
-        dotnet test --no-build --configuration Release --framework net6
+        dotnet test --no-build --configuration Release --framework net6 --filter TestGRPCWrapper
         kill $grpcpid
         
     - name: Add msbuild to PATH
@@ -61,8 +61,8 @@ jobs:
       if: contains(matrix.os, 'windows')
       run: |
         dotnet build --configuration Release
-        $j = Start-Process -PassThru -Filepath 'dotnet' -WorkingDirectory $PWD -ArgumentList 'run --configuration Release --framework net6 --project .\ReaderWriter\FileReaderWriterFactoryGRPCWrapper\FileReaderWriterFactoryGRPCWrapper.csproj background'
-        Start-Sleep -s 60
+        $j = Start-Process -PassThru -Filepath 'dotnet' -WorkingDirectory $PWD -ArgumentList 'run --configuration Release --framework net6 --project .\ReaderWriter\FileReaderWriterFactoryGRPCWrapper\FileReaderWriterFactoryGRPCWrapper.csproj'
+        Start-Sleep -s 5
         dotnet test --no-build --configuration Release
         $j | Select-Object -Property Id | Stop-Process
         

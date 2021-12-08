@@ -42,6 +42,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         [TestMethod]
         public void TestSupportedFormat()
         {
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             string ip = "127.0.0.1";
             uint port = 50051;
             using GrpcChannel channel = GrpcChannel.ForAddress("http://" + ip + ":" + port.ToString());
@@ -74,6 +75,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         [TestMethod]
         public async System.Threading.Tasks.Task TestWriteReadAsync(FileInfo testFile)
         {
+            AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             string ip = "127.0.0.1";
             uint port = 50051;
             using GrpcChannel channel = GrpcChannel.ForAddress("http://" + ip + ":" + port.ToString());
