@@ -24,7 +24,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest]
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: true
     
