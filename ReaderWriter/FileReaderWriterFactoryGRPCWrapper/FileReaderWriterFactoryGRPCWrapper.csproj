@@ -12,7 +12,7 @@
     <PackageReference Include="Grpc.AspNetCore" Version="2.41.0" />
         
     <!-- Explicitly include our proto file by adding this line: -->
-    <Protobuf Include="../../ReaderWriter/AbstractReaderWriter/grpc_reader_writer_interface.proto" GrpcServices="Server" Link="Protos/grpc_reader_writer_interface.proto" ProtoRoot="../../" />
+    <Protobuf Include="../../ReaderWriter/AbstractReaderWriter/grpc_reader_writer_interface.proto" GrpcServices="Both" Link="Protos/grpc_reader_writer_interface.proto" ProtoRoot="../../" />
   </ItemGroup>
 
   <ItemGroup>
