@@ -62,7 +62,7 @@ jobs:
       run: |
         dotnet build --configuration Release
         $j = Start-Process -PassThru -Filepath 'dotnet' -WorkingDirectory $PWD -ArgumentList 'run --configuration Release --framework net6 --project .\ReaderWriter\FileReaderWriterFactoryGRPCWrapper\FileReaderWriterFactoryGRPCWrapper.csproj background'
-        Start-Sleep -s 5
+        Start-Sleep -s 60
         dotnet test --no-build --configuration Release
         $j | Select-Object -Property Id | Stop-Process
         
