@@ -1,4 +1,4 @@
-/*
+﻿/*
 ---- Copyright Start ----
 
 This file is part of the OpenVectorFormatTools collection. This collection provides tools to facilitate the usage of the OpenVectorFormat.
@@ -22,16 +22,34 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
 {
-    internal static class Config
+    class Startup
     {
-        static internal string IP { get; set; } = string.Empty;
-        static internal int Port { get; set; } = -1;
-        static internal long AutomatedCachingThresholdBytes { get; set; } = -1;
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddGrpc();
+            services.AddSingleton(new GRPCWrapperFunctionsImplementation());
+        }
+
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        {
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+
+            app.UseRouting();
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapGrpcService<GRPCWrapperFunctionsImplementation>();
+            });
+        }
     }
 }

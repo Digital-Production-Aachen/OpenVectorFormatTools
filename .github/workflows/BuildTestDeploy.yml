@@ -46,7 +46,7 @@ jobs:
         dotnet build --configuration Release --framework net6 ReaderWriter/FileReaderWriterFactoryGRPCWrapper/FileReaderWriterFactoryGRPCWrapper.csproj
         dotnet build --configuration Release --framework net6 ReaderWriter/UnitTests/UnitTests.csproj
         dotnet build --configuration Release --framework net6 PlausibilityChecker/PlausibilityCheckerUnitTests/PlausibilityCheckerUnitTests.csproj
-        dotnet run --configuration Release --framework net6 --project ReaderWriter/FileReaderWriterFactoryGRPCWrapper/FileReaderWriterFactoryGRPCWrapper.csproj background &
+        dotnet run --configuration Release --framework net6 --project ReaderWriter/FileReaderWriterFactoryGRPCWrapper/FileReaderWriterFactoryGRPCWrapper.csproj &
         grpcpid="$!"
         echo "started grpc server"
         sleep 5s
@@ -61,7 +61,7 @@ jobs:
       if: contains(matrix.os, 'windows')
       run: |
         dotnet build --configuration Release
-        $j = Start-Process -PassThru -Filepath 'dotnet' -WorkingDirectory $PWD -ArgumentList 'run --configuration Release --framework net6 --project .\ReaderWriter\FileReaderWriterFactoryGRPCWrapper\FileReaderWriterFactoryGRPCWrapper.csproj background'
+        $j = Start-Process -PassThru -Filepath 'dotnet' -WorkingDirectory $PWD -ArgumentList 'run --configuration Release --framework net6 --project .\ReaderWriter\FileReaderWriterFactoryGRPCWrapper\FileReaderWriterFactoryGRPCWrapper.csproj'
         Start-Sleep -s 5
         dotnet test --no-build --configuration Release
         $j | Select-Object -Property Id | Stop-Process

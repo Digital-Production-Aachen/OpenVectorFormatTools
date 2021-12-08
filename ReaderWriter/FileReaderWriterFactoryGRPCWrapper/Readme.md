@@ -16,6 +16,7 @@ To compile & run (skip the first step if you already have .net build environment
 ## How to use
 A quick example on how to set up a connection to the gRPC service in C#:
 ```c#
+using Grpc.Net.Client;
 using Grpc.Core;
 using GrpcReaderWriterInterface;
 using System;
@@ -30,7 +31,7 @@ namespace OpenVectorFormat.GRPCWrapperDemo
         {
             string ip = "127.0.0.1";
             uint port = 50051;
-            Channel channel = new Channel(ip + ":" + port.ToString(), ChannelCredentials.Insecure);
+            using GrpcChannel channel = GrpcChannel.ForAddress("http://" + ip + ":" + port.ToString());
 
             VectorFileHandler.VectorFileHandlerClient client = new VectorFileHandler.VectorFileHandlerClient(channel);
             IsFormatSupportedReply reply = client.IsFormatSupported(new IsFormatSupportedRequest { FileExtension = ".ovf" });
