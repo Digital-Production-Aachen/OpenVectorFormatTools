@@ -2,24 +2,10 @@
 
   <PropertyGroup>
     <TargetFrameworks>net6</TargetFrameworks>
-
+	<Nullable>enable</Nullable>
+	  
     <IsPackable>false</IsPackable>
 
-    <ApplicationIcon />
-
-    <Win32Resource />
-
-    <Platforms>AnyCPU;x64</Platforms>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netcoreapp2.1|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG;NETCOREAPP;NETCOREAPP2_1</DefineConstants>
-    <DebugType>pdbonly</DebugType>
-    <DebugSymbols>true</DebugSymbols>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netcoreapp2.1|x64'">
-    <DefineConstants>TRACE;DEBUG;NETCOREAPP;NETCOREAPP2_1</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
