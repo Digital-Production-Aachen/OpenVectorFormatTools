@@ -71,8 +71,8 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
             {
                 // read values from environment variables (primary for Docker container)
                 Config.IP = Environment.GetEnvironmentVariable("GRPC_SERVER_IP");
-                Config.IP = Environment.GetEnvironmentVariable("GRPC_SERVER_PORT");
-                Config.IP = Environment.GetEnvironmentVariable("GRPC_SERVER_AUTOMATED_CACHING_THRESHOLD_BYTES");
+                Config.Port = int.Parse(Environment.GetEnvironmentVariable("GRPC_SERVER_PORT"));
+                Config.AutomatedCachingThresholdBytes = long.Parse(Environment.GetEnvironmentVariable("GRPC_SERVER_AUTOMATED_CACHING_THRESHOLD_BYTES"));
             }
 
             if (Config.IP == string.Empty | Config.Port == -1 | Config.AutomatedCachingThresholdBytes == -1)

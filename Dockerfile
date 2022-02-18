@@ -3,13 +3,13 @@ FROM mcr.microsoft.com/dotnet/sdk:6.0 as build
 
 WORKDIR /src
 
-COPY ./* ./src/
+COPY ./ ./
 
-RUN dotnet restore
+RUN dotnet restore ReaderWriter/FileReaderWriterFactoryGRPCWrapper/FileReaderWriterFactoryGRPCWrapper.csproj
 
 COPY . .
 
-RUN dotnet publish --no-restore -c Release -o /published src/FileReaderWriterFactoryGRPCWrapper.csproj
+RUN dotnet publish --no-restore -c Release --framework net6 -o /published ReaderWriter/FileReaderWriterFactoryGRPCWrapper/FileReaderWriterFactoryGRPCWrapper.csproj
 
 FROM mcr.microsoft.com/dotnet/aspnet:6.0-alpine as runtime
 
