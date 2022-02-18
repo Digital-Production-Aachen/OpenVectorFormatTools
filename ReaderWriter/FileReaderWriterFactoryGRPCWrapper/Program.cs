@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
+using System;
 using System.IO;
 using System.Net;
 using System.Text.Json;
@@ -58,10 +59,21 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
             path = Path.GetDirectoryName(path);
             string configFile = path + "/grpc_server_config.json";
 
-            var json = JsonSerializer.Deserialize<object>(File.ReadAllText(configFile)) as JsonElement?;
-            Config.IP = json?.GetProperty("ip").ToString();
-            Config.Port = int.Parse(json?.GetProperty("port").ToString());
-            Config.AutomatedCachingThresholdBytes = long.Parse(json?.GetProperty("AutomatedCachingThresholdBytes").ToString());
+            if (File.Exists(configFile))
+            {
+                // read values from config file if the file exists
+                JsonElement? json = JsonSerializer.Deserialize<object>(File.ReadAllText(configFile)) as JsonElement?;
+                Config.IP = json?.GetProperty("ip").ToString();
+                Config.Port = int.Parse(json?.GetProperty("port").ToString());
+                Config.AutomatedCachingThresholdBytes = long.Parse(json?.GetProperty("AutomatedCachingThresholdBytes").ToString());
+            }
+            else
+            {
+                // read values from environment variables (primary for Docker container)
+                Config.IP = Environment.GetEnvironmentVariable("GRPC_SERVER_IP");
+                Config.IP = Environment.GetEnvironmentVariable("GRPC_SERVER_PORT");
+                Config.IP = Environment.GetEnvironmentVariable("GRPC_SERVER_AUTOMATED_CACHING_THRESHOLD_BYTES");
+            }
 
             if (Config.IP == string.Empty | Config.Port == -1 | Config.AutomatedCachingThresholdBytes == -1)
             {

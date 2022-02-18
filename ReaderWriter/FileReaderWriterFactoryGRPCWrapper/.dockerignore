@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+**/Dockerfile
+kube/
+xxx/
+.idea/
+.vs/
+*.ncrunchsolution.*
+**/Readme.**
+**/README.**
+**/readme.**
+grpc_server_config.json
