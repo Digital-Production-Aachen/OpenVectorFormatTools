@@ -100,5 +100,28 @@ jobs:
         mkdir nupkg
         dotnet pack -p:PackageVersion=$env:RELEASE_VERSION -o  $PWD\nupkg -p:RepositoryCommit=$env:GITHUB_SHA --configuration Release
         cd nupkg
-        dotnet nuget push "**/*.nupkg" --api-key ${{secrets.NUGET_DEPLOY_KEY}} --source "https://api.nuget.org/v3/index.json" --no-symbols true 
+        #dotnet nuget push "**/*.nupkg" --api-key ${{secrets.NUGET_DEPLOY_KEY}} --source "https://api.nuget.org/v3/index.json" --no-symbols true 
 
+  publish_docker:
+    needs: [check_license, build_and_test, publish_nuget]
+    if: startsWith(github.ref, 'refs/tags/v') # make sure deploy only runs on tags with version number
+    runs-on: ubuntu-latest
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+        
+    - name: Setup Dotnet sdk
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.x
+        
+                  
+    - name: Build container
+      run: | 
+        echo $env:RELEASE_VERSION
+        docker build . -t digitalproductionaachen/ovf-grpc:$env:RELEASE_VERSION
