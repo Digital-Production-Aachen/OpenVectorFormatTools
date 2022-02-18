@@ -24,7 +24,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [windows-latest, ubuntu-latest]
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: true
     
@@ -103,12 +103,10 @@ jobs:
         #dotnet nuget push "**/*.nupkg" --api-key ${{secrets.NUGET_DEPLOY_KEY}} --source "https://api.nuget.org/v3/index.json" --no-symbols true 
 
   publish_docker:
-    #needs: [publish_nuget]
+    needs: [publish_nuget]
     if: startsWith(github.ref, 'refs/tags/v') # make sure deploy only runs on tags with version number
     runs-on: ubuntu-latest
-    env:
-      DOTNET_CLI_TELEMETRY_OPTOUT: true
-    
+        
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
@@ -126,6 +124,6 @@ jobs:
     - name: Push container
       run: | 
         echo ${{secrets.DOCKER_HUB_DEPLOY_KEY}} | docker login --username ${{secrets.DOCKER_HUB_USER}} --password-stdin
-        #docker push digitalproductionaachen/ovf-grpc:$RELEASE_VERSION
+        docker push digitalproductionaachen/ovf-grpc:$RELEASE_VERSION
         docker tag digitalproductionaachen/ovf-grpc:$RELEASE_VERSION digitalproductionaachen/ovf-grpc:latest
-        #docker push digitalproductionaachen/ovf-grpc:latest
+        docker push digitalproductionaachen/ovf-grpc:latest
