@@ -5,7 +5,7 @@ This project provides an standalone console-application that wraps the functiona
 To read / write a job all-at-once, call the `SimpleJobRead` or `SimpleJobWrite` procedures. If the job is very big and you do not want to keep it in memory all the time, use the `PartialJobRead` and `PartialJobWrite` procedures to open a stream and do the reading / writing in parts.
 
 ## How to build
-A docker image with this project prebuild can be found here: [https://hub.docker.com/r/digitalproductionaachen/ovf-grpc/tags](https://hub.docker.com/r/digitalproductionaachen/ovf-grpc/tags)
+A docker image with this project prebuild can be found here: [https://hub.docker.com/r/digitalproductionaachen/ovf-grpc](https://hub.docker.com/r/digitalproductionaachen/ovf-grpc)
 Other than this, there are no prebuild artefacts provided with each release at this time.
 
 To build yourself (skip the first step if you already have .net build environment set up on your machine):
