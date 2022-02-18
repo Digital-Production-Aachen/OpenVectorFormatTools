@@ -5,13 +5,15 @@ This project provides an standalone console-application that wraps the functiona
 To read / write a job all-at-once, call the `SimpleJobRead` or `SimpleJobWrite` procedures. If the job is very big and you do not want to keep it in memory all the time, use the `PartialJobRead` and `PartialJobWrite` procedures to open a stream and do the reading / writing in parts.
 
 ## How to build
-At this time, there are no prebuild artefacts provided with each release.
-To compile & run (skip the first step if you already have .net build environment set up on your machine):
-* Setup `dotnet`  on your machine: [Download](https://dotnet.microsoft.com/download/dotnet) - be sure to pick a version >= 2.1, and use the SDK, not the runtime!
+A docker image with this project prebuild can be found here: [https://hub.docker.com/r/digitalproductionaachen/ovf-grpc/tags](https://hub.docker.com/r/digitalproductionaachen/ovf-grpc/tags)
+Other than this, there are no prebuild artefacts provided with each release at this time.
+
+To build yourself (skip the first step if you already have .net build environment set up on your machine):
+* Setup `dotnet`  on your machine: [Download](https://dotnet.microsoft.com/download/dotnet) - be sure to pick a version >= 6, and use the SDK, not the runtime!
 * Download / Clone this repository and enter the root folder
 * Edit the network settings in `ReaderWriter\FileReaderWriterFactoryGRPCWrapper\grpc_server_config.json` to your needs.
 * Open a command prompt in the root folder
-* Run `dotnet run --configuration Release --framework netcoreapp2.1 --project .\ReaderWriter\FileReaderWriterFactoryGRPCWrapper\FileReaderWriterFactoryGRPCWrapper.csproj` - you can also use `net46` as framework if you have a legacy .net framework installed.
+* Run `dotnet run --configuration Release --framework net6 --project .\ReaderWriter\FileReaderWriterFactoryGRPCWrapper\FileReaderWriterFactoryGRPCWrapper.csproj`.
 
 ## How to use
 A quick example on how to set up a connection to the gRPC service in C#:
