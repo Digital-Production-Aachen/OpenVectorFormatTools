@@ -20,6 +20,6 @@ Feel free to open an issue regarding any tools you would like to see - or start 
 Also, chances are we might already have some prototype tools internally that are not yet ready for publication - contact us and join in with the development & testing!
 
 ## Licenses, Legal
-This license for OpenVectorFormatTools can be found [here](LICENSE.md).
+This license for OpenVectorFormatTools can be found [here](LICENSE).
 
 Licenses of libraries used / distributed with OpenVectorFormatTools are listed [here](Licenses_of_used_libraries.md).
