@@ -39,29 +39,28 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 6.0.x
-                
+
+    - name: Remove GUI Projects (Linux)
+      if: contains(matrix.os, 'ubuntu')
+      run: dotnet sln OpenVectorFormatTools.sln remove OVFFileConverterGUI/OVFFileConverterGUI.csproj
+
+    - name: Build
+      run: dotnet build --configuration Release
+
     - name: Test Linux
       if: contains(matrix.os, 'ubuntu')
       run: |
-        dotnet build --configuration Release --framework net6 ReaderWriter/FileReaderWriterFactoryGRPCWrapper/FileReaderWriterFactoryGRPCWrapper.csproj
-        dotnet build --configuration Release --framework net6 ReaderWriter/UnitTests/UnitTests.csproj
-        dotnet build --configuration Release --framework net6 PlausibilityChecker/PlausibilityCheckerUnitTests/PlausibilityCheckerUnitTests.csproj
-        dotnet run --configuration Release --framework net6 --project ReaderWriter/FileReaderWriterFactoryGRPCWrapper/FileReaderWriterFactoryGRPCWrapper.csproj &
+        dotnet run --configuration Release --framework net6 --no-build --project ReaderWriter/FileReaderWriterFactoryGRPCWrapper/FileReaderWriterFactoryGRPCWrapper.csproj &
         grpcpid="$!"
         echo "started grpc server"
         sleep 5s
         dotnet test --no-build --configuration Release --framework net6
         kill $grpcpid
-        
-    - name: Add msbuild to PATH
-      if: contains(matrix.os, 'windows')
-      uses: microsoft/setup-msbuild@v1.0.2
                   
     - name: Test Windows
       if: contains(matrix.os, 'windows')
       run: |
-        dotnet build --configuration Release
-        $j = Start-Process -PassThru -Filepath 'dotnet' -WorkingDirectory $PWD -ArgumentList 'run --configuration Release --framework net6 --project .\ReaderWriter\FileReaderWriterFactoryGRPCWrapper\FileReaderWriterFactoryGRPCWrapper.csproj'
+        $j = Start-Process -PassThru -Filepath 'dotnet' -WorkingDirectory $PWD -ArgumentList 'run --configuration Release --framework net6 --no-build --project .\ReaderWriter\FileReaderWriterFactoryGRPCWrapper\FileReaderWriterFactoryGRPCWrapper.csproj'
         Start-Sleep -s 5
         dotnet test --no-build --configuration Release
         $j | Select-Object -Property Id | Stop-Process
@@ -83,9 +82,6 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 6.0.x
-        
-    - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v1.0.2
                   
     - name: Build Windows
       run: |
