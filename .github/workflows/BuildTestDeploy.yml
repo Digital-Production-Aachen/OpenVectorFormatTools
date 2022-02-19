@@ -103,7 +103,7 @@ jobs:
         dotnet nuget push "**/*.nupkg" --api-key ${{secrets.NUGET_DEPLOY_KEY}} --source "https://api.nuget.org/v3/index.json" --no-symbols true 
 
   publish_docker:
-    needs: [publish_nuget]
+    needs: [check_license, build_and_test]
     if: startsWith(github.ref, 'refs/tags/v') # make sure deploy only runs on tags with version number
     runs-on: ubuntu-latest
         
