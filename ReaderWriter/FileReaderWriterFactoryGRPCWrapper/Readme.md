@@ -50,7 +50,7 @@ namespace OpenVectorFormat.GRPCWrapperDemo
 }
 ```
 
-Further procedure calls & streaming are done in the unit test for this module: [TestGRPCWrapper.cs](ReaderWriter/UnitTests/TestGRPCWrapper.cs).
+Further procedure calls & streaming are done in the unit test for this module: [TestGRPCWrapper.cs](../UnitTests/TestGRPCWrapper.cs).
 However, those examples are all in C#.
 
 For details how to set up a gRPC connection in your preferred language, check out the quick start guide [here](https://grpc.io/docs/languages/).
