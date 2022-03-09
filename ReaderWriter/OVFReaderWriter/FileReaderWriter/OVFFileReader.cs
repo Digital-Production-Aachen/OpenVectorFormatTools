@@ -47,7 +47,14 @@ namespace OpenVectorFormat.OVFReaderWriter
     public class OVFFileReader : FileReader
     {
         private IFileReaderWriterProgress progress;
-        private Stream _fs;
+        /// <summary>
+        /// stream with access to the full MemoryMappedFile
+        /// </summary>
+        private Stream _globalstream;
+        /// <summary>
+        /// shared file stream the memory mapped file is created from
+        /// </summary>
+        private FileStream _fileStream;
         private long _streamlength;
         private string _filename;
         private MemoryMappedFile _mmf;
@@ -87,32 +94,32 @@ namespace OpenVectorFormat.OVFReaderWriter
 
             this.progress = progress;
 
-            _fs = File.OpenRead(filename);
-            _streamlength = _fs.Length;
-            if (_fs.Length < 12)
+            _fileStream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read);
+            _streamlength = _fileStream.Length;
+            if (_fileStream.Length < 12)
             {
-                _fs.Dispose();
+                _fileStream.Dispose();
                 throw new IOException("binary file is empty!");
             }
             else
             {
-                _fs.Dispose();
-                _mmf = MemoryMappedFile.CreateFromFile(filename);
-                _fs = _mmf.CreateViewStream(0, 0, MemoryMappedFileAccess.Read);
+                _mmf = MemoryMappedFile.CreateFromFile(_fileStream, null, 0, MemoryMappedFileAccess.Read, HandleInheritability.None, false);
+
+                _globalstream = _mmf.CreateViewStream(0, 0, MemoryMappedFileAccess.Read);
 
                 byte[] magicNumberBuffer = new byte[Contract.magicNumber.Length];
-                _fs.Read(magicNumberBuffer, 0, magicNumberBuffer.Length);
+                _globalstream.Read(magicNumberBuffer, 0, magicNumberBuffer.Length);
                 byte[] LUTIndexBuffer = new byte[sizeof(Int64)];
-                _fs.Read(LUTIndexBuffer, 0, LUTIndexBuffer.Length);
+                _globalstream.Read(LUTIndexBuffer, 0, LUTIndexBuffer.Length);
                 if (!BitConverter.IsLittleEndian)
                 {
                     Array.Reverse(LUTIndexBuffer);
                 }
                 long jobLUTindex = BitConverter.ToInt64(LUTIndexBuffer, 0);
 
-                if (!magicNumberBuffer.SequenceEqual(Contract.magicNumber) || jobLUTindex >= _fs.Length || jobLUTindex < -1)
+                if (!magicNumberBuffer.SequenceEqual(Contract.magicNumber) || jobLUTindex >= _globalstream.Length || jobLUTindex < -1)
                 {
-                    _fs.Close();
+                    _globalstream.Close();
                     throw new IOException("binary file is not an OVF file or corrupted!");
                 }
                 else
@@ -154,21 +161,21 @@ namespace OpenVectorFormat.OVFReaderWriter
             void _readWorkPlaneLUT(int i_workPlane)
             {
                 long wpLUTIndexIndex = _jobLUT.WorkPlanePositions[i_workPlane];
-                _fs.Position = wpLUTIndexIndex;
+                _globalstream.Position = wpLUTIndexIndex;
 
                 byte[] LUTIndexBuffer = new byte[sizeof(Int64)];
-                _fs.Read(LUTIndexBuffer, 0, LUTIndexBuffer.Length);
+                _globalstream.Read(LUTIndexBuffer, 0, LUTIndexBuffer.Length);
                 if (!BitConverter.IsLittleEndian)
                 {
                     Array.Reverse(LUTIndexBuffer);
                 }
                 long wpLUTindex = BitConverter.ToInt64(LUTIndexBuffer, 0);
-                _fs.Position = wpLUTindex;
-                WorkPlaneLUT wpLUT = WorkPlaneLUT.Parser.ParseDelimitedFrom(_fs);
+                _globalstream.Position = wpLUTindex;
+                WorkPlaneLUT wpLUT = WorkPlaneLUT.Parser.ParseDelimitedFrom(_globalstream);
 
                 foreach (long pos in wpLUT.VectorBlocksPositions)
                 {
-                    if (pos > _fs.Length)
+                    if (pos > _globalstream.Length)
                     {
                         Dispose();
                         throw new IOException("invalid vectorblock position detected in file");
@@ -181,15 +188,15 @@ namespace OpenVectorFormat.OVFReaderWriter
             void _readJobShell(Int64 LUTindex)
             {
                 // Read LUT
-                _fs.Position = LUTindex;
-                _jobLUT = JobLUT.Parser.ParseDelimitedFrom(_fs);
-                _fs.Position = _jobLUT.JobShellPosition;
-                _jobShell = Job.Parser.ParseDelimitedFrom(_fs);
+                _globalstream.Position = LUTindex;
+                _jobLUT = JobLUT.Parser.ParseDelimitedFrom(_globalstream);
+                _globalstream.Position = _jobLUT.JobShellPosition;
+                _jobShell = Job.Parser.ParseDelimitedFrom(_globalstream);
                 CheckConsistence(_jobShell.NumWorkPlanes, _jobLUT.WorkPlanePositions.Count);
                 _numberOfLayers = _jobShell.NumWorkPlanes;
                 foreach (long pos in _jobLUT.WorkPlanePositions)
                 {
-                    if (pos > _fs.Length)
+                    if (pos > _globalstream.Length)
                     {
                         Dispose();
                         throw new IOException("invalid workPlane position detected in file");
@@ -209,7 +216,7 @@ namespace OpenVectorFormat.OVFReaderWriter
             }
             else
             {
-                _fs.Dispose();
+                _globalstream.Dispose();
                 progress.IsCancelled = false;
                 progress.IsFinished = false;
 
@@ -381,15 +388,16 @@ namespace OpenVectorFormat.OVFReaderWriter
         public override void Dispose()
         {
             _job = null;
-            _fs?.Dispose();
+            _globalstream?.Dispose();
             _mmf?.Dispose();
+            _fileStream?.Dispose();
             _fileOperationInProgress = FileReadOperation.None;
             _cacheState = CacheState.NotCached;
         }
 
         public override void CloseFile()
         {
-            _fs?.Close();
+            _fileStream?.Close();
         }
     }
 }
