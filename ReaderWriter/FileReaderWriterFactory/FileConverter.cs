@@ -258,6 +258,12 @@ namespace OpenVectorFormat.FileReaderWriterFactory
                         }
                         else
                         {
+                            //check if we have copied this part at all from the reader job shell
+                            if (!writer.JobShell.PartsMap.ContainsKey(VB.MetaData.PartKey))
+                            {
+                                //this part is missing from the original readers job shell, add a new part to make it consistent after conversion
+                                writer.JobShell.PartsMap.Add(VB.MetaData.PartKey, new Part() { Name = $"Unnamed_Part_{VB.MetaData.PartKey}" });
+                            }
                             //we have a part vectorBlock
                             VB.LpbfMetadata.StructureType = VectorBlock.Types.StructureType.Part;
                             if (VB.VectorDataCase == VectorBlock.VectorDataOneofCase.LineSequence)
