@@ -36,7 +36,10 @@ namespace OVFReaderWriter
         /// <summary>Gets reference to complete job, including WorkPlanes.</summary>
         public Job CompleteJob { get; private set; } = null;
 
-        /// <inheritdoc/>
+        /// /// <summary>
+        /// JobShell being written to.
+        /// For OVFMemoryReader, this is the same reference as CompleteJob, since all workplanes are always stored in memory.
+        /// </summary>
         public Job JobShell
         {
             get
@@ -45,9 +48,7 @@ namespace OVFReaderWriter
                 {
                     throw new InvalidOperationException("Initialize memory reader with 'StartWritePartial' before querying data!");
                 }
-                Job jobShell = new Job();
-                ProtoUtils.CopyWithExclude(CompleteJob, jobShell, new List<int> { Job.WorkPlanesFieldNumber });
-                return jobShell;
+                return CompleteJob;
             }
         }
 

@@ -66,7 +66,7 @@ namespace OpenVectorFormat.OVFReaderWriter
         private WorkPlaneLUT[] _workPlaneLUTs;
 
         /// <inheritdoc/>
-        public override Job JobShell => _jobShell;
+        public override Job JobShell => _jobShell.Clone();
         private Job _jobShell;
         private Job _job;
         private int _numberOfLayers;

@@ -39,8 +39,12 @@ namespace OpenVectorFormat.OVFReaderWriter
         private IFileReaderWriterProgress progress;
         private string filename;
         private FileStream _fs;
-        private object locker;
-        /// <inheritdoc/>
+
+        /// /// <summary>
+        /// jobShell being written to. (just the shell without workPlanes)
+        /// For OVF, edits to the JobShell reference this getter returns are possible at any point.
+        /// OVFFileWriter will write them to the target file when dispose is called.
+        /// </summary>
         public override Job JobShell { get { return _jobShell; } }
         private Job _jobShell;
 
