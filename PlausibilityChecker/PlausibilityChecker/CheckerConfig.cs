@@ -47,5 +47,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
         /// <summary>Checks if all <see cref="VectorBlock.Types.VectorBlockMetaData.PatchKey"/> exist in <see cref="WorkPlane.Types.WorkPlaneMetaData.PatchesMap"/>.</summary>
         public CheckAction CheckPatchKeys { get; set; } = CheckAction.CHECKWARNING;
+
+        public CheckAction CheckContourIndex { get; set; } = CheckAction.CHECKWARNING;
     }
 }

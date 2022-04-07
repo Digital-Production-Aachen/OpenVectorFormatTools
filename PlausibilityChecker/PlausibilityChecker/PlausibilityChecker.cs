@@ -344,6 +344,51 @@ namespace OpenVectorFormat.Plausibility
                 }
             }
 
+            if (config.CheckContourIndex != CheckAction.DONTCHECK)
+            {
+                if (workPlaneShell == null)
+                {
+                    OVFPlausibilityCheckerException exception = new OVFPlausibilityCheckerException("workPlaneShell is required to perform the check 'CheckContourIndex'");
+
+                    if (config.CheckContourIndex == CheckAction.CHECKERROR)
+                    {
+                        if (config.ErrorHandling == ErrorHandlingMode.THROWEXCEPTION) { throw exception; }
+                        else if (config.ErrorHandling == ErrorHandlingMode.LOGANDCONTINUE) { result.Errors.Add(exception); }
+                        else { throw new Exception("Unknown Error Handling Mode."); }
+                    }
+                    else if (config.CheckContourIndex == CheckAction.CHECKWARNING) { result.Warnings.Add(exception); }
+                    else { throw new Exception("Unknown CheckAction Mode."); }
+
+                }
+                else if (workPlaneShell.MetaData == null)
+                {
+                    OVFPlausibilityCheckerException exception = new OVFPlausibilityCheckerException("workPlaneShell.MetaData is required to perform the check 'CheckContourIndex'");
+
+                    if (config.CheckContourIndex == CheckAction.CHECKERROR)
+                    {
+                        if (config.ErrorHandling == ErrorHandlingMode.THROWEXCEPTION) { throw exception; }
+                        else if (config.ErrorHandling == ErrorHandlingMode.LOGANDCONTINUE) { result.Errors.Add(exception); }
+                        else { throw new Exception("Unknown Error Handling Mode."); }
+                    }
+                    else if (config.CheckContourIndex == CheckAction.CHECKWARNING) { result.Warnings.Add(exception); }
+                    else { throw new Exception("Unknown CheckAction Mode."); }
+                }
+                else if (workPlaneShell.MetaData.Contours == null ||
+                    workPlaneShell.MetaData.Contours.Count <= vectorBlock.MetaData.ContourIndex)
+                {
+                    ContourIndexNotFoundException exception = new ContourIndexNotFoundException(workPlaneShell.WorkPlaneNumber, vectorBlockNumber, vectorBlock.MetaData.ContourIndex);
+
+                    if (config.CheckContourIndex == CheckAction.CHECKERROR)
+                    {
+                        if (config.ErrorHandling == ErrorHandlingMode.THROWEXCEPTION) { throw exception; }
+                        else if (config.ErrorHandling == ErrorHandlingMode.LOGANDCONTINUE) { result.Errors.Add(exception); }
+                        else { throw new Exception("Unknown Error Handling Mode."); }
+                    }
+                    else if (config.CheckContourIndex == CheckAction.CHECKWARNING) { result.Warnings.Add(exception); }
+                    else { throw new Exception("Unknown CheckAction Mode."); }
+                }
+            }
+
             return result;
         }
 
