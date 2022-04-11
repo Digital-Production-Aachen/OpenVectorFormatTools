@@ -35,7 +35,8 @@ namespace OpenVectorFormat.OVFReaderWriter
     class Contract
     {
         internal static readonly byte[] magicNumber = { 0x4c, 0x56, 0x46, 0x21 };
-        // only Int64 and not UInt64 because the length of a filestream is given bei Int64 (long) in C#.
+        
+        // only Int64 and not UInt64 because the length of a filestream is given by Int64 (long) in C#.
         internal const Int64 defaultLUTIndex = 0;
     }
 }
