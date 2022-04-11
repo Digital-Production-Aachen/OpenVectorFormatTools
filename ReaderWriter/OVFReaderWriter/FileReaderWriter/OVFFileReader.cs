@@ -117,7 +117,7 @@ namespace OpenVectorFormat.OVFReaderWriter
                 }
                 long jobLUTindex = BitConverter.ToInt64(LUTIndexBuffer, 0);
 
-                if (!magicNumberBuffer.SequenceEqual(Contract.magicNumber) || jobLUTindex >= _globalstream.Length || jobLUTindex < -1)
+                if (!magicNumberBuffer.SequenceEqual(Contract.magicNumber) || jobLUTindex >= _globalstream.Length || jobLUTindex < 0 || jobLUTindex == Contract.defaultLUTIndex)
                 {
                     _globalstream.Close();
                     throw new IOException("binary file is not an OVF file or corrupted!");
