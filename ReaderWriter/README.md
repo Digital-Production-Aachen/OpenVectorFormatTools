@@ -25,7 +25,7 @@ string filename = "testfile.ovf";
 string fileExtension = ".ovf";
 if (!FileReaderFactory.SupportedFileFormats.Contains(fileExtension))
 {
-    throw new Exception("Not supported")
+    throw new Exception("Not supported");
 }
 
 // create progress object & file reader for this extension
@@ -44,7 +44,7 @@ await fileReader.CacheJobToMemoryAsync();
 Job jobshell = fileReader.JobShell;
 WorkPlane wp = await fileReader.GetWorkPlaneAsync(workplane_index); // get a complete workplane with geometry data
 WorkPlane wp_shell = fileReader.GetWorkPlaneShell(workplane_index); // get a workplane without geometry data, just metadata
-VectorBlock vb = await fileReader.GetVectorBlockAsync(workplane_index, vectorblock_index) // get a complete vectorblock, with geometry data
+VectorBlock vb = await fileReader.GetVectorBlockAsync(workplane_index, vectorblock_index); // get a complete vectorblock, with geometry data
 
 // ... do what you need
 
@@ -57,7 +57,7 @@ string filename = "testfile.ovf";
 string fileExtension = ".ovf";
 if (!FileWriterFactory.SupportedFileFormats.Contains(fileExtension))
 {
-    throw new Exception("Not supported")
+    throw new Exception("Not supported");
 }
 
 Job job = new Job();
