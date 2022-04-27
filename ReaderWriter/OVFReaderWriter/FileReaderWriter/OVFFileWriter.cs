@@ -140,10 +140,11 @@ namespace OpenVectorFormat.OVFReaderWriter
 
                     _currentWorkPlaneShell.WorkPlaneNumber = _jobShell.NumWorkPlanes;
                     _currentWorkPlaneShell.NumBlocks = _currentWorkPlaneShell.VectorBlocks.Count;
-                    _currentWorkPlaneShell.VectorBlocks.Clear();
+                    var tempShell = new WorkPlane();
+                    ProtoUtils.CopyWithExclude(_currentWorkPlaneShell, tempShell, new List<int> { WorkPlane.VectorBlocksFieldNumber });
 
                     wpLUT.WorkPlaneShellPosition = _fs.Position;
-                    _currentWorkPlaneShell.WriteDelimitedTo(_fs);
+                    tempShell.WriteDelimitedTo(_fs);
 
                     long lutPosition = _fs.Position;
 
