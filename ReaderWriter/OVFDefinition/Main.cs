@@ -25,5 +25,4 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ﻿/*
  * This project only exists to provide the compiled proto classes of open_vector_format.proto to all projects.
  * open_vector_format.proto is included and gets compiled by the .net buildtools automatically at buildtime.
- * DO NOT PUT ANY OTHER CODE IN THIS PROJECT
  */
