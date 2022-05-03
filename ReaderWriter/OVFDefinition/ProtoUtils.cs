@@ -42,8 +42,12 @@ namespace OpenVectorFormat.Utils
         /// <param name="source">Source message to be copied from.</param>
         /// <param name="target">Target message to copy to.</param>
         /// <param name="excludedFieldNumbers">Protobuf fieldnumbers of the fields to exclude while copying.</param>
-        public static void CopyWithExclude(IMessage source, IMessage target, IList<int> excludedFieldNumbers)
+        public static void CopyWithExclude(IMessage source, IMessage target, IList<int> excludedFieldNumbers = null)
         {
+            if(excludedFieldNumbers == null)
+            {
+                excludedFieldNumbers = new List<int> {};
+            }
             foreach (FieldDescriptor field in source.Descriptor.Fields.InFieldNumberOrder())
             {
                 if (excludedFieldNumbers.Contains(field.FieldNumber))
@@ -67,6 +71,17 @@ namespace OpenVectorFormat.Utils
                     foreach (object element in sourceList)
                     {
                         targetList.Add(element);
+                    }
+                }
+                else if(field.FieldType == FieldType.Message)
+                {
+                    //embedded message, will be fully cloned (since field numbers in excludedFieldNumbers are not unique across IMessages)
+                    var sourceValue = field.Accessor.GetValue(source);
+                    if (sourceValue != null) {
+                        //get the copy constuctor declared by all protobuf messages, and clone the embedded message with it
+                        var copyCtor = sourceValue.GetType().GetConstructor(new System.Type[] { sourceValue.GetType() });
+                        var embeddedMessageClone = copyCtor.Invoke(new object[] { sourceValue });
+                        field.Accessor.SetValue(target, embeddedMessageClone);
                     }
                 }
                 else
