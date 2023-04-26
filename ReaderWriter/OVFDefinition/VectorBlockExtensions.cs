@@ -26,6 +26,7 @@ using Google.Protobuf.Collections;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Transactions;
 
 namespace OpenVectorFormat
 {
@@ -127,7 +128,7 @@ namespace OpenVectorFormat
         /// </summary>
         /// <param name="vectorBlock">vector block to translate</param>
         /// <param name="translation">translation vector</param>
-        public static void Translate(this VectorBlock vectorBlock, Vector2 translation)
+        public static void Translate(this VectorBlock vectorBlock, float translationX, float translationY)
         {
             switch (vectorBlock.VectorDataCase)
             {
@@ -136,7 +137,7 @@ namespace OpenVectorFormat
                 case VectorBlock.VectorDataOneofCase.PointSequence:
                 case VectorBlock.VectorDataOneofCase.Arcs:
                 case VectorBlock.VectorDataOneofCase.Ellipses:
-                    AddToVector2(vectorBlock.RawCoordinates(), translation);
+                    AddToVector2(vectorBlock.RawCoordinates(), translationX, translationY);
                     break;
 
                 case VectorBlock.VectorDataOneofCase.LineSequence3D:
@@ -144,13 +145,13 @@ namespace OpenVectorFormat
                 case VectorBlock.VectorDataOneofCase.PointSequence3D:
                 case VectorBlock.VectorDataOneofCase.Arcs3D:
                 case VectorBlock.VectorDataOneofCase.LineSequenceParaAdapt:
-                    AddToVector3(vectorBlock.RawCoordinates(), translation);
+                    AddToVector3(vectorBlock.RawCoordinates(), translationX, translationY);
                     break;
 
                 case VectorBlock.VectorDataOneofCase.HatchParaAdapt:
                     foreach (var item in vectorBlock.HatchParaAdapt.HatchAsLinesequence)
                     {
-                        AddToVector3(item.PointsWithParas, translation);
+                        AddToVector3(item.PointsWithParas, translationX, translationY);
                     }
                     break;
 
@@ -211,19 +212,19 @@ namespace OpenVectorFormat
             }
         }
 
-        private static void AddToVector2(RepeatedField<float> coordinates, Vector2 translation)
+        private static void AddToVector2(RepeatedField<float> coordinates, float translationX, float translationY)
         {
             for (int i = 0; i < coordinates.Count; i++)
             {
-                coordinates[i] += i % 2 == 0 ? translation.X : translation.Y;
+                coordinates[i] += i % 2 == 0 ? translationX : translationY;
             }
         }
 
-        private static void AddToVector3(RepeatedField<float> coordinates, Vector2 translation)
+        private static void AddToVector3(RepeatedField<float> coordinates, float translationX, float translationY)
         {
             for (int i = 0; i < coordinates.Count; i++)
             {
-                coordinates[i] += i % 3 == 0 ? translation.X : i % 3 == 1 ? translation.Y : 0;
+                coordinates[i] += i % 3 == 0 ? translationX : i % 3 == 1 ? translationY : 0;
             }
         }
 
