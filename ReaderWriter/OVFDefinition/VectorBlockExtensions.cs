@@ -23,9 +23,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 using Google.Protobuf.Collections;
+using OpenVectorFormat.Utils;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace OpenVectorFormat
 {
@@ -163,6 +165,39 @@ namespace OpenVectorFormat
         }
 
         /// <summary>
+        /// Rotates the vectorblock data counterclockwise by angleDeg
+        /// around the origin.
+        /// </summary>
+        /// <param name="block"></param>
+        /// <param name="angleDeg"></param>
+        /// <exception cref="NotImplementedException"></exception>
+        public static void Rotate(this VectorBlock block, double angleDeg)
+        {
+            switch (block.VectorDataCase)
+            {
+                case VectorBlock.VectorDataOneofCase.LineSequence:
+                case VectorBlock.VectorDataOneofCase.Hatches:
+                    double angle = angleDeg / 180 * Math.PI;
+                    float[,] rotation = new float[2, 2] {
+                        { (float) Math.Cos(angle), (float) -Math.Sin(angle) },
+                        { (float) Math.Sin(angle), (float) Math.Cos(angle) },
+                    };
+
+                    var coords = block.RawCoordinates();
+                    for (int i = 0; i < coords.Count; i += 2)
+                    {
+                        float xNew = coords[i] * rotation[0, 0] + coords[i + 1] * rotation[0, 1];
+                        float yNew = coords[i] * rotation[1, 0] + coords[i + 1] * rotation[1, 1];
+                        coords[i] = xNew; coords[i + 1] = yNew;
+                    }
+                    break;
+                default:
+                    throw new NotImplementedException("only hatches and line sequences supported!");
+            }
+
+        }
+
+        /// <summary>
         /// Retrieves the raw coordinate data of the vector block.
         /// This are 2D or 3D coordinates of either the line points or centers (for arcs/ellipses),
         /// depending on VectorDataOneofCase.
@@ -213,17 +248,109 @@ namespace OpenVectorFormat
 
         private static void AddToVector2(RepeatedField<float> coordinates, Vector2 translation)
         {
-            for (int i = 0; i < coordinates.Count; i++)
+            if (coordinates.Count % 2 != 0) throw new ArgumentException($"count of coordinates must be even");
+            //did some benchmarks (on AVX2 capable hardware) to estimate the threshold when the overhead of
+            //getting the span with reflection is compensated by SIMD speedup => ~190
+            if (coordinates.Count > 190 && Vector.IsHardwareAccelerated && Vector<float>.Count % 2 == 0)
             {
-                coordinates[i] += i % 2 == 0 ? translation.X : translation.Y;
+                var coordSpan = coordinates.AsSpan();
+                var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordSpan);
+                int chunkSize = Vector<float>.Count;
+                var inputVec = new float[chunkSize];
+
+                for (int i = 0; i < chunkSize - 1; i += 2)
+                {
+                    inputVec[i] = translation.X;
+                    inputVec[i + 1] = translation.Y;
+                }
+
+                var addVec = new Vector<float>(inputVec);
+
+                for (int i = 0; i < vecSpan.Length; i++)
+                {
+                    vecSpan[i] += addVec;
+                }
+
+                var restCoord = coordSpan.Slice(vecSpan.Length * chunkSize);
+
+                var vec2Span = MemoryMarshal.Cast<float, Vector2>(restCoord);
+                for (int i = 0; i < vec2Span.Length; i++)
+                {
+                    vec2Span[i] += translation;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < coordinates.Count - 1; i += 2)
+                {
+                    coordinates[i] += translation.X;
+                    coordinates[i + 1] += translation.Y;
+                }
             }
         }
 
         private static void AddToVector3(RepeatedField<float> coordinates, Vector2 translation)
         {
-            for (int i = 0; i < coordinates.Count; i++)
+            if (coordinates.Count % 3 != 0) throw new ArgumentException($"count of coordinates must be a multiple of 3");
+
+            if (coordinates.Count > 300 && Vector.IsHardwareAccelerated)
             {
-                coordinates[i] += i % 3 == 0 ? translation.X : i % 3 == 1 ? translation.Y : 0;
+                var coordSpan = coordinates.AsSpan();
+                int chunkSize = Vector<float>.Count;
+                var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordSpan);
+
+                var inputVec1 = new float[chunkSize];
+                var inputVec2 = new float[chunkSize];
+                var inputVec3 = new float[chunkSize];
+
+                for (int i = 0; i < chunkSize; i += 3)
+                {
+                    inputVec1[i] = translation.X;
+                    if (i + 1 < chunkSize) inputVec1[i + 1] = translation.Y;
+
+                    if (i + 1 < chunkSize) inputVec2[i + 1] = translation.X;
+                    if (i + 2 < chunkSize) inputVec2[i + 2] = translation.Y;
+
+                    if (i + 2 < chunkSize) inputVec3[i + 2] = translation.X;
+                    inputVec3[i] = translation.Y;
+                }
+
+                var addVec1 = new Vector<float>(inputVec1);
+                var addVec2 = new Vector<float>(inputVec2);
+                var addVec3 = new Vector<float>(inputVec3);
+
+                for (int i = 0; i < vecSpan.Length - 2; i += 3)
+                {
+                    vecSpan[i] += addVec1;
+                    vecSpan[i + 1] += addVec2;
+                    vecSpan[i + 2] += addVec3;
+                }
+
+                var rest = vecSpan.Length % 3;
+                if (rest == 1)
+                {
+                    vecSpan[vecSpan.Length - 1] += addVec1;
+                }
+                else if (rest == 2)
+                {
+                    vecSpan[vecSpan.Length - 2] += addVec1;
+                    vecSpan[vecSpan.Length - 1] += addVec2;
+                }
+
+                var restCoord = coordSpan.Slice(vecSpan.Length * chunkSize);
+                var offset = (vecSpan.Length * chunkSize) % 3;
+                for (int i = offset; i < restCoord.Length + offset; i++)
+                {
+                    restCoord[i - offset] += i % 3 == 0 ? translation.X : i % 3 == 1 ? translation.Y : 0;
+                }
+            }
+            else
+            {
+                for (int i = 0; i < coordinates.Count - 2; i += 3)
+                {
+                    coordinates[i    ] += translation.X;
+                    coordinates[i + 1] += translation.Y;
+                }
             }
         }
 
@@ -319,7 +446,7 @@ namespace OpenVectorFormat
         /// <returns></returns>
         public static List<Vector3> ToVector3(this RepeatedField<float> points)
         {
-            var list = new List<Vector3>();
+            var list = new List<Vector3>(points.Count / 3);
 
             for (int i = 2; i < points.Count; i += 3)
             {
@@ -338,7 +465,7 @@ namespace OpenVectorFormat
         /// <returns></returns>
         public static List<Vector2> ToVector2(this RepeatedField<float> points)
         {
-            var list = new List<Vector2>();
+            var list = new List<Vector2>(points.Count / 2);
 
             for (int i = 1; i < points.Count; i += 2)
             {
@@ -351,7 +478,7 @@ namespace OpenVectorFormat
 
         private static List<Vector2> Points3DToVector2(RepeatedField<float> points)
         {
-            var list = new List<Vector2>();
+            var list = new List<Vector2>(points.Count / 3);
 
             for (int i = 2; i < points.Count; i += 3)
             {
@@ -365,7 +492,7 @@ namespace OpenVectorFormat
 
         private static List<Vector3> Points2DToVector3(RepeatedField<float> points)
         {
-            var list = new List<Vector3>();
+            var list = new List<Vector3>(points.Count / 2);
 
             for (int i = 1; i < points.Count; i += 2)
             {

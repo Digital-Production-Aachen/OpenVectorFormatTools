@@ -25,9 +25,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 using Google.Protobuf;
+using Google.Protobuf.Collections;
 using Google.Protobuf.Reflection;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace OpenVectorFormat.Utils
 {
@@ -89,6 +93,23 @@ namespace OpenVectorFormat.Utils
                     field.Accessor.SetValue(target, field.Accessor.GetValue(source));
                 }
             }
+        }
+
+        /// <summary>
+        /// Creates a span for the given repeated field's underlying private array.
+        /// It is not safe to add or remove to and from the repeated field while using the Span,
+        /// since this might allocate a new private array.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="repeatedField"></param>
+        /// <returns></returns>
+        public static Span<T> AsSpan<T>(this RepeatedField<T> repeatedField)
+        {
+            var arrayField = typeof(RepeatedField<T>).GetField("array", BindingFlags.NonPublic | BindingFlags.Instance);
+            var privateArray = arrayField.GetValue(repeatedField) as T[];
+            var countField = typeof(RepeatedField<T>).GetField("count", BindingFlags.NonPublic | BindingFlags.Instance);
+            var count = (int) countField.GetValue(repeatedField);
+            return privateArray.AsSpan().Slice(0, count);
         }
     }
 }
