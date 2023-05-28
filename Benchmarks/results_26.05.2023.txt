@@ -286,3 +286,66 @@ AMD Ryzen 9 7950X3D, 1 CPU, 32 logical and 16 physical cores
 |         TranslateSpanSIMDVector2 |    1000000 |    3 | 389,000.767 ns | 1,565.2569 ns | 1,387.5595 ns |  0.52 |    0.00 |      - |      25 B |          NA |
 |          TranslateSpanSIMDVector |    1000000 |    3 | 118,443.766 ns |   664.5618 ns |   554.9392 ns |  0.16 |    0.00 |      - |     192 B |          NA |
 | TranslateSpanSIMDVectorWFallback |    1000000 |    3 | 117,902.834 ns |   703.5864 ns |   658.1351 ns |  0.16 |    0.00 |      - |     192 B |          NA |
+
+
+// * Summary *
+
+BenchmarkDotNet=v0.13.5, OS=Windows 11 (10.0.22621.1702/22H2/2022Update/SunValley2)
+AMD Ryzen 9 7950X3D, 1 CPU, 32 logical and 16 physical cores
+.NET SDK=7.0.203
+  [Host]     : .NET 7.0.5 (7.0.523.17405), X64 RyuJIT AVX2 [AttachedDebugger]
+  DefaultJob : .NET 7.0.5 (7.0.523.17405), X64 RyuJIT AVX2
+
+
+|                                Method | numVectors | dims |           Mean |         Error |        StdDev |         Median | Ratio | RatioSD |   Gen0 | Allocated | Alloc Ratio |
+|-------------------------------------- |----------- |----- |---------------:|--------------:|--------------:|---------------:|------:|--------:|-------:|----------:|------------:|
+|                     TranslateBaseline |          1 |    2 |       4.630 ns |     0.0212 ns |     0.0188 ns |       4.623 ns |  1.00 |    0.00 |      - |         - |          NA |
+| TranslateSpanSIMDSystemNumericsVector |          1 |    2 |      68.251 ns |     0.4366 ns |     0.4084 ns |      68.289 ns | 14.74 |    0.11 | 0.0005 |      24 B |          NA |
+|               TranslateSpanSIMDVector |          1 |    2 |      73.109 ns |     0.1604 ns |     0.1421 ns |      73.129 ns | 15.79 |    0.06 | 0.0015 |      80 B |          NA |
+|      TranslateSpanSIMDVectorWFallback |          1 |    2 |       3.656 ns |     0.0073 ns |     0.0069 ns |       3.655 ns |  0.79 |    0.00 |      - |         - |          NA |
+|                                       |            |      |                |               |               |                |       |         |        |           |             |
+|                     TranslateBaseline |          1 |    3 |       4.992 ns |     0.0077 ns |     0.0072 ns |       4.994 ns |  1.00 |    0.00 |      - |         - |          NA |
+| TranslateSpanSIMDSystemNumericsVector |          1 |    3 |      67.633 ns |     0.2756 ns |     0.2578 ns |      67.545 ns | 13.55 |    0.05 | 0.0005 |      24 B |          NA |
+|               TranslateSpanSIMDVector |          1 |    3 |      76.873 ns |     0.6354 ns |     0.5943 ns |      76.543 ns | 15.40 |    0.11 | 0.0029 |     144 B |          NA |
+|      TranslateSpanSIMDVectorWFallback |          1 |    3 |       3.700 ns |     0.0242 ns |     0.0227 ns |       3.686 ns |  0.74 |    0.00 |      - |         - |          NA |
+|                                       |            |      |                |               |               |                |       |         |        |           |             |
+|                     TranslateBaseline |         60 |    2 |      49.241 ns |     1.0027 ns |     1.5312 ns |      48.300 ns |  1.00 |    0.00 |      - |         - |          NA |
+| TranslateSpanSIMDSystemNumericsVector |         60 |    2 |      87.075 ns |     0.1362 ns |     0.1207 ns |      87.090 ns |  1.77 |    0.05 | 0.0005 |      24 B |          NA |
+|               TranslateSpanSIMDVector |         60 |    2 |      76.062 ns |     0.1182 ns |     0.1106 ns |      76.104 ns |  1.55 |    0.04 | 0.0015 |      80 B |          NA |
+|      TranslateSpanSIMDVectorWFallback |         60 |    2 |      47.878 ns |     0.7525 ns |     0.8665 ns |      47.544 ns |  0.98 |    0.03 |      - |         - |          NA |
+|                                       |            |      |                |               |               |                |       |         |        |           |             |
+|                     TranslateBaseline |         60 |    3 |      49.005 ns |     0.3701 ns |     0.3090 ns |      48.846 ns |  1.00 |    0.00 |      - |         - |          NA |
+| TranslateSpanSIMDSystemNumericsVector |         60 |    3 |      91.328 ns |     0.5492 ns |     0.5137 ns |      91.391 ns |  1.86 |    0.01 | 0.0005 |      24 B |          NA |
+|               TranslateSpanSIMDVector |         60 |    3 |      86.047 ns |     0.5272 ns |     0.4931 ns |      86.189 ns |  1.76 |    0.02 | 0.0029 |     144 B |          NA |
+|      TranslateSpanSIMDVectorWFallback |         60 |    3 |      72.628 ns |     0.4088 ns |     0.3824 ns |      72.678 ns |  1.48 |    0.01 |      - |         - |          NA |
+|                                       |            |      |                |               |               |                |       |         |        |           |             |
+|                     TranslateBaseline |        100 |    2 |      80.742 ns |     0.1197 ns |     0.1120 ns |      80.779 ns |  1.00 |    0.00 |      - |         - |          NA |
+| TranslateSpanSIMDSystemNumericsVector |        100 |    2 |     105.499 ns |     0.8427 ns |     0.7883 ns |     105.280 ns |  1.31 |    0.01 | 0.0005 |      24 B |          NA |
+|               TranslateSpanSIMDVector |        100 |    2 |      77.918 ns |     0.2535 ns |     0.2372 ns |      77.909 ns |  0.97 |    0.00 | 0.0015 |      80 B |          NA |
+|      TranslateSpanSIMDVectorWFallback |        100 |    2 |      81.608 ns |     0.6030 ns |     0.5640 ns |      81.832 ns |  1.01 |    0.01 | 0.0015 |      80 B |          NA |
+|                                       |            |      |                |               |               |                |       |         |        |           |             |
+|                     TranslateBaseline |        100 |    3 |      82.066 ns |     0.3982 ns |     0.3530 ns |      82.160 ns |  1.00 |    0.00 |      - |         - |          NA |
+| TranslateSpanSIMDSystemNumericsVector |        100 |    3 |     111.080 ns |     0.6922 ns |     0.6136 ns |     111.346 ns |  1.35 |    0.01 | 0.0005 |      24 B |          NA |
+|               TranslateSpanSIMDVector |        100 |    3 |      88.536 ns |     0.4345 ns |     0.4065 ns |      88.580 ns |  1.08 |    0.01 | 0.0029 |     144 B |          NA |
+|      TranslateSpanSIMDVectorWFallback |        100 |    3 |      91.086 ns |     0.7327 ns |     0.6854 ns |      91.242 ns |  1.11 |    0.01 | 0.0029 |     144 B |          NA |
+|                                       |            |      |                |               |               |                |       |         |        |           |             |
+|                     TranslateBaseline |      10000 |    2 |   7,379.946 ns |    33.7371 ns |    31.5577 ns |   7,362.010 ns |  1.00 |    0.00 |      - |         - |          NA |
+| TranslateSpanSIMDSystemNumericsVector |      10000 |    2 |   2,698.960 ns |     1.0879 ns |     0.9644 ns |   2,698.774 ns |  0.37 |    0.00 |      - |      24 B |          NA |
+|               TranslateSpanSIMDVector |      10000 |    2 |     841.217 ns |     1.1011 ns |     0.9761 ns |     841.101 ns |  0.11 |    0.00 | 0.0010 |      80 B |          NA |
+|      TranslateSpanSIMDVectorWFallback |      10000 |    2 |     943.220 ns |     0.6137 ns |     0.5125 ns |     943.086 ns |  0.13 |    0.00 | 0.0010 |      80 B |          NA |
+|                                       |            |      |                |               |               |                |       |         |        |           |             |
+|                     TranslateBaseline |      10000 |    3 |   7,425.300 ns |    33.4244 ns |    31.2652 ns |   7,437.624 ns |  1.00 |    0.00 |      - |         - |          NA |
+| TranslateSpanSIMDSystemNumericsVector |      10000 |    3 |   3,961.212 ns |    19.6905 ns |    18.4185 ns |   3,967.656 ns |  0.53 |    0.00 |      - |      24 B |          NA |
+|               TranslateSpanSIMDVector |      10000 |    3 |   1,206.793 ns |     7.4227 ns |     6.9432 ns |   1,208.700 ns |  0.16 |    0.00 | 0.0019 |     144 B |          NA |
+|      TranslateSpanSIMDVectorWFallback |      10000 |    3 |   1,211.116 ns |     4.6969 ns |     4.3935 ns |   1,212.821 ns |  0.16 |    0.00 | 0.0019 |     144 B |          NA |
+|                                       |            |      |                |               |               |                |       |         |        |           |             |
+|                     TranslateBaseline |    1000000 |    2 | 738,868.581 ns | 2,879.1082 ns | 2,693.1196 ns | 737,520.801 ns |  1.00 |    0.00 |      - |         - |          NA |
+| TranslateSpanSIMDSystemNumericsVector |    1000000 |    2 | 262,549.226 ns | 1,253.3696 ns | 1,111.0795 ns | 262,675.684 ns |  0.36 |    0.00 |      - |      25 B |          NA |
+|               TranslateSpanSIMDVector |    1000000 |    2 |  91,396.665 ns |   583.6429 ns |   545.9399 ns |  91,023.657 ns |  0.12 |    0.00 |      - |      80 B |          NA |
+|      TranslateSpanSIMDVectorWFallback |    1000000 |    2 |  91,169.524 ns |   550.0030 ns |   514.4731 ns |  90,832.446 ns |  0.12 |    0.00 |      - |      80 B |          NA |
+|                                       |            |      |                |               |               |                |       |         |        |           |             |
+|                     TranslateBaseline |    1000000 |    3 | 744,198.359 ns | 4,902.9868 ns | 4,586.2569 ns | 740,699.414 ns |  1.00 |    0.00 |      - |         - |          NA |
+| TranslateSpanSIMDSystemNumericsVector |    1000000 |    3 | 385,057.493 ns |   478.4129 ns |   447.5077 ns | 384,983.887 ns |  0.52 |    0.00 |      - |      25 B |          NA |
+|               TranslateSpanSIMDVector |    1000000 |    3 | 117,755.218 ns | 1,130.3772 ns | 1,057.3555 ns | 116,991.162 ns |  0.16 |    0.00 |      - |     144 B |          NA |
+|      TranslateSpanSIMDVectorWFallback |    1000000 |    3 | 117,531.213 ns |   301.0987 ns |   281.6479 ns | 117,669.653 ns |  0.16 |    0.00 |      - |     144 B |          NA |
+

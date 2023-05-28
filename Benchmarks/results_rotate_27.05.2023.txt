@@ -313,3 +313,120 @@ AMD Ryzen 9 7950X3D, 1 CPU, 32 logical and 16 physical cores
 |               RotateSpanSIMDVector |    1000000 |    3 |        16.00 ns |      0.187 ns |      0.175 ns | 0.000 |    0.00 |      - |         - |        0.00 |
 
 
+// * Summary *
+
+BenchmarkDotNet=v0.13.5, OS=Windows 11 (10.0.22621.1702/22H2/2022Update/SunValley2)
+AMD Ryzen 9 7950X3D, 1 CPU, 32 logical and 16 physical cores
+.NET SDK=7.0.203
+  [Host]     : .NET 7.0.5 (7.0.523.17405), X64 RyuJIT AVX2 [AttachedDebugger]
+  DefaultJob : .NET 7.0.5 (7.0.523.17405), X64 RyuJIT AVX2
+
+
+|                             Method | numVectors | dims |             Mean |         Error |        StdDev | Ratio | RatioSD |   Gen0 | Allocated | Alloc Ratio |
+|----------------------------------- |----------- |----- |-----------------:|--------------:|--------------:|------:|--------:|-------:|----------:|------------:|
+|                     RotateBaseline |          1 |    2 |         8.791 ns |     0.0238 ns |     0.0223 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |          1 |    2 |        81.364 ns |     0.2401 ns |     0.2246 ns |  9.26 |    0.04 | 0.0005 |      24 B |          NA |
+|                   RotateSpanAVX256 |          1 |    2 |        84.307 ns |     0.3854 ns |     0.3605 ns |  9.59 |    0.05 | 0.0005 |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |          1 |    3 |         8.758 ns |     0.0246 ns |     0.0205 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |          1 |    3 |        83.013 ns |     0.2621 ns |     0.2452 ns |  9.48 |    0.04 | 0.0005 |      24 B |          NA |
+|                   RotateSpanAVX256 |          1 |    3 |        83.808 ns |     0.3358 ns |     0.2976 ns |  9.57 |    0.05 | 0.0005 |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |         10 |    2 |        16.109 ns |     0.0140 ns |     0.0109 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |         10 |    2 |        95.232 ns |     0.2557 ns |     0.2392 ns |  5.91 |    0.02 | 0.0005 |      24 B |          NA |
+|                   RotateSpanAVX256 |         10 |    2 |        94.343 ns |     0.2247 ns |     0.2102 ns |  5.86 |    0.02 | 0.0005 |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |         10 |    3 |        16.156 ns |     0.0372 ns |     0.0348 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |         10 |    3 |        93.577 ns |     0.2689 ns |     0.2515 ns |  5.79 |    0.02 | 0.0005 |      24 B |          NA |
+|                   RotateSpanAVX256 |         10 |    3 |       104.149 ns |     0.3162 ns |     0.2958 ns |  6.45 |    0.02 | 0.0005 |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |         20 |    2 |        24.365 ns |     0.0530 ns |     0.0469 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |         20 |    2 |       109.022 ns |     0.3333 ns |     0.3117 ns |  4.47 |    0.01 | 0.0005 |      24 B |          NA |
+|                   RotateSpanAVX256 |         20 |    2 |       111.621 ns |     0.4350 ns |     0.4069 ns |  4.58 |    0.02 | 0.0005 |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |         20 |    3 |        24.387 ns |     0.0650 ns |     0.0608 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |         20 |    3 |       110.481 ns |     0.3589 ns |     0.3357 ns |  4.53 |    0.02 | 0.0005 |      24 B |          NA |
+|                   RotateSpanAVX256 |         20 |    3 |               NA |            NA |            NA |     ? |       ? |      - |         - |           ? |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |        100 |    2 |        94.514 ns |     0.1899 ns |     0.1586 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |        100 |    2 |       226.180 ns |     0.5877 ns |     0.5498 ns |  2.39 |    0.01 | 0.0005 |      24 B |          NA |
+|                   RotateSpanAVX256 |        100 |    2 |       249.493 ns |     0.6278 ns |     0.5242 ns |  2.64 |    0.01 | 0.0005 |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |        100 |    3 |        94.611 ns |     0.1069 ns |     0.0948 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |        100 |    3 |       237.018 ns |     0.7739 ns |     0.7239 ns |  2.50 |    0.01 | 0.0005 |      24 B |          NA |
+|                   RotateSpanAVX256 |        100 |    3 |       303.434 ns |     0.8284 ns |     0.7343 ns |  3.21 |    0.01 | 0.0005 |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |      10000 |    2 |     8,387.579 ns |     7.4316 ns |     6.2057 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |      10000 |    2 |    14,543.931 ns |    36.3178 ns |    33.9717 ns |  1.73 |    0.00 |      - |      24 B |          NA |
+|                   RotateSpanAVX256 |      10000 |    2 |    17,036.023 ns |    36.1533 ns |    32.0489 ns |  2.03 |    0.00 |      - |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |      10000 |    3 |     8,421.707 ns |     8.2927 ns |     7.3512 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |      10000 |    3 |    14,839.173 ns |    36.3494 ns |    34.0012 ns |  1.76 |    0.00 |      - |      24 B |          NA |
+|                   RotateSpanAVX256 |      10000 |    3 |    23,145.281 ns |    23.3984 ns |    21.8868 ns |  2.75 |    0.00 |      - |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |    1000000 |    2 |   843,543.535 ns | 1,906.2984 ns | 1,783.1527 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |    1000000 |    2 | 1,455,702.943 ns | 3,340.1989 ns | 3,124.4242 ns |  1.73 |    0.00 |      - |      27 B |          NA |
+|                   RotateSpanAVX256 |    1000000 |    2 | 1,695,696.185 ns | 6,299.7002 ns | 5,892.7435 ns |  2.01 |    0.01 |      - |      27 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |    1000000 |    3 |   843,969.010 ns | 2,707.8936 ns | 2,532.9654 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |    1000000 |    3 | 1,564,488.867 ns | 3,884.3930 ns | 3,633.4636 ns |  1.85 |    0.01 |      - |      27 B |          NA |
+|                   RotateSpanAVX256 |    1000000 |    3 | 2,266,009.505 ns | 7,181.5233 ns | 6,717.6014 ns |  2.68 |    0.01 |      - |      30 B |          NA |
+
+// * Summary * using AVX2 instead of Vector256
+
+BenchmarkDotNet=v0.13.5, OS=Windows 11 (10.0.22621.1702/22H2/2022Update/SunValley2)
+AMD Ryzen 9 7950X3D, 1 CPU, 32 logical and 16 physical cores
+.NET SDK=7.0.203
+  [Host]     : .NET 7.0.5 (7.0.523.17405), X64 RyuJIT AVX2 [AttachedDebugger]
+  DefaultJob : .NET 7.0.5 (7.0.523.17405), X64 RyuJIT AVX2
+
+
+|                             Method | numVectors | dims |             Mean |         Error |        StdDev | Ratio | RatioSD |   Gen0 | Allocated | Alloc Ratio |
+|----------------------------------- |----------- |----- |-----------------:|--------------:|--------------:|------:|--------:|-------:|----------:|------------:|
+|                     RotateBaseline |          1 |    2 |         8.910 ns |     0.0789 ns |     0.0659 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |          1 |    2 |        82.884 ns |     0.5005 ns |     0.4682 ns |  9.30 |    0.09 | 0.0005 |      24 B |          NA |
+|                   RotateSpanAVX256 |          1 |    2 |        85.784 ns |     0.3901 ns |     0.3649 ns |  9.62 |    0.07 | 0.0005 |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |          1 |    3 |         8.792 ns |     0.0071 ns |     0.0055 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |          1 |    3 |        81.673 ns |     0.3407 ns |     0.3187 ns |  9.29 |    0.04 | 0.0005 |      24 B |          NA |
+|                   RotateSpanAVX256 |          1 |    3 |        82.950 ns |     0.1172 ns |     0.1039 ns |  9.44 |    0.01 | 0.0005 |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |         10 |    2 |        16.167 ns |     0.0297 ns |     0.0264 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |         10 |    2 |        95.227 ns |     0.4693 ns |     0.4390 ns |  5.89 |    0.03 | 0.0005 |      24 B |          NA |
+|                   RotateSpanAVX256 |         10 |    2 |        84.535 ns |     0.4629 ns |     0.4330 ns |  5.23 |    0.03 | 0.0005 |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |         10 |    3 |        16.266 ns |     0.0902 ns |     0.0799 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |         10 |    3 |        96.293 ns |     0.1354 ns |     0.1267 ns |  5.92 |    0.03 | 0.0005 |      24 B |          NA |
+|                   RotateSpanAVX256 |         10 |    3 |        85.567 ns |     0.1233 ns |     0.1093 ns |  5.26 |    0.03 | 0.0005 |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |         20 |    2 |        24.433 ns |     0.0469 ns |     0.0439 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |         20 |    2 |       111.375 ns |     0.0972 ns |     0.0862 ns |  4.56 |    0.01 | 0.0005 |      24 B |          NA |
+|                   RotateSpanAVX256 |         20 |    2 |        83.558 ns |     0.3968 ns |     0.3712 ns |  3.42 |    0.02 | 0.0005 |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |         20 |    3 |        24.582 ns |     0.1597 ns |     0.1493 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |         20 |    3 |       111.293 ns |     0.3837 ns |     0.3401 ns |  4.53 |    0.04 | 0.0005 |      24 B |          NA |
+|                   RotateSpanAVX256 |         20 |    3 |               NA |            NA |            NA |     ? |       ? |      - |         - |           ? |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |        100 |    2 |        94.946 ns |     0.2989 ns |     0.2796 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |        100 |    2 |       237.842 ns |     1.1841 ns |     1.0496 ns |  2.51 |    0.01 | 0.0005 |      24 B |          NA |
+|                   RotateSpanAVX256 |        100 |    2 |        91.146 ns |     0.3709 ns |     0.3469 ns |  0.96 |    0.00 | 0.0005 |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |        100 |    3 |        95.515 ns |     0.5713 ns |     0.5344 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |        100 |    3 |       230.507 ns |     0.2472 ns |     0.2064 ns |  2.41 |    0.01 | 0.0005 |      24 B |          NA |
+|                   RotateSpanAVX256 |        100 |    3 |        95.280 ns |     0.0660 ns |     0.0617 ns |  1.00 |    0.01 | 0.0005 |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |      10000 |    2 |     8,457.255 ns |    32.2350 ns |    28.5755 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |      10000 |    2 |    14,636.145 ns |    17.6255 ns |    16.4869 ns |  1.73 |    0.01 |      - |      24 B |          NA |
+|                   RotateSpanAVX256 |      10000 |    2 |     1,107.943 ns |     1.2615 ns |     1.1800 ns |  0.13 |    0.00 |      - |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |      10000 |    3 |     8,478.613 ns |    29.4880 ns |    24.6238 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |      10000 |    3 |    14,882.014 ns |    55.3164 ns |    51.7430 ns |  1.76 |    0.01 |      - |      24 B |          NA |
+|                   RotateSpanAVX256 |      10000 |    3 |     1,464.945 ns |     7.0684 ns |     6.6118 ns |  0.17 |    0.00 |      - |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |    1000000 |    2 |   844,390.072 ns | 3,572.9595 ns | 3,342.1485 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |    1000000 |    2 | 1,572,798.060 ns | 8,935.4940 ns | 8,358.2667 ns |  1.86 |    0.01 |      - |      27 B |          NA |
+|                   RotateSpanAVX256 |    1000000 |    2 |    99,434.133 ns |   108.6025 ns |    96.2733 ns |  0.12 |    0.00 |      - |      24 B |          NA |
+|                                    |            |      |                  |               |               |       |         |        |           |             |
+|                     RotateBaseline |    1000000 |    3 |   849,649.831 ns | 4,857.4149 ns | 4,543.6289 ns |  1.00 |    0.00 |      - |         - |          NA |
+| RotateSpanSIMDSystemNumericsVector |    1000000 |    3 | 1,473,272.539 ns | 7,624.5708 ns | 7,132.0283 ns |  1.73 |    0.01 |      - |      27 B |          NA |
+|                   RotateSpanAVX256 |    1000000 |    3 |   139,408.026 ns | 1,010.1833 ns |   944.9261 ns |  0.16 |    0.00 |      - |      24 B |          NA |

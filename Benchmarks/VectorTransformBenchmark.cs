@@ -25,11 +25,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ﻿using System;
 using System.Numerics;
 using System.Runtime.InteropServices;
+#if NETCOREAPP3_0_OR_GREATER
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
-using System.Transactions;
+#endif
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Running;
 using Google.Protobuf.Collections;
 using OpenVectorFormat;
@@ -38,12 +40,15 @@ using OpenVectorFormat.Utils;
 namespace Benchmarks
 {
     [MemoryDiagnoser]
+    [SimpleJob(RuntimeMoniker.Net70, baseline: true)]
+    [SimpleJob(RuntimeMoniker.Net60)]
     public class VectorTranslate
     {
         [Params(1, 60 ,100, 10000, 1000000)]
         public int numVectors { get; set; }
         [Params(2, 3)]
         public int dims { get; set; }
+
         public VectorBlock vectorBlock;
         public Vector2 translation = new Vector2(4, 5);
 
@@ -230,29 +235,23 @@ namespace Benchmarks
         }
 
         [Benchmark]
-        public void TranslateSpanSIMDVectorWFallback()
+        public void TranslateFinal()
         {
-            var coords = vectorBlock.RawCoordinates();
-            if (coords.Count > 190 && Vector.IsHardwareAccelerated)
-            {
-                TranslateSpanSIMDVector();
-            }
-            else
-            {
-                AddToVector2(coords, translation);
-            }
+            vectorBlock.Translate(translation);
         }
     }
 
     [MemoryDiagnoser]
+    [SimpleJob(RuntimeMoniker.Net70, baseline: true)]
+    [SimpleJob(RuntimeMoniker.Net60)]
     public class VectorRotate
     {
-        [Params(1, 10, 20, 100, 10000, 1000000)]
+        [Params(1, 10, 100, 121, 10000, 1000000)]
         public int numVectors { get; set; }
         [Params(2, 3)]
         public int dims { get; set; }
         public VectorBlock vectorBlock;
-        public const float rotation = MathF.PI / 6;
+        public const float rotation = (float)Math.PI / 6;
 
         [GlobalSetup]
         public void GlobalSetup()
@@ -321,8 +320,8 @@ namespace Benchmarks
 
         private static void RotateVector2(RepeatedField<float> coords, float angleDeg, int dims)
         {
-            var sin = MathF.Sin(angleDeg);
-            var cos = MathF.Cos(angleDeg);
+            var sin = (float) Math.Sin(angleDeg);
+            var cos = (float) Math.Cos(angleDeg);
             var nsin = -sin;
             for (int i = 0; i < coords.Count - 1; i += dims)
             {
@@ -332,15 +331,21 @@ namespace Benchmarks
             }
         }
 
-        private static float[,] RotationMatrix2D(float angleRad)
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        private struct Vec2FromVec3
         {
-            return new float[2, 2] {
-                        { MathF.Cos(angleRad), -MathF.Sin(angleRad) },
-                        { MathF.Sin(angleRad),  MathF.Cos(angleRad) },
-                    };
+            public Vector2 vec2;
+            private float unused;
         }
 
-        struct Vec2FromVec3 { public Vector2 vec2; float unused; };
+#if NETCOREAPP3_0_OR_GREATER
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        private struct Vec256FromVec3
+        {
+            public Vector256<float> vec256;
+            private float unused;
+        }
+#endif
 
         [Benchmark]
         public void RotateSpanSIMDSystemNumericsVector()
@@ -365,8 +370,9 @@ namespace Benchmarks
             }
         }
 
+#if NETCOREAPP3_0_OR_GREATER
         [Benchmark]
-        public void RotateSpanSIMDVector()
+        public void RotateSpanAVX256()
         {
             var rot = Matrix3x2.CreateRotation(rotation);
             var coordSpan = vectorBlock.RawCoordinates().AsSpan();
@@ -388,9 +394,10 @@ namespace Benchmarks
 
                     for (int i = 0; i < vec256Span.Length; i++)
                     {
-                        var sum = Avx2.Multiply(vec256Span[i], vec2);
-                        var sumPermuted = Avx2.PermuteVar8x32(sum, shuffleMask);
-                        vec256Span[i] = Fma.MultiplyAdd(vec256Span[i], vec1, sumPermuted);
+                        var sumCos = Avx2.Multiply(vec256Span[i], vec1);
+                        var sumSin = Avx2.Multiply(vec256Span[i], vec2);
+                        var sumSinShuffled = Avx2.PermuteVar8x32(sumSin, shuffleMask);
+                        vec256Span[i] = Avx2.Add(sumCos, sumSinShuffled);
                     }
 
                     coordSpan = coordSpan.Slice(vec256Span.Length * chunkSize);
@@ -410,88 +417,51 @@ namespace Benchmarks
                     var cos = rot.M11;
                     var nsin = rot.M21;
 
-                    int chunkSize = Vector256<float>.Count;
+                    int chunkSize = Vector256<float>.Count + 1;
 
-                    var vec1 = Vector256.Create(cos);
-                    var vec2 = Vector256.Create(sin, nsin, sin, nsin, sin, nsin, sin, nsin);
-                    Vector256<int> shuffleMask = Vector256.Create(1, 0, 3, 2, 5, 4, 7, 6);
+                    var vec1 = Vector256.Create(cos,  cos, 1, cos,  cos, 1, cos, cos );
+                    var vec2 = Vector256.Create(sin, nsin, 0, sin, nsin, 0, sin, nsin);
+                    Vector256<int> shuffleMask = Vector256.Create(1, 0, 2, 4, 3, 5, 7, 6);
 
-                    var vec256Span = MemoryMarshal.Cast<float, Vector256<float>>(coordSpan);
-
-                    for (int i = 0; i < vec256Span.Length; i++)
+                    var vec256Span = MemoryMarshal.Cast<float, Vec256FromVec3>(coordSpan);
+                    var numChunks = coordSpan.Length / chunkSize;
+                    for (int i = 0; i < numChunks; i++)
                     {
-                        var sum = Avx2.Multiply(vec256Span[i], vec2);
-                        var sumPermuted = Avx2.PermuteVar8x32(sum, shuffleMask);
-                        vec256Span[i] = Fma.MultiplyAdd(vec256Span[i], vec1, sumPermuted);
+                        var sumCos = Avx2.Multiply(vec256Span[i].vec256, vec1);
+                        var sumSin = Avx2.Multiply(vec256Span[i].vec256, vec2);
+                        var sumSinShuffled = Avx2.PermuteVar8x32(sumSin, shuffleMask);
+                        vec256Span[i].vec256 = Avx2.Add(sumCos, sumSinShuffled);
                     }
 
-                    coordSpan = coordSpan.Slice(vec256Span.Length * chunkSize);
+                    coordSpan = coordSpan.Slice(numChunks * chunkSize);
                 }
-                //var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordSpan);
-                //int chunkSize = Vector<float>.Count;
-                //var inputVec = new float[chunkSize * 3];
-
-                //for (int i = 0; i < chunkSize * 3; i += 3)
-                //{
-                //    inputVec[i] = translation.X;
-                //    inputVec[i + 1] = translation.Y;
-                //    //inputVec[i + 2] = 0;
-                //}
-
-                //var addVec1 = new Vector<float>(inputVec, 0);
-                //var addVec2 = new Vector<float>(inputVec, chunkSize);
-                //var addVec3 = new Vector<float>(inputVec, chunkSize * 2);
-
-                //for (int i = 0; i < vecSpan.Length - 2; i += 3)
-                //{
-                //    vecSpan[i] += addVec1;
-                //    vecSpan[i + 1] += addVec2;
-                //    vecSpan[i + 2] += addVec3;
-                //}
-
-                //var rest = vecSpan.Length % 3;
-                //if (rest == 1)
-                //{
-                //    vecSpan[vecSpan.Length - 1] += addVec1;
-                //}
-                //else if (rest == 2)
-                //{
-                //    vecSpan[vecSpan.Length - 2] += addVec1;
-                //    vecSpan[vecSpan.Length - 1] += addVec2;
-                //}
 
                 var vec3Span = MemoryMarshal.Cast<float, Vec2FromVec3>(coordSpan);
-                for (int i = 0; i < vec3Span.Length; i++)
+                for (int i = 0; i < coordSpan.Length; i+=3)
                 {
                     vec3Span[i].vec2 = Vector2.Transform(vec3Span[i].vec2, rot);
                 }
             }
         }
+#endif
 
-        //[Benchmark]
-        //public void TranslateSpanSIMDVectorWFallback()
-        //{
-        //    var coords = vectorBlock.RawCoordinates();
-        //    if (coords.Count > 190 && Vector.IsHardwareAccelerated)
-        //    {
-        //        TranslateSpanSIMDVector();
-        //    }
-        //    else
-        //    {
-        //        AddToVector2(coords, translation);
-        //    }
-        //}
+        [Benchmark]
+        public void RotateFinal()
+        {
+            vectorBlock.Rotate(rotation);
+        }
     }
 
     public class VectorTransformBenchmark
     {
         public static void Main(string[] args)
         {
-            //debugVec2Trans();
+            debugVec2Trans();
+            debugVec3Trans();
             debugVec2Rot();
-            //debugVec3();
-            var summary = BenchmarkRunner.Run<VectorTranslate>();
-            //var summary2 = BenchmarkRunner.Run<VectorRotate>();
+            debugVec3Rot();
+            Type[] benchmarks = { typeof(VectorTranslate), typeof(VectorRotate) };
+            var summary = BenchmarkRunner.Run(benchmarks);
         }
 
         private static void debugVec2Trans()
@@ -533,12 +503,34 @@ namespace Benchmarks
             if (!trans1.Equals(transBase)) throw new Exception($"{trans1.LineSequence.Points}\r{transBase.LineSequence.Points}");
 
             bench.vectorBlock = origBlock.Clone();
-            bench.RotateSpanSIMDVector();
+            bench.RotateFinal();
             var trans2 = bench.vectorBlock;
-            //if (!trans2.Equals(transBase)) throw new Exception($"{trans2.LineSequence.Points}\r{transBase.LineSequence.Points}");
+            if (!trans2.Equals(transBase)) throw new Exception($"{trans2.LineSequence.Points}\r{transBase.LineSequence.Points}");
         }
 
-        private static void debugVec3()
+        private static void debugVec3Rot()
+        {
+            var bench = new VectorRotate();
+            bench.numVectors = 10;
+            bench.dims = 3;
+            bench.GlobalSetup();
+            var origBlock = bench.vectorBlock.Clone();
+
+            bench.RotateBaseline();
+            var transBase = bench.vectorBlock;
+
+            bench.vectorBlock = origBlock.Clone();
+            bench.RotateSpanSIMDSystemNumericsVector();
+            var trans1 = bench.vectorBlock;
+            if (!trans1.Equals(transBase)) throw new Exception($"{trans1.LineSequence3D.Points}\r{transBase.LineSequence3D.Points}");
+
+            bench.vectorBlock = origBlock.Clone();
+            bench.RotateFinal();
+            var trans2 = bench.vectorBlock;
+            if (!trans2.Equals(transBase)) throw new Exception($"{trans2.LineSequence3D.Points}\r{transBase.LineSequence3D.Points}");
+        }
+
+        private static void debugVec3Trans()
         {
             var bench = new VectorTranslate();
             bench.numVectors = 12;

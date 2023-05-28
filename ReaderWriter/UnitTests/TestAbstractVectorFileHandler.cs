@@ -31,6 +31,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using OpenVectorFormat.AbstractReaderWriter;
+using System.Numerics;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
@@ -101,6 +102,27 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 }
 
                 Assert.AreEqual(originalJob, convertedJob);
+
+                Vector2 translation = new Vector2(4, 5);
+                float rotation =(float) Math.PI / 8;
+
+                for (int i = 0; i < originalJob.WorkPlanes.Count; i++)
+                {
+                    var wp1 = originalJob.WorkPlanes[i];
+                    var wp2 = convertedJob.WorkPlanes[i];
+                    for (int j = 0; j < wp1.VectorBlocks.Count; j++)
+                    {
+                        var vb1 = wp1.VectorBlocks[j];
+                        vb1.Translate(translation);
+                        vb1.Rotate(rotation);
+                        var vb2 = wp2.VectorBlocks[j];
+                        vb2.Translate(translation);
+                        vb2.Rotate(rotation);
+                    }
+                }
+
+                Assert.AreEqual(originalJob, convertedJob);
+
                 originalReader.Dispose();
                 convertedReader.Dispose();
             }

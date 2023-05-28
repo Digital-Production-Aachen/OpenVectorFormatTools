@@ -28,6 +28,10 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.InteropServices;
+#if NETCOREAPP3_0_OR_GREATER
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
+#endif
 
 namespace OpenVectorFormat
 {
@@ -165,36 +169,45 @@ namespace OpenVectorFormat
         }
 
         /// <summary>
-        /// Rotates the vectorblock data counterclockwise by angleDeg
-        /// around the origin.
+        /// Rotates the VectorBlock data counterclockwise
+        /// by angleRad [radians] around the origin.
         /// </summary>
-        /// <param name="block"></param>
-        /// <param name="angleDeg"></param>
+        /// <param name="vectorBlock"></param>
+        /// <param name="angleRad"> angle in radians</param>
         /// <exception cref="NotImplementedException"></exception>
-        public static void Rotate(this VectorBlock block, double angleDeg)
+        public static void Rotate(this VectorBlock vectorBlock, float angleRad)
         {
-            switch (block.VectorDataCase)
+            switch (vectorBlock.VectorDataCase)
             {
                 case VectorBlock.VectorDataOneofCase.LineSequence:
                 case VectorBlock.VectorDataOneofCase.Hatches:
-                    double angle = angleDeg / 180 * Math.PI;
-                    float[,] rotation = new float[2, 2] {
-                        { (float) Math.Cos(angle), (float) -Math.Sin(angle) },
-                        { (float) Math.Sin(angle), (float) Math.Cos(angle) },
-                    };
+                case VectorBlock.VectorDataOneofCase.PointSequence:
+                case VectorBlock.VectorDataOneofCase.Arcs:
+                case VectorBlock.VectorDataOneofCase.Ellipses:
+                    RotateVector2(vectorBlock.RawCoordinates(), angleRad, 2);
+                    break;
 
-                    var coords = block.RawCoordinates();
-                    for (int i = 0; i < coords.Count; i += 2)
+                case VectorBlock.VectorDataOneofCase.LineSequence3D:
+                case VectorBlock.VectorDataOneofCase.Hatches3D:
+                case VectorBlock.VectorDataOneofCase.PointSequence3D:
+                case VectorBlock.VectorDataOneofCase.Arcs3D:
+                case VectorBlock.VectorDataOneofCase.LineSequenceParaAdapt:
+                    RotateVector2(vectorBlock.RawCoordinates(), angleRad, 3);
+                    break;
+
+                case VectorBlock.VectorDataOneofCase.HatchParaAdapt:
+                    foreach (var item in vectorBlock.HatchParaAdapt.HatchAsLinesequence)
                     {
-                        float xNew = coords[i] * rotation[0, 0] + coords[i + 1] * rotation[0, 1];
-                        float yNew = coords[i] * rotation[1, 0] + coords[i + 1] * rotation[1, 1];
-                        coords[i] = xNew; coords[i + 1] = yNew;
+                        RotateVector2(vectorBlock.RawCoordinates(), angleRad, 3);
                     }
                     break;
-                default:
-                    throw new NotImplementedException("only hatches and line sequences supported!");
-            }
 
+                case VectorBlock.VectorDataOneofCase.None:
+                case VectorBlock.VectorDataOneofCase.ExposurePause:
+                    break;
+                default:
+                    throw new NotImplementedException($"unknown VectorDataCase: {vectorBlock.VectorDataCase}");
+            }
         }
 
         /// <summary>
@@ -243,6 +256,74 @@ namespace OpenVectorFormat
                     return new RepeatedField<float>();
                 default:
                     throw new NotImplementedException($"unknown VectorDataCase: {vectorBlock.VectorDataCase}");
+            }
+        }
+
+#if NETCOREAPP3_0_OR_GREATER
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        private struct Vec256FromVec3
+        {
+            public Vector256<float> vec256;
+            private float unused;
+        }
+#endif
+
+        private static void RotateVector2(RepeatedField<float> coordinates, float angleRad, int dims)
+        {
+            if (coordinates.Count % dims != 0) throw new ArgumentException($"coordinates count is {coordinates.Count} but must be a multiple of {dims}");
+
+            var sin = (float)Math.Sin(angleRad);
+            var cos = (float)Math.Cos(angleRad);
+            var nsin = -sin;
+            int noSIMDStartIndex = 0;
+
+#if NETCOREAPP3_0_OR_GREATER
+            if (Avx2.IsSupported & coordinates.Count > 80 * dims)
+            {
+                var coordSpan = ProtoUtils.AsSpan<float>(coordinates);
+                if (dims == 2)
+                {
+                    int chunkSize = Vector256<float>.Count;
+                    var vec1 = Vector256.Create(cos);
+                    var vec2 = Vector256.Create(sin, nsin, sin, nsin, sin, nsin, sin, nsin);
+                    Vector256<int> shuffleMask = Vector256.Create(1, 0, 3, 2, 5, 4, 7, 6);
+
+                    var vec256Span = MemoryMarshal.Cast<float, Vector256<float>>(coordSpan);
+                    for (int i = 0; i < vec256Span.Length; i++)
+                    {
+                        var sumCos = Avx2.Multiply(vec256Span[i], vec1);
+                        var sumSin = Avx2.Multiply(vec256Span[i], vec2);
+                        var sumSinShuffled = Avx2.PermuteVar8x32(sumSin, shuffleMask);
+                        vec256Span[i] = Avx2.Add(sumCos, sumSinShuffled);
+                    }
+                    noSIMDStartIndex = vec256Span.Length * chunkSize;
+                }
+                else
+                {
+                    int chunkSize = Vector256<float>.Count + 1;
+                    var vec1 = Vector256.Create(cos, cos, 1, cos, cos, 1, cos, cos);
+                    var vec2 = Vector256.Create(sin, nsin, 0, sin, nsin, 0, sin, nsin);
+                    Vector256<int> shuffleMask = Vector256.Create(1, 0, 2, 4, 3, 5, 7, 6);
+
+                    //we process 9 floats at once, s
+                    var vec256Span = MemoryMarshal.Cast<float, Vec256FromVec3>(coordSpan);
+                    for (int i = 0; i < vec256Span.Length; i++)
+                    {
+                        var sumCos = Avx2.Multiply(vec256Span[i].vec256, vec1);
+                        var sumSin = Avx2.Multiply(vec256Span[i].vec256, vec2);
+                        var sumSinShuffled = Avx2.PermuteVar8x32(sumSin, shuffleMask);
+                        vec256Span[i].vec256 = Avx2.Add(sumCos, sumSinShuffled);
+                    }
+                    noSIMDStartIndex = vec256Span.Length * chunkSize;
+                }
+            }
+#endif
+
+            for (int i = noSIMDStartIndex; i < coordinates.Count - 1; i += dims)
+            {
+                float xNew = coordinates[i] * cos + coordinates[i + 1] * nsin;
+                float yNew = coordinates[i] * sin + coordinates[i + 1] * cos;
+                coordinates[i] = xNew; coordinates[i + 1] = yNew;
             }
         }
 

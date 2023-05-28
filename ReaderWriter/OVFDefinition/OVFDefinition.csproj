@@ -1,13 +1,13 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.0;netstandard2.0</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup>
     <PackageId>OpenVectorFormat.OVFDefinition</PackageId>
     <Description>
-      This package provides a precompiled version of the proto definition for the OpenVectorFormat.
+      This package provides a precompiled version of the proto definition for the OpenVectorFormat. It also contains extension methods for Vector Block Translate and rotate operations.
     </Description>
     <Authors>The OpenVectorFormat Authors</Authors>
     <PackageLicenseExpression>LGPL-2.1-or-later</PackageLicenseExpression>
