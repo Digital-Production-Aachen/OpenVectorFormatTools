@@ -7,13 +7,13 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Setup python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
         architecture: 'x64'
         
     - name: Checkout repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: true
         
@@ -31,12 +31,12 @@ jobs:
     steps:
     
     - name: Checkout repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: true
         
     - name: Setup Dotnet sdk
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 7.0.x
 
@@ -54,7 +54,7 @@ jobs:
         grpcpid="$!"
         echo "started grpc server"
         sleep 5s
-        dotnet test --no-build --configuration Release --framework net6
+        dotnet test --no-build --configuration Release --framework net7
         kill $grpcpid
                   
     - name: Test Windows
@@ -74,14 +74,14 @@ jobs:
     
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: true
         
     - name: Setup Dotnet sdk
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 7.0.x
                   
     - name: Build Windows
       run: |
@@ -105,7 +105,7 @@ jobs:
         
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: true
 
