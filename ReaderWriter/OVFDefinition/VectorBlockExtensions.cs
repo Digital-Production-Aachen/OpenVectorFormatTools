@@ -31,6 +31,8 @@ using System.Runtime.InteropServices;
 #if NETCOREAPP3_0_OR_GREATER
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
+using System.Transactions;
+using static OpenVectorFormat.SIMDVectorOperations;
 #endif
 
 namespace OpenVectorFormat
@@ -272,54 +274,20 @@ namespace OpenVectorFormat
         {
             if (coordinates.Count % dims != 0) throw new ArgumentException($"coordinates count is {coordinates.Count} but must be a multiple of {dims}");
 
-            var sin = (float)Math.Sin(angleRad);
-            var cos = (float)Math.Cos(angleRad);
-            var nsin = -sin;
-            int noSIMDStartIndex = 0;
-
 #if NETCOREAPP3_0_OR_GREATER
             if (Avx2.IsSupported & coordinates.Count > 80 * dims)
             {
                 var coordSpan = ProtoUtils.AsSpan<float>(coordinates);
-                if (dims == 2)
-                {
-                    int chunkSize = Vector256<float>.Count;
-                    var vec1 = Vector256.Create(cos);
-                    var vec2 = Vector256.Create(sin, nsin, sin, nsin, sin, nsin, sin, nsin);
-                    Vector256<int> shuffleMask = Vector256.Create(1, 0, 3, 2, 5, 4, 7, 6);
-
-                    var vec256Span = MemoryMarshal.Cast<float, Vector256<float>>(coordSpan);
-                    for (int i = 0; i < vec256Span.Length; i++)
-                    {
-                        var sumCos = Avx2.Multiply(vec256Span[i], vec1);
-                        var sumSin = Avx2.Multiply(vec256Span[i], vec2);
-                        var sumSinShuffled = Avx2.PermuteVar8x32(sumSin, shuffleMask);
-                        vec256Span[i] = Avx2.Add(sumCos, sumSinShuffled);
-                    }
-                    noSIMDStartIndex = vec256Span.Length * chunkSize;
-                }
-                else
-                {
-                    int chunkSize = Vector256<float>.Count + 1;
-                    var vec1 = Vector256.Create(cos, cos, 1, cos, cos, 1, cos, cos);
-                    var vec2 = Vector256.Create(sin, nsin, 0, sin, nsin, 0, sin, nsin);
-                    Vector256<int> shuffleMask = Vector256.Create(1, 0, 2, 4, 3, 5, 7, 6);
-
-                    //we process 9 floats at once, s
-                    var vec256Span = MemoryMarshal.Cast<float, Vec256FromVec3>(coordSpan);
-                    for (int i = 0; i < vec256Span.Length; i++)
-                    {
-                        var sumCos = Avx2.Multiply(vec256Span[i].vec256, vec1);
-                        var sumSin = Avx2.Multiply(vec256Span[i].vec256, vec2);
-                        var sumSinShuffled = Avx2.PermuteVar8x32(sumSin, shuffleMask);
-                        vec256Span[i].vec256 = Avx2.Add(sumCos, sumSinShuffled);
-                    }
-                    noSIMDStartIndex = vec256Span.Length * chunkSize;
-                }
+                RotateAsVector2(coordSpan, angleRad, dims);
+                return;
             }
 #endif
 
-            for (int i = noSIMDStartIndex; i < coordinates.Count - 1; i += dims)
+            var sin = (float)Math.Sin(angleRad);
+            var cos = (float)Math.Cos(angleRad);
+            var nsin = -sin;
+
+            for (int i = 0; i < coordinates.Count - 1; i += dims)
             {
                 float xNew = coordinates[i] * cos + coordinates[i + 1] * nsin;
                 float yNew = coordinates[i] * sin + coordinates[i + 1] * cos;
@@ -329,109 +297,40 @@ namespace OpenVectorFormat
 
         private static void AddToVector2(RepeatedField<float> coordinates, Vector2 translation)
         {
-            if (coordinates.Count % 2 != 0) throw new ArgumentException($"count of coordinates must be even");
+            
             //did some benchmarks (on AVX2 capable hardware) to estimate the threshold when the overhead of
             //getting the span with reflection is compensated by SIMD speedup => ~190
-            if (coordinates.Count > 190 && Vector.IsHardwareAccelerated && Vector<float>.Count % 2 == 0)
+            if (coordinates.Count > 190)
             {
                 var coordSpan = coordinates.AsSpan();
-                var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordSpan);
-                int chunkSize = Vector<float>.Count;
-                var inputVec = new float[chunkSize];
-
-                for (int i = 0; i < chunkSize - 1; i += 2)
-                {
-                    inputVec[i] = translation.X;
-                    inputVec[i + 1] = translation.Y;
-                }
-
-                var addVec = new Vector<float>(inputVec);
-
-                for (int i = 0; i < vecSpan.Length; i++)
-                {
-                    vecSpan[i] += addVec;
-                }
-
-                var restCoord = coordSpan.Slice(vecSpan.Length * chunkSize);
-
-                var vec2Span = MemoryMarshal.Cast<float, Vector2>(restCoord);
-                for (int i = 0; i < vec2Span.Length; i++)
-                {
-                    vec2Span[i] += translation;
-                }
+                TranslateAsVector2(coordSpan, translation);
             }
             else
             {
-                for (int i = 0; i < coordinates.Count - 1; i += 2)
-                {
-                    coordinates[i] += translation.X;
-                    coordinates[i + 1] += translation.Y;
-                }
+                TranslateFallback(coordinates, translation, 2);
+            }
+        }
+
+        private static void TranslateFallback(RepeatedField<float> coordinates, Vector2 translation, int dims)
+        {
+            if (coordinates.Count % dims != 0) throw new ArgumentException($"coordinates count is {coordinates.Count} but must be a multiple of {dims}");
+            for (int i = 0; i < coordinates.Count - 1; i += dims)
+            {
+                coordinates[i] += translation.X;
+                coordinates[i + 1] += translation.Y;
             }
         }
 
         private static void AddToVector3(RepeatedField<float> coordinates, Vector2 translation)
         {
-            if (coordinates.Count % 3 != 0) throw new ArgumentException($"count of coordinates must be a multiple of 3");
-
-            if (coordinates.Count > 300 && Vector.IsHardwareAccelerated)
+            if (coordinates.Count > 300)
             {
                 var coordSpan = coordinates.AsSpan();
-                int chunkSize = Vector<float>.Count;
-                var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordSpan);
-
-                var inputVec1 = new float[chunkSize];
-                var inputVec2 = new float[chunkSize];
-                var inputVec3 = new float[chunkSize];
-
-                for (int i = 0; i < chunkSize; i += 3)
-                {
-                    inputVec1[i] = translation.X;
-                    if (i + 1 < chunkSize) inputVec1[i + 1] = translation.Y;
-
-                    if (i + 1 < chunkSize) inputVec2[i + 1] = translation.X;
-                    if (i + 2 < chunkSize) inputVec2[i + 2] = translation.Y;
-
-                    if (i + 2 < chunkSize) inputVec3[i + 2] = translation.X;
-                    inputVec3[i] = translation.Y;
-                }
-
-                var addVec1 = new Vector<float>(inputVec1);
-                var addVec2 = new Vector<float>(inputVec2);
-                var addVec3 = new Vector<float>(inputVec3);
-
-                for (int i = 0; i < vecSpan.Length - 2; i += 3)
-                {
-                    vecSpan[i] += addVec1;
-                    vecSpan[i + 1] += addVec2;
-                    vecSpan[i + 2] += addVec3;
-                }
-
-                var rest = vecSpan.Length % 3;
-                if (rest == 1)
-                {
-                    vecSpan[vecSpan.Length - 1] += addVec1;
-                }
-                else if (rest == 2)
-                {
-                    vecSpan[vecSpan.Length - 2] += addVec1;
-                    vecSpan[vecSpan.Length - 1] += addVec2;
-                }
-
-                var restCoord = coordSpan.Slice(vecSpan.Length * chunkSize);
-                var offset = (vecSpan.Length * chunkSize) % 3;
-                for (int i = offset; i < restCoord.Length + offset; i++)
-                {
-                    restCoord[i - offset] += i % 3 == 0 ? translation.X : i % 3 == 1 ? translation.Y : 0;
-                }
+                TranslateAsVector3(coordSpan, translation);
             }
             else
             {
-                for (int i = 0; i < coordinates.Count - 2; i += 3)
-                {
-                    coordinates[i    ] += translation.X;
-                    coordinates[i + 1] += translation.Y;
-                }
+                TranslateFallback(coordinates, translation, 3);
             }
         }
 
