@@ -244,6 +244,309 @@ namespace Benchmarks
     [MemoryDiagnoser]
     [SimpleJob(RuntimeMoniker.Net70, baseline: true)]
     [SimpleJob(RuntimeMoniker.Net60)]
+    public class VectorBlockBounds
+    {
+        [Params(1, 20, 40, 60, 100, 10000, 1000000)]
+        public int numVectors { get; set; }
+        [Params(2, 3)]
+        public int dims { get; set; }
+
+        public VectorBlock vectorBlock;
+
+        [GlobalSetup]
+        public void GlobalSetup()
+        {
+            vectorBlock = new VectorBlock();
+            if (dims == 2)
+            {
+                vectorBlock.LineSequence = new VectorBlock.Types.LineSequence();
+                vectorBlock.LineSequence.Points.Capacity = numVectors * 2;
+                Random random = new Random();
+                for (int i = 0; i < numVectors; i++)
+                {
+                    vectorBlock.LineSequence.Points.Add((float)(random.NextDouble() * 10f));
+                    vectorBlock.LineSequence.Points.Add((float)(random.NextDouble() * 10f));
+                }
+            }
+            else
+            {
+                vectorBlock.LineSequence3D = new VectorBlock.Types.LineSequence3D();
+                vectorBlock.LineSequence3D.Points.Capacity = numVectors * 3;
+                Random random = new Random();
+                for (int i = 0; i < numVectors; i++)
+                {
+                    vectorBlock.LineSequence3D.Points.Add((float)(random.NextDouble() * 10f));
+                    vectorBlock.LineSequence3D.Points.Add((float)(random.NextDouble() * 10f));
+                    vectorBlock.LineSequence3D.Points.Add((float)(random.NextDouble() * 10f));
+                }
+            }
+        }
+
+        [Benchmark(Baseline = true)]
+        public AxisAlignedBox2D BoundsBaseline()
+        {
+            switch (vectorBlock.VectorDataCase)
+            {
+                case VectorBlock.VectorDataOneofCase.LineSequence:
+                case VectorBlock.VectorDataOneofCase.Hatches:
+                case VectorBlock.VectorDataOneofCase.PointSequence:
+                case VectorBlock.VectorDataOneofCase.Arcs:
+                case VectorBlock.VectorDataOneofCase.Ellipses:
+                    return BoundsVector2(vectorBlock.RawCoordinates(), 2);
+
+                case VectorBlock.VectorDataOneofCase.LineSequence3D:
+                case VectorBlock.VectorDataOneofCase.Hatches3D:
+                case VectorBlock.VectorDataOneofCase.PointSequence3D:
+                case VectorBlock.VectorDataOneofCase.Arcs3D:
+                case VectorBlock.VectorDataOneofCase.LineSequenceParaAdapt:
+                    return BoundsVector2(vectorBlock.RawCoordinates(), 3);
+
+                case VectorBlock.VectorDataOneofCase.HatchParaAdapt:
+                    return null;
+                    foreach (var item in vectorBlock.HatchParaAdapt.HatchAsLinesequence)
+                    {
+                        return BoundsVector2(item.PointsWithParas, 3);
+                    }
+                    break;
+
+                case VectorBlock.VectorDataOneofCase.None:
+                case VectorBlock.VectorDataOneofCase.ExposurePause:
+                    throw new ArgumentException($"vector block type does not have coordinates: {vectorBlock.VectorDataCase}");
+                default:
+                    throw new NotImplementedException($"unknown VectorDataCase: {vectorBlock.VectorDataCase}");
+            }
+        }
+
+        private static AxisAlignedBox2D BoundsVector2(RepeatedField<float> coordinates, int dims)
+        {
+            if (coordinates.Count % dims != 0) throw new ArgumentException($"count of coordinates must be a multiple of 2");
+
+            var bounds = new AxisAlignedBox2D();
+
+            bounds.XMin = coordinates[0];
+            bounds.YMin = coordinates[1];
+            bounds.XMax = coordinates[0];
+            bounds.YMax = coordinates[1];
+            for (int i = dims; i < coordinates.Count - 1; i += dims)
+            {
+                bounds.XMin = Math.Min(bounds.XMin, coordinates[i]);
+                bounds.YMin = Math.Min(bounds.YMin, coordinates[i + 1]);
+                bounds.XMax = Math.Max(bounds.XMax, coordinates[i]);
+                bounds.YMax = Math.Max(bounds.YMax, coordinates[i + 1]);
+            }
+            return bounds;
+        }
+
+        [Benchmark]
+        public AxisAlignedBox2D BoundsSimpleLoop()
+        {
+            var coordinates = vectorBlock.RawCoordinates();
+            if (coordinates.Count % dims != 0) throw new ArgumentException($"count of coordinates must be a multiple of 2");
+
+            var bounds = new AxisAlignedBox2D();
+
+            bounds.XMin = coordinates[0];
+            bounds.YMin = coordinates[1];
+            bounds.XMax = coordinates[0];
+            bounds.YMax = coordinates[1];
+            for (int i = dims; i < coordinates.Count - 1; i += dims)
+            {
+                if (bounds.XMin > coordinates[i])     bounds.XMin = coordinates[i];
+                if (bounds.YMin > coordinates[i + 1]) bounds.YMin = coordinates[i + 1];
+                if (bounds.XMax > coordinates[i])     bounds.XMax = coordinates[i];
+                if (bounds.YMax > coordinates[i + 1]) bounds.YMax = coordinates[i + 1];
+            }
+            return bounds;
+        }
+
+        //[Benchmark]
+        //public void TranslateSpanSIMDSystemNumericsVector()
+        //{
+        //    var coordSpan = vectorBlock.RawCoordinates().AsSpan();
+        //    if (dims == 2)
+        //    {
+        //        var vec2Span = MemoryMarshal.Cast<float, Vector2>(coordSpan);
+        //        for (int i = 0; i < vec2Span.Length; i++)
+        //        {
+        //            vec2Span[i] += translation;
+        //        }
+        //    }
+        //    else
+        //    {
+        //        Vector3 trans3 = new Vector3(translation.X, translation.Y, 0);
+        //        var vec2Span = MemoryMarshal.Cast<float, Vector3>(coordSpan);
+        //        for (int i = 0; i < vec2Span.Length; i++)
+        //        {
+        //            vec2Span[i] += trans3;
+        //        }
+        //    }
+        //}
+
+        [Benchmark]
+        public AxisAlignedBox2D BoundsSpanSIMDVector()
+        {
+            var coordinates = vectorBlock.RawCoordinates();
+            int nonSIMDStartIdx = dims;
+            var bounds = new AxisAlignedBox2D();
+
+            if (dims == 2)
+            {
+                var coordSpan = vectorBlock.RawCoordinates().AsSpan();
+                var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordSpan);
+                int chunkSize = Vector<float>.Count;
+
+                var minVector = vecSpan[0];
+                var maxVector = vecSpan[0];
+
+                for (int i = 1; i < vecSpan.Length; i++)
+                {
+                    minVector = Vector.Min(minVector, vecSpan[i]);
+                    maxVector = Vector.Max(maxVector, vecSpan[i]);
+                }
+
+                nonSIMDStartIdx = vecSpan.Length * chunkSize;
+
+                bounds.XMin = minVector[0];
+                bounds.YMin = minVector[1];
+                bounds.XMax = maxVector[0];
+                bounds.YMax = maxVector[1];
+
+                for (int i = dims; i < chunkSize - 1; i += dims)
+                {
+                    bounds.XMin = Math.Min(bounds.XMin, minVector[i]);
+                    bounds.YMin = Math.Min(bounds.YMin, minVector[i + 1]);
+                    bounds.XMax = Math.Max(bounds.XMax, maxVector[i]);
+                    bounds.YMax = Math.Max(bounds.YMax, maxVector[i + 1]);
+                }
+            }
+            else if(coordinates.Count >= 24) { 
+                var coordSpan = vectorBlock.RawCoordinates().AsSpan();
+                var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordSpan);
+                //var vecSpanShifted = MemoryMarshal.Cast<float, Vector<float>>(coordSpan.Slice(1));
+                int chunkSize = Vector<float>.Count;
+
+                var mask = new int[chunkSize * 3];
+
+                for (int i = 0; i < mask.Length; i += 3)
+                {
+                    mask[i] = -1;
+                    mask[i + 1] = 0;
+                    mask[i + 2] = 0;
+                }
+
+                var mask1 = new Vector<int>(mask);
+                var mask2 = new Vector<int>(mask, chunkSize);
+                var mask3 = new Vector<int>(mask, chunkSize * 2);
+
+                var minXVector = Vector.ConditionalSelect(mask1, vecSpan[0], vecSpan[1]);
+                var minYVector = Vector.ConditionalSelect(mask2, vecSpan[0], vecSpan[1]);
+                minXVector = Vector.ConditionalSelect(mask3, vecSpan[2], minXVector);
+                minYVector = Vector.ConditionalSelect(mask1, vecSpan[2], minYVector);
+                var maxXVector = minXVector;
+                var maxYVector = minYVector;
+
+                for (int i = 3; i < vecSpan.Length - 2; i += 3)
+                {
+                    var vectorX = Vector.ConditionalSelect(mask1, vecSpan[0], vecSpan[1]);
+                    var vectorY = Vector.ConditionalSelect(mask2, vecSpan[0], vecSpan[1]);
+                    vectorX = Vector.ConditionalSelect(mask3, vecSpan[2], vectorX);
+                    vectorY = Vector.ConditionalSelect(mask1, vecSpan[2], vectorY);
+                    minXVector = Vector.Min(minXVector, vectorX);
+                    minYVector = Vector.Min(minYVector, vectorY);
+                    maxXVector = Vector.Max(maxXVector, vectorX);
+                    maxYVector = Vector.Max(maxYVector, vectorY);
+                }
+
+                nonSIMDStartIdx = (vecSpan.Length - vecSpan.Length % 3) * chunkSize;
+
+                bounds.XMin = minXVector[0];
+                bounds.YMin = minYVector[0];
+                bounds.XMax = maxXVector[0];
+                bounds.YMax = maxYVector[0];
+
+                for (int i = 1; i < chunkSize; i++)
+                {
+                    bounds.XMin = Math.Min(bounds.XMin, minXVector[i]);
+                    bounds.YMin = Math.Min(bounds.YMin, minYVector[i]);
+                    bounds.XMax = Math.Max(bounds.XMax, maxXVector[i]);
+                    bounds.YMax = Math.Max(bounds.YMax, maxYVector[i]);
+                }
+            }
+            else
+            {
+                bounds.XMin = coordinates[0];
+                bounds.YMin = coordinates[1];
+                bounds.XMax = coordinates[0];
+                bounds.YMax = coordinates[1];
+            }
+
+            for (int i = nonSIMDStartIdx; i < coordinates.Count - 1; i += dims)
+            {
+                if (bounds.XMin > coordinates[i]) bounds.XMin = coordinates[i];
+                if (bounds.YMin > coordinates[i + 1]) bounds.YMin = coordinates[i + 1];
+                if (bounds.XMax > coordinates[i]) bounds.XMax = coordinates[i];
+                if (bounds.YMax > coordinates[i + 1]) bounds.YMax = coordinates[i + 1];
+            }
+
+            return bounds;
+        }
+
+        [Benchmark]
+        public AxisAlignedBox2D BoundsSpanAVX256()
+        {
+            var coordinates = vectorBlock.RawCoordinates();
+            int nonSIMDStartIdx = 1;
+            //if(coordinates.Count > 10)
+            var coordSpan = vectorBlock.RawCoordinates().AsSpan();
+            var vecSpan = MemoryMarshal.Cast<float, Vector256<float>>(coordSpan);
+            int chunkSize = Vector<float>.Count;
+
+            var minVector = vecSpan[0];
+            var maxVector = vecSpan[0];
+
+            for (int i = 1; i < vecSpan.Length; i++)
+            {
+                minVector = Avx2.Min(minVector, vecSpan[i]);
+                maxVector = Avx2.Max(maxVector, vecSpan[i]);
+            }
+
+            nonSIMDStartIdx = vecSpan.Length * chunkSize;
+
+            var bounds = new AxisAlignedBox2D();
+
+            bounds.XMin = minVector.GetElement(0);
+            bounds.YMin = minVector.GetElement(1);
+            bounds.XMax = maxVector.GetElement(0);
+            bounds.YMax = maxVector.GetElement(1);
+
+            for (int i = dims; i < chunkSize - 1; i += dims)
+            {
+                bounds.XMin = Math.Min(bounds.XMin, minVector.GetElement(i));
+                bounds.YMin = Math.Min(bounds.YMin, minVector.GetElement(i+1));
+                bounds.XMax = Math.Max(bounds.XMax, maxVector.GetElement(i));
+                bounds.YMax = Math.Max(bounds.YMax, maxVector.GetElement(i+1));
+            }
+
+            for (int i = nonSIMDStartIdx; i < coordinates.Count - 1; i += dims)
+            {
+                bounds.XMin = Math.Min(bounds.XMin, coordinates[i]);
+                bounds.YMin = Math.Min(bounds.YMin, coordinates[i + 1]);
+                bounds.XMax = Math.Max(bounds.XMax, coordinates[i]);
+                bounds.YMax = Math.Max(bounds.YMax, coordinates[i + 1]);
+            }
+
+            return bounds;
+        }
+        //[Benchmark]
+        //public void BoundsFinal()
+        //{
+
+        //}
+    }
+
+    [MemoryDiagnoser]
+    [SimpleJob(RuntimeMoniker.Net70, baseline: true)]
+    [SimpleJob(RuntimeMoniker.Net60)]
     public class VectorRotate
     {
         [Params(1, 10, 100, 121, 10000, 1000000)]
@@ -460,7 +763,9 @@ namespace Benchmarks
             debugVec3Trans();
             debugVec2Rot();
             debugVec3Rot();
-            Type[] benchmarks = { typeof(VectorTranslate), typeof(VectorRotate) };
+            debugVec2Bounds();
+            debugVec3Bounds();
+            Type[] benchmarks = { typeof(VectorBlockBounds) };//, typeof(VectorTranslate), typeof(VectorRotate) };
             var summary = BenchmarkRunner.Run(benchmarks);
         }
 
@@ -545,6 +850,34 @@ namespace Benchmarks
             bench.TranslateSpanSIMDVector();
             var trans2 = bench.vectorBlock;
             if (!trans2.Equals(transBase)) throw new Exception($"{trans2.LineSequence3D.Points}\r{transBase.LineSequence3D.Points}");
+        }
+
+        private static void debugVec2Bounds()
+        {
+            var bench = new VectorBlockBounds();
+            bench.numVectors = 10;
+            bench.dims = 2;
+            bench.GlobalSetup();
+
+            var bounds1 = bench.BoundsBaseline();
+
+            var bounds2 = bench.BoundsSpanSIMDVector();
+
+            if (!bounds1.Equals(bounds2)) throw new Exception($"{bounds1}\r{bounds2}");
+        }
+
+        private static void debugVec3Bounds()
+        {
+            var bench = new VectorBlockBounds();
+            bench.numVectors = 12;
+            bench.dims = 3;
+            bench.GlobalSetup();
+
+            var bounds1 = bench.BoundsBaseline();
+
+            var bounds2 = bench.BoundsSpanSIMDVector();
+
+            if (!bounds1.Equals(bounds2)) throw new Exception($"{bounds1}\r{bounds2}");
         }
 
     }
