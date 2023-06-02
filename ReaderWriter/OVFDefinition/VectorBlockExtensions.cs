@@ -26,14 +26,15 @@ using Google.Protobuf.Collections;
 using OpenVectorFormat.Utils;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 #if NETCOREAPP3_0_OR_GREATER
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
+#endif
 using System.Transactions;
 using static OpenVectorFormat.SIMDVectorOperations;
-#endif
 
 namespace OpenVectorFormat
 {
@@ -51,23 +52,27 @@ namespace OpenVectorFormat
         public static VectorBlock CloneWithoutVectorData(this VectorBlock blockToClone)
         {
             var clone = new VectorBlock();
-            //cases none and exposure pause don't contain coordinates
-            Utils.ProtoUtils.CopyWithExclude(blockToClone, clone, new List<int>() {
-                VectorBlock.LineSequenceFieldNumber,
-                VectorBlock.HatchesFieldNumber,
-                VectorBlock.PointSequenceFieldNumber,
-                VectorBlock.ArcsFieldNumber,
-                VectorBlock.EllipsesFieldNumber,
-                VectorBlock.LineSequence3DFieldNumber,
-                VectorBlock.Hatches3DFieldNumber,
-                VectorBlock.PointSequence3DFieldNumber,
-                VectorBlock.Arcs3DFieldNumber,
-                VectorBlock.LineSequenceParaAdaptFieldNumber,
-                VectorBlock.HatchParaAdaptFieldNumber
-            });
-            //ensure the field is empty for future extensions as well
-            //new definitions will not be excluded and degrade performance because of unnecessary copies
-            clone.ClearVectorData();
+            
+            clone.MarkingParamsKey = blockToClone.MarkingParamsKey;
+            clone.LaserIndex = blockToClone.LaserIndex;
+            clone.Repeats = blockToClone.Repeats;
+            clone.MetaData = blockToClone.MetaData.Clone();
+
+            switch (clone.ProcessMetaDataCase)
+            {
+                case VectorBlock.ProcessMetaDataOneofCase.None:
+                    break;
+                case VectorBlock.ProcessMetaDataOneofCase.LpbfMetadata:
+                    clone.LpbfMetadata = blockToClone.LpbfMetadata.Clone();
+                    break;
+                case VectorBlock.ProcessMetaDataOneofCase.MicroStructuringMetadata:
+                    clone.MicroStructuringMetadata = blockToClone.MicroStructuringMetadata.Clone();
+                    break;
+                case VectorBlock.ProcessMetaDataOneofCase.PolishingMetadata:
+                    clone.PolishingMetadata = blockToClone.PolishingMetadata.Clone();
+                    break;
+            }
+
             return clone;
         }
 
@@ -132,6 +137,7 @@ namespace OpenVectorFormat
 
         /// <summary>
         /// Translates a vector block in the x/y plane.
+        /// Uses SIMD hardware acceleration if available.
         /// </summary>
         /// <param name="vectorBlock">vector block to translate</param>
         /// <param name="translation">translation vector</param>
@@ -171,8 +177,20 @@ namespace OpenVectorFormat
         }
 
         /// <summary>
+        /// Translates a vector blocks in the x/y plane.
+        /// Uses SIMD hardware acceleration if available.
+        /// </summary>
+        /// <param name="vectorBlocks"></param>
+        /// <param name="translation"></param>
+        public static void Translate(this IEnumerable<VectorBlock> vectorBlocks, Vector2 translation)
+        {
+            foreach(var block in vectorBlocks) { block.Translate(translation); }
+        }
+
+        /// <summary>
         /// Rotates the VectorBlock data counterclockwise
         /// by angleRad [radians] around the origin.
+        /// Uses AVX2 hardware acceleration if available.
         /// </summary>
         /// <param name="vectorBlock"></param>
         /// <param name="angleRad"> angle in radians</param>
@@ -200,7 +218,7 @@ namespace OpenVectorFormat
                 case VectorBlock.VectorDataOneofCase.HatchParaAdapt:
                     foreach (var item in vectorBlock.HatchParaAdapt.HatchAsLinesequence)
                     {
-                        RotateVector2(vectorBlock.RawCoordinates(), angleRad, 3);
+                        RotateVector2(item.PointsWithParas, angleRad, 3);
                     }
                     break;
 
@@ -211,6 +229,133 @@ namespace OpenVectorFormat
                     throw new NotImplementedException($"unknown VectorDataCase: {vectorBlock.VectorDataCase}");
             }
         }
+
+        /// <summary>
+        /// Rotates the VectorBlocks data counterclockwise
+        /// by angleRad [radians] around the origin.
+        /// Uses AVX2 hardware acceleration if available.
+        /// </summary>
+        /// <param name="vectorBlocks"></param>
+        /// <param name="angleRad"></param>
+        public static void Rotate(this IEnumerable<VectorBlock> vectorBlocks, float angleRad)
+        {
+            foreach (var block in vectorBlocks) { block.Rotate(angleRad); }
+        }
+
+        /// <summary>
+        /// Calculates the 2D (x any y) axis aligned bounding box of the coordinates of the vector block.
+        /// Uses SIMD hardware acceleration if available.
+        /// </summary>
+        /// <param name="vectorBlock"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="NotImplementedException"></exception>
+        public static AxisAlignedBox2D Bounds2D(this VectorBlock vectorBlock)
+        {
+            switch (vectorBlock.VectorDataCase)
+            {
+                case VectorBlock.VectorDataOneofCase.LineSequence:
+                case VectorBlock.VectorDataOneofCase.Hatches:
+                case VectorBlock.VectorDataOneofCase.PointSequence:
+                case VectorBlock.VectorDataOneofCase.Arcs:
+                case VectorBlock.VectorDataOneofCase.Ellipses:
+                    return Bounds2DFromCoordinates(vectorBlock.RawCoordinates(), 2);
+
+                case VectorBlock.VectorDataOneofCase.LineSequence3D:
+                case VectorBlock.VectorDataOneofCase.Hatches3D:
+                case VectorBlock.VectorDataOneofCase.PointSequence3D:
+                case VectorBlock.VectorDataOneofCase.Arcs3D:
+                case VectorBlock.VectorDataOneofCase.LineSequenceParaAdapt:
+                    return Bounds2DFromCoordinates(vectorBlock.RawCoordinates(), 3);
+
+                case VectorBlock.VectorDataOneofCase.HatchParaAdapt:
+                    var bounds = AxisAlignedBox2DExtensions.EmptyAAB2D();
+                    foreach (var item in vectorBlock.HatchParaAdapt.HatchAsLinesequence)
+                    {
+                        if(item.PointsWithParas.Count > 0)
+                        {
+                            var lsBounds = Bounds2DFromCoordinates(item.PointsWithParas, 3);
+                            bounds.Contain(lsBounds);
+                        }
+                    }
+                    return bounds;
+
+                case VectorBlock.VectorDataOneofCase.None:
+                case VectorBlock.VectorDataOneofCase.ExposurePause:
+                    throw new ArgumentException($"vector block type {vectorBlock.VectorDataCase} does not have coordinates");
+                default:
+                    throw new NotImplementedException($"unknown VectorDataCase: {vectorBlock.VectorDataCase}");
+            }
+        }
+
+        /// <summary>
+        /// Calculates the 2D (x any y) axis aligned bounding box of the coordinates of the vector blocks.
+        /// Uses SIMD hardware acceleration if available.
+        /// Returns empty (min/max float) bounds if all blocks are empty.
+        /// </summary>
+        /// <param name="vectorBlocks"></param>
+        /// <returns></returns>
+        public static AxisAlignedBox2D Bounds2D(this IEnumerable<VectorBlock> vectorBlocks)
+        {
+            var bounds = AxisAlignedBox2DExtensions.EmptyAAB2D();
+            foreach (var block in vectorBlocks)
+            {
+                //skip empty blocks and don't attempt vector block types that do not have coordinates
+                if (block.VectorCount() > 0)
+                {
+                    bounds.Contain(block.Bounds2D());
+                }
+            }
+            return bounds;
+        }
+
+        /// <summary>
+        /// Returns the count of 2D or 3D vectors stored in the vector block,
+        /// depending on the vector block type.
+        /// </summary>
+        /// <param name="vectorBlock"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public static int VectorCount(this VectorBlock vectorBlock)
+        {
+            switch (vectorBlock.VectorDataCase)
+            {
+                case VectorBlock.VectorDataOneofCase.LineSequence:
+                    return vectorBlock.LineSequence.Points.Count / 2;
+                case VectorBlock.VectorDataOneofCase.Hatches:
+                    return vectorBlock.Hatches.Points.Count / 2;
+                case VectorBlock.VectorDataOneofCase.PointSequence:
+                    return vectorBlock.PointSequence.Points.Count / 2;
+                case VectorBlock.VectorDataOneofCase.Arcs:
+                    return vectorBlock.Arcs.Centers.Count / 2;
+                case VectorBlock.VectorDataOneofCase.Ellipses:
+                    return vectorBlock.Ellipses.EllipsesArcs.Centers.Count / 2;
+                case VectorBlock.VectorDataOneofCase.LineSequence3D:
+                    return vectorBlock.LineSequence3D.Points.Count / 3;
+                case VectorBlock.VectorDataOneofCase.Hatches3D:
+                    return vectorBlock.Hatches3D.Points.Count / 3;
+                case VectorBlock.VectorDataOneofCase.PointSequence3D:
+                    return vectorBlock.PointSequence3D.Points.Count / 3;
+                case VectorBlock.VectorDataOneofCase.Arcs3D:
+                    return vectorBlock.Arcs3D.Centers.Count / 3;
+                case VectorBlock.VectorDataOneofCase.LineSequenceParaAdapt:
+                    return vectorBlock.LineSequenceParaAdapt.PointsWithParas.Count / 3;
+                case VectorBlock.VectorDataOneofCase.HatchParaAdapt:
+                    int counter = 0;
+                    foreach (var item in vectorBlock.HatchParaAdapt.HatchAsLinesequence)
+                    {
+                        counter += item.PointsWithParas.Count;
+                    }
+                    return counter;
+                case VectorBlock.VectorDataOneofCase.None:
+                case VectorBlock.VectorDataOneofCase.ExposurePause:
+                    return 0;
+                default:
+                    throw new NotImplementedException($"unknown VectorDataCase: {vectorBlock.VectorDataCase}");
+            }
+        }
+
+        public static int VectorCount(this IEnumerable<VectorBlock> vectorBlocks) => vectorBlocks.Sum(block => block.VectorCount());
 
         /// <summary>
         /// Retrieves the raw coordinate data of the vector block.
@@ -246,6 +391,7 @@ namespace OpenVectorFormat
                 case VectorBlock.VectorDataOneofCase.LineSequenceParaAdapt:
                     return vectorBlock.LineSequenceParaAdapt.PointsWithParas;
                 case VectorBlock.VectorDataOneofCase.HatchParaAdapt:
+                    //there is no better design for this that came to my mind...
                     var temp = new RepeatedField<float>();
                     foreach (var item in vectorBlock.HatchParaAdapt.HatchAsLinesequence)
                     {
@@ -311,16 +457,6 @@ namespace OpenVectorFormat
             }
         }
 
-        private static void TranslateFallback(RepeatedField<float> coordinates, Vector2 translation, int dims)
-        {
-            if (coordinates.Count % dims != 0) throw new ArgumentException($"coordinates count is {coordinates.Count} but must be a multiple of {dims}");
-            for (int i = 0; i < coordinates.Count - 1; i += dims)
-            {
-                coordinates[i] += translation.X;
-                coordinates[i + 1] += translation.Y;
-            }
-        }
-
         private static void AddToVector3(RepeatedField<float> coordinates, Vector2 translation)
         {
             if (coordinates.Count > 300)
@@ -331,6 +467,45 @@ namespace OpenVectorFormat
             else
             {
                 TranslateFallback(coordinates, translation, 3);
+            }
+        }
+
+        private static void TranslateFallback(RepeatedField<float> coordinates, Vector2 translation, int dims)
+        {
+            if (coordinates.Count % dims != 0) throw new ArgumentException($"coordinates count is {coordinates.Count} but must be a multiple of {dims}");
+            for (int i = 0; i < coordinates.Count - 1; i += dims)
+            {
+                coordinates[i] += translation.X;
+                coordinates[i + 1] += translation.Y;
+            }
+        }
+
+        private static AxisAlignedBox2D Bounds2DFromCoordinates(RepeatedField<float> coordinates, int dims)
+        {
+            if (coordinates.Count == 0) 
+                return AxisAlignedBox2DExtensions.EmptyAAB2D();
+            else if (coordinates.Count > 100 * dims)
+            {
+                var coordSpan = coordinates.AsSpan();
+                return SIMDVectorOperations.Bounds2D(coordSpan, dims);
+            }
+            else
+            {
+                var bounds = new AxisAlignedBox2D()
+                {
+                    XMin = coordinates[0],
+                    YMin = coordinates[1],
+                    XMax = coordinates[0],
+                    YMax = coordinates[1],
+                };
+                for (int i = dims; i < coordinates.Count - 1; i += dims)
+                {
+                    if (bounds.XMin > coordinates[i]) bounds.XMin = coordinates[i];
+                    if (bounds.YMin > coordinates[i + 1]) bounds.YMin = coordinates[i + 1];
+                    if (bounds.XMax > coordinates[i]) bounds.XMax = coordinates[i];
+                    if (bounds.YMax > coordinates[i + 1]) bounds.YMax = coordinates[i + 1];
+                }
+                return bounds;
             }
         }
 

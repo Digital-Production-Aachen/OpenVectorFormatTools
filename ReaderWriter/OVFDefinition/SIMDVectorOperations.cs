@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.InteropServices;
+#if NETCOREAPP3_0_OR_GREATER
 using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics;
+#endif
 using System.Text;
 using System.Transactions;
+using System.Threading;
 
 namespace OpenVectorFormat
 {
@@ -152,7 +155,8 @@ namespace OpenVectorFormat
         /// <exception cref="ArgumentException"></exception>
         public static void RotateAsVector2(Span<float> coordinates, float angleRad, int dims = 2)
         {
-            if (coordinates.Length % dims != 0) throw new ArgumentException($"coordinates count is {coordinates.Length} but must be a multiple of {dims}");
+            if (coordinates.Length % dims != 0 || dims < 2)
+                throw new ArgumentException($"coordinates count is {coordinates.Length} but must be a multiple of {dims}");
 
             var sin = (float)Math.Sin(angleRad);
             var cos = (float)Math.Cos(angleRad);
@@ -210,6 +214,128 @@ namespace OpenVectorFormat
                 float yNew = coordinates[i] * sin + coordinates[i + 1] * cos;
                 coordinates[i] = xNew; coordinates[i + 1] = yNew;
             }
+        }
+
+        /// <summary>
+        /// Interprets a span of floats as an array of Vector2 structs [x0 y0 x1 y1 ...]
+        /// or higher dimension vector structs like Vector3 [x0 y0 z0 x1 y1 z1 ...]
+        /// and calculates the 2D (x any y) axis aligned bounding box of the coordinates.
+        /// Uses SIMD hardware acceleration if available and dimension is 2 or 3.
+        /// </summary>
+        /// <param name="coordinates"></param>
+        /// <param name="dims"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static AxisAlignedBox2D Bounds2D(Span<float> coordinates, int dims = 2)
+        {
+            if (coordinates.Length % dims != 0 || dims < 2 || coordinates.Length < 2)
+                throw new ArgumentException($"coordinates count is {coordinates.Length} but must be a multiple of {dims}");
+            
+            int noSIMDStartIdx = dims;
+            var bounds = new AxisAlignedBox2D();
+
+            if (dims == 2 && coordinates.Length >= Vector<float>.Count)
+            {
+                var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordinates);
+
+                var minVector = vecSpan[0];
+                var maxVector = vecSpan[0];
+
+                for (int i = 1; i < vecSpan.Length; i++)
+                {
+                    minVector = Vector.Min(minVector, vecSpan[i]);
+                    maxVector = Vector.Max(maxVector, vecSpan[i]);
+                }
+
+                noSIMDStartIdx = vecSpan.Length * Vector<float>.Count;
+
+                bounds.XMin = minVector[0];
+                bounds.YMin = minVector[1];
+                bounds.XMax = maxVector[0];
+                bounds.YMax = maxVector[1];
+
+                for (int i = dims; i < Vector<float>.Count - 1; i += dims)
+                {
+                    bounds.XMin = Math.Min(bounds.XMin, minVector[i]);
+                    bounds.YMin = Math.Min(bounds.YMin, minVector[i + 1]);
+                    bounds.XMax = Math.Max(bounds.XMax, maxVector[i]);
+                    bounds.YMax = Math.Max(bounds.YMax, maxVector[i + 1]);
+                }
+            }
+            else if (dims == 3 && coordinates.Length >= Vector<float>.Count * 3)
+            {
+                var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordinates);
+
+                int chunkSize = Vector<float>.Count;
+                var mask = new int[chunkSize * 3];
+
+                for (int i = 0; i < mask.Length; i += 3)
+                {
+                    mask[i] = -1;
+                    mask[i + 1] = 0;
+                    mask[i + 2] = 0;
+                }
+
+                var mask1 = new Vector<int>(mask);
+                var mask2 = new Vector<int>(mask, chunkSize);
+                var mask3 = new Vector<int>(mask, chunkSize * 2);
+
+                //use conditional selects to move coordinates from 3 vectors into 2 that only contain
+                //x and y coordinates respectively (but not in order)
+                //we don't use shuffles because they would require switching to Vector256/AVX2 and not be
+                //platform and vector size independent any more
+                //result is [x0 x3 x6 x1 x4 x7 x2 x5] and [y5 y0 y3 y6 y1 y4 y7 y2]
+                var minXVector = Vector.ConditionalSelect(mask1, vecSpan[0], vecSpan[1]);
+                var minYVector = Vector.ConditionalSelect(mask2, vecSpan[0], vecSpan[1]);
+                minXVector = Vector.ConditionalSelect(mask3, vecSpan[2], minXVector);
+                minYVector = Vector.ConditionalSelect(mask1, vecSpan[2], minYVector);
+                var maxXVector = minXVector;
+                var maxYVector = minYVector;
+
+                for (int i = 3; i < vecSpan.Length - 2; i += 3)
+                {
+                    var vectorX = Vector.ConditionalSelect(mask1, vecSpan[0], vecSpan[1]);
+                    var vectorY = Vector.ConditionalSelect(mask2, vecSpan[0], vecSpan[1]);
+                    vectorX = Vector.ConditionalSelect(mask3, vecSpan[2], vectorX);
+                    vectorY = Vector.ConditionalSelect(mask1, vecSpan[2], vectorY);
+                    minXVector = Vector.Min(minXVector, vectorX);
+                    minYVector = Vector.Min(minYVector, vectorY);
+                    maxXVector = Vector.Max(maxXVector, vectorX);
+                    maxYVector = Vector.Max(maxYVector, vectorY);
+                }
+
+                noSIMDStartIdx = (vecSpan.Length - vecSpan.Length % 3) * chunkSize;
+
+                bounds.XMin = minXVector[0];
+                bounds.YMin = minYVector[0];
+                bounds.XMax = maxXVector[0];
+                bounds.YMax = maxYVector[0];
+
+                for (int i = 1; i < chunkSize; i++)
+                {
+                    bounds.XMin = Math.Min(bounds.XMin, minXVector[i]);
+                    bounds.YMin = Math.Min(bounds.YMin, minYVector[i]);
+                    bounds.XMax = Math.Max(bounds.XMax, maxXVector[i]);
+                    bounds.YMax = Math.Max(bounds.YMax, maxYVector[i]);
+                }
+            }
+            else
+            {
+                bounds.XMin = coordinates[0];
+                bounds.YMin = coordinates[1];
+                bounds.XMax = coordinates[0];
+                bounds.YMax = coordinates[1];
+            }
+
+            for (int i = noSIMDStartIdx; i < coordinates.Length - 1; i += dims)
+            {
+                if (bounds.XMin > coordinates[i]) bounds.XMin = coordinates[i];
+                if (bounds.YMin > coordinates[i + 1]) bounds.YMin = coordinates[i + 1];
+                if (bounds.XMax > coordinates[i]) bounds.XMax = coordinates[i];
+                if (bounds.YMax > coordinates[i + 1]) bounds.YMax = coordinates[i + 1];
+            }
+
+            return bounds;
         }
     }
 }
