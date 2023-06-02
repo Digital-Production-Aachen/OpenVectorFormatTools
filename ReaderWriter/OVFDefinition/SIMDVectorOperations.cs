@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -50,7 +50,7 @@ namespace OpenVectorFormat
             if (coordinates.Length % 2 != 0) throw new ArgumentException($"count of coordinates must be even, but is {coordinates.Length}");
             //did some benchmarks (on AVX2 capable hardware) to estimate the threshold when the overhead of
             //getting the span with reflection is compensated by SIMD speedup => ~190
-            if (coordinates.Length > 190 && Vector.IsHardwareAccelerated && Vector<float>.Count % 2 == 0)
+            if (coordinates.Length > Vector<float>.Count && Vector.IsHardwareAccelerated && Vector<float>.Count % 2 == 0)
             {
                 var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordinates);
                 int chunkSize = Vector<float>.Count;
@@ -98,7 +98,7 @@ namespace OpenVectorFormat
         {
             if (coordinates.Length % 3 != 0) throw new ArgumentException($"count of coordinates must be divisible by 3, but is {coordinates.Length}");
 
-            if (coordinates.Length > 300 && Vector.IsHardwareAccelerated)
+            if (coordinates.Length > Vector<float>.Count * 3 && Vector.IsHardwareAccelerated)
             {
                 int chunkSize = Vector<float>.Count;
                 var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordinates);
@@ -190,7 +190,7 @@ namespace OpenVectorFormat
 #if NETCOREAPP3_0_OR_GREATER
             //the variable size Vector does not have permute/shuffle methods that we need for a matrix multiplication
             //so instead we use Avx2 with Vector256 if available (and did not bother to create a separate Vector128 code path)
-            if (Avx2.IsSupported & coordinates.Length > 80 * dims)
+            if (Avx2.IsSupported & coordinates.Length > Vector256<float>.Count * dims)
             {
                 if (dims == 2)
                 {
@@ -254,7 +254,7 @@ namespace OpenVectorFormat
         {
             if (coordinates.Length % dims != 0 || dims < 2 || coordinates.Length < 2)
                 throw new ArgumentException($"coordinates count is {coordinates.Length} but must be a multiple of {dims}");
-            
+
             int noSIMDStartIdx = dims;
             var bounds = new AxisAlignedBox2D();
 
@@ -353,10 +353,10 @@ namespace OpenVectorFormat
 
             for (int i = noSIMDStartIdx; i < coordinates.Length - 1; i += dims)
             {
-                if (bounds.XMin > coordinates[i]) bounds.XMin = coordinates[i];
-                if (bounds.YMin > coordinates[i + 1]) bounds.YMin = coordinates[i + 1];
-                if (bounds.XMax > coordinates[i]) bounds.XMax = coordinates[i];
-                if (bounds.YMax > coordinates[i + 1]) bounds.YMax = coordinates[i + 1];
+                if (coordinates[i] < bounds.XMin) bounds.XMin = coordinates[i];
+                if (coordinates[i + 1] < bounds.YMin) bounds.YMin = coordinates[i + 1];
+                if (coordinates[i] > bounds.XMax) bounds.XMax = coordinates[i];
+                if (coordinates[i + 1] > bounds.YMax) bounds.YMax = coordinates[i + 1];
             }
 
             return bounds;

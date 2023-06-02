@@ -79,6 +79,8 @@ namespace OpenVectorFormat.OVFReaderWriter
             ProtoUtils.CopyWithExclude(jobShell, newJobShell, new List<int> { Job.WorkPlanesFieldNumber });
             _jobShell = newJobShell;
             _jobShell.NumWorkPlanes = 0;
+            if(_jobShell.JobMetaData == null) _jobShell.JobMetaData = new Job.Types.JobMetaData();
+            _jobShell.JobMetaData.Bounds = AxisAlignedBox2DExtensions.EmptyAAB2D();
 
             this.progress = progress;
             this.filename = filename;
@@ -140,6 +142,10 @@ namespace OpenVectorFormat.OVFReaderWriter
 
                     _currentWorkPlaneShell.WorkPlaneNumber = _jobShell.NumWorkPlanes;
                     _currentWorkPlaneShell.NumBlocks = _currentWorkPlaneShell.VectorBlocks.Count;
+                    if (_currentWorkPlaneShell.MetaData == null) _currentWorkPlaneShell.MetaData = new WorkPlane.Types.WorkPlaneMetaData();
+                    _currentWorkPlaneShell.MetaData.Bounds = _currentWorkPlaneShell.Bounds2D();
+                    _jobShell.JobMetaData.Bounds.Contain(_currentWorkPlaneShell.MetaData.Bounds);
+
                     var tempShell = new WorkPlane();
                     ProtoUtils.CopyWithExclude(_currentWorkPlaneShell, tempShell, new List<int> { WorkPlane.VectorBlocksFieldNumber });
 

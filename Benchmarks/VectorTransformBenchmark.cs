@@ -28,6 +28,7 @@ using System.Runtime.InteropServices;
 #if NETCOREAPP3_0_OR_GREATER
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
+using System.Transactions;
 #endif
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
@@ -44,13 +45,14 @@ namespace Benchmarks
     [SimpleJob(RuntimeMoniker.Net60)]
     public class VectorTranslate
     {
-        [Params(1, 60 ,100, 10000, 1000000)]
+        [Params(1, 20, 40, 60, 80, 100, 10000, 1000000)]
         public int numVectors { get; set; }
         [Params(2, 3)]
         public int dims { get; set; }
 
         public VectorBlock vectorBlock;
         public Vector2 translation = new Vector2(4, 5);
+        private float[] spanArray;
 
         [GlobalSetup]
         public void GlobalSetup()
@@ -66,6 +68,7 @@ namespace Benchmarks
                     vectorBlock.LineSequence.Points.Add((float)(random.NextDouble() * 10f));
                     vectorBlock.LineSequence.Points.Add((float)(random.NextDouble() * 10f));
                 }
+                spanArray = vectorBlock.LineSequence.Points.ToArray();
             }
             else
             {
@@ -78,6 +81,7 @@ namespace Benchmarks
                     vectorBlock.LineSequence3D.Points.Add((float)(random.NextDouble() * 10f));
                     vectorBlock.LineSequence3D.Points.Add((float)(random.NextDouble() * 10f));
                 }
+                spanArray = vectorBlock.LineSequence3D.Points.ToArray();
             }
         }
 
@@ -239,6 +243,20 @@ namespace Benchmarks
         {
             vectorBlock.Translate(translation);
         }
+
+        [Benchmark]
+        public void TranslateFloatSpan()
+        {
+            var span = spanArray.AsSpan<float>();
+            if(dims == 2)
+            {
+                SIMDVectorOperations.TranslateAsVector2(span, translation);
+            }
+            else
+            {
+                SIMDVectorOperations.TranslateAsVector3(span, translation);
+            }
+        }
     }
 
     [MemoryDiagnoser]
@@ -246,12 +264,13 @@ namespace Benchmarks
     [SimpleJob(RuntimeMoniker.Net60)]
     public class VectorBlockBounds
     {
-        [Params(1, 20, 40, 60, 100, 10000, 1000000)]
+        [Params(1, 20, 40, 60, 80, 100, 10000, 1000000)]
         public int numVectors { get; set; }
         [Params(2, 3)]
         public int dims { get; set; }
 
         public VectorBlock vectorBlock;
+        private float[] spanArray;
 
         [GlobalSetup]
         public void GlobalSetup()
@@ -267,6 +286,7 @@ namespace Benchmarks
                     vectorBlock.LineSequence.Points.Add((float)(random.NextDouble() * 10f));
                     vectorBlock.LineSequence.Points.Add((float)(random.NextDouble() * 10f));
                 }
+                spanArray = vectorBlock.LineSequence.Points.ToArray();
             }
             else
             {
@@ -279,6 +299,7 @@ namespace Benchmarks
                     vectorBlock.LineSequence3D.Points.Add((float)(random.NextDouble() * 10f));
                     vectorBlock.LineSequence3D.Points.Add((float)(random.NextDouble() * 10f));
                 }
+                spanArray = vectorBlock.LineSequence3D.Points.ToArray();
             }
         }
 
@@ -351,36 +372,13 @@ namespace Benchmarks
             bounds.YMax = coordinates[1];
             for (int i = dims; i < coordinates.Count - 1; i += dims)
             {
-                if (bounds.XMin > coordinates[i])     bounds.XMin = coordinates[i];
-                if (bounds.YMin > coordinates[i + 1]) bounds.YMin = coordinates[i + 1];
-                if (bounds.XMax > coordinates[i])     bounds.XMax = coordinates[i];
-                if (bounds.YMax > coordinates[i + 1]) bounds.YMax = coordinates[i + 1];
+                if (coordinates[i] < bounds.XMin)     bounds.XMin = coordinates[i];
+                if (coordinates[i + 1] < bounds.YMin) bounds.YMin = coordinates[i + 1];
+                if (coordinates[i] > bounds.XMax)     bounds.XMax = coordinates[i];
+                if (coordinates[i + 1] > bounds.YMax) bounds.YMax = coordinates[i + 1];
             }
             return bounds;
         }
-
-        //[Benchmark]
-        //public void TranslateSpanSIMDSystemNumericsVector()
-        //{
-        //    var coordSpan = vectorBlock.RawCoordinates().AsSpan();
-        //    if (dims == 2)
-        //    {
-        //        var vec2Span = MemoryMarshal.Cast<float, Vector2>(coordSpan);
-        //        for (int i = 0; i < vec2Span.Length; i++)
-        //        {
-        //            vec2Span[i] += translation;
-        //        }
-        //    }
-        //    else
-        //    {
-        //        Vector3 trans3 = new Vector3(translation.X, translation.Y, 0);
-        //        var vec2Span = MemoryMarshal.Cast<float, Vector3>(coordSpan);
-        //        for (int i = 0; i < vec2Span.Length; i++)
-        //        {
-        //            vec2Span[i] += trans3;
-        //        }
-        //    }
-        //}
 
         [Benchmark]
         public AxisAlignedBox2D BoundsSpanSIMDVector()
@@ -389,7 +387,7 @@ namespace Benchmarks
             int nonSIMDStartIdx = dims;
             var bounds = new AxisAlignedBox2D();
 
-            if (dims == 2)
+            if (dims == 2 && coordinates.Count >= Vector<float>.Count)
             {
                 var coordSpan = vectorBlock.RawCoordinates().AsSpan();
                 var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordSpan);
@@ -482,13 +480,26 @@ namespace Benchmarks
 
             for (int i = nonSIMDStartIdx; i < coordinates.Count - 1; i += dims)
             {
-                if (bounds.XMin > coordinates[i]) bounds.XMin = coordinates[i];
-                if (bounds.YMin > coordinates[i + 1]) bounds.YMin = coordinates[i + 1];
-                if (bounds.XMax > coordinates[i]) bounds.XMax = coordinates[i];
-                if (bounds.YMax > coordinates[i + 1]) bounds.YMax = coordinates[i + 1];
+                if (coordinates[i] < bounds.XMin) bounds.XMin = coordinates[i];
+                if (coordinates[i + 1] < bounds.YMin) bounds.YMin = coordinates[i + 1];
+                if (coordinates[i] > bounds.XMax) bounds.XMax = coordinates[i];
+                if (coordinates[i + 1] > bounds.YMax) bounds.YMax = coordinates[i + 1];
             }
 
             return bounds;
+        }
+
+        [Benchmark]
+        public AxisAlignedBox2D BoundsFinal()
+        {
+            return vectorBlock.Bounds2D();
+        }
+
+        [Benchmark]
+        public AxisAlignedBox2D BoundsFloatSpan()
+        {
+            var span = spanArray.AsSpan<float>();
+            return SIMDVectorOperations.Bounds2D(span, dims);
         }
 
         [Benchmark]
@@ -549,12 +560,15 @@ namespace Benchmarks
     [SimpleJob(RuntimeMoniker.Net60)]
     public class VectorRotate
     {
-        [Params(1, 10, 100, 121, 10000, 1000000)]
+        [Params(1, 20, 40, 60, 80, 100, 10000, 1000000)]
         public int numVectors { get; set; }
         [Params(2, 3)]
         public int dims { get; set; }
-        public VectorBlock vectorBlock;
+
         public const float rotation = (float)Math.PI / 6;
+
+        public VectorBlock vectorBlock;
+        private float[] spanArray;
 
         [GlobalSetup]
         public void GlobalSetup()
@@ -570,6 +584,7 @@ namespace Benchmarks
                     vectorBlock.LineSequence.Points.Add((float)(random.NextDouble() * 10f));
                     vectorBlock.LineSequence.Points.Add((float)(random.NextDouble() * 10f));
                 }
+                spanArray = vectorBlock.LineSequence.Points.ToArray();
             }
             else
             {
@@ -582,6 +597,7 @@ namespace Benchmarks
                     vectorBlock.LineSequence3D.Points.Add((float)(random.NextDouble() * 10f));
                     vectorBlock.LineSequence3D.Points.Add((float)(random.NextDouble() * 10f));
                 }
+                spanArray = vectorBlock.LineSequence3D.Points.ToArray();
             }
         }
 
@@ -753,6 +769,12 @@ namespace Benchmarks
         {
             vectorBlock.Rotate(rotation);
         }
+
+        [Benchmark]
+        public void RotateFloatSpan()
+        {
+            SIMDVectorOperations.RotateAsVector2(spanArray.AsSpan<float>(), rotation, dims);
+        }
     }
 
     public class VectorTransformBenchmark
@@ -765,8 +787,40 @@ namespace Benchmarks
             debugVec3Rot();
             debugVec2Bounds();
             debugVec3Bounds();
-            Type[] benchmarks = { typeof(VectorBlockBounds) };//, typeof(VectorTranslate), typeof(VectorRotate) };
+            Type[] benchmarks = { typeof(VectorBlockBounds) };//typeof(VectorBlockBounds) };//, typeof(VectorTranslate), typeof(VectorRotate) };
             var summary = BenchmarkRunner.Run(benchmarks);
+        }
+
+        public static (VectorBlock, float[]) GlobalSetup(int dims, int numVectors)
+        {
+            float[] spanArray;
+            var vectorBlock = new VectorBlock();
+            if (dims == 2)
+            {
+                vectorBlock.LineSequence = new VectorBlock.Types.LineSequence();
+                vectorBlock.LineSequence.Points.Capacity = numVectors * 2;
+                Random random = new Random();
+                for (int i = 0; i < numVectors; i++)
+                {
+                    vectorBlock.LineSequence.Points.Add((float)(random.NextDouble() * 10f));
+                    vectorBlock.LineSequence.Points.Add((float)(random.NextDouble() * 10f));
+                }
+                spanArray = vectorBlock.LineSequence.Points.ToArray();
+            }
+            else
+            {
+                vectorBlock.LineSequence3D = new VectorBlock.Types.LineSequence3D();
+                vectorBlock.LineSequence3D.Points.Capacity = numVectors * 3;
+                Random random = new Random();
+                for (int i = 0; i < numVectors; i++)
+                {
+                    vectorBlock.LineSequence3D.Points.Add((float)(random.NextDouble() * 10f));
+                    vectorBlock.LineSequence3D.Points.Add((float)(random.NextDouble() * 10f));
+                    vectorBlock.LineSequence3D.Points.Add((float)(random.NextDouble() * 10f));
+                }
+                spanArray = vectorBlock.LineSequence3D.Points.ToArray();
+            }
+            return (vectorBlock, spanArray);
         }
 
         private static void debugVec2Trans()
@@ -864,6 +918,10 @@ namespace Benchmarks
             var bounds2 = bench.BoundsSpanSIMDVector();
 
             if (!bounds1.Equals(bounds2)) throw new Exception($"{bounds1}\r{bounds2}");
+
+            var bounds3 = bench.BoundsFinal();
+
+            if (!bounds1.Equals(bounds3)) throw new Exception($"{bounds1}\r{bounds3}");
         }
 
         private static void debugVec3Bounds()
@@ -878,6 +936,10 @@ namespace Benchmarks
             var bounds2 = bench.BoundsSpanSIMDVector();
 
             if (!bounds1.Equals(bounds2)) throw new Exception($"{bounds1}\r{bounds2}");
+
+            var bounds3 = bench.BoundsFinal();
+
+            if (!bounds1.Equals(bounds3)) throw new Exception($"{bounds1}\r{bounds3}");
         }
 
     }

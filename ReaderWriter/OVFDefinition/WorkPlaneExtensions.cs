@@ -68,7 +68,7 @@ namespace OpenVectorFormat
         /// </summary>
         /// <param name="workPlane"></param>
         /// <param name="angleRad"></param>
-        public static void Rotate(this IEnumerable<WorkPlane> workPlanes, float angleRad) 
+        public static void Rotate(this IEnumerable<WorkPlane> workPlanes, float angleRad)
         {
             foreach (var wp in workPlanes) { Rotate(wp, angleRad); }
         }
@@ -116,5 +116,25 @@ namespace OpenVectorFormat
         /// <param name="workPlane"></param>
         /// <returns></returns>
         public static int VectorCount(this IEnumerable<WorkPlane> workPlanes) => workPlanes.Sum(wp=>wp.VectorCount());
+
+        /// <summary>
+        /// Computes and stores the vector blocks axis aligned bounding box into their meta data.
+        /// Skips empty blocks.
+        /// </summary>
+        /// <param name="vectorBlocks"></param>
+        public static void StoreVectorBlockBoundsInMetaData(this WorkPlane workPlane)
+        {
+            workPlane.VectorBlocks.StoreVectorBlockBoundsInMetaData();
+        }
+
+        /// <summary>
+        /// Computes and stores the vector blocks axis aligned bounding box into their meta data.
+        /// Skips empty blocks.
+        /// </summary>
+        /// <param name="vectorBlocks"></param>
+        public static void StoreVectorBlockBoundsInMetaData(this IEnumerable<WorkPlane> workPlanes)
+        {
+            foreach (var wp in workPlanes) { wp.StoreVectorBlockBoundsInMetaData(); }
+        }
     }
 }

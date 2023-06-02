@@ -52,7 +52,7 @@ namespace OpenVectorFormat
         public static VectorBlock CloneWithoutVectorData(this VectorBlock blockToClone)
         {
             var clone = new VectorBlock();
-            
+
             clone.MarkingParamsKey = blockToClone.MarkingParamsKey;
             clone.LaserIndex = blockToClone.LaserIndex;
             clone.Repeats = blockToClone.Repeats;
@@ -184,7 +184,7 @@ namespace OpenVectorFormat
         /// <param name="translation"></param>
         public static void Translate(this IEnumerable<VectorBlock> vectorBlocks, Vector2 translation)
         {
-            foreach(var block in vectorBlocks) { block.Translate(translation); }
+            foreach (var block in vectorBlocks) { block.Translate(translation); }
         }
 
         /// <summary>
@@ -272,7 +272,7 @@ namespace OpenVectorFormat
                     var bounds = AxisAlignedBox2DExtensions.EmptyAAB2D();
                     foreach (var item in vectorBlock.HatchParaAdapt.HatchAsLinesequence)
                     {
-                        if(item.PointsWithParas.Count > 0)
+                        if (item.PointsWithParas.Count > 0)
                         {
                             var lsBounds = Bounds2DFromCoordinates(item.PointsWithParas, 3);
                             bounds.Contain(lsBounds);
@@ -307,6 +307,32 @@ namespace OpenVectorFormat
                 }
             }
             return bounds;
+        }
+
+        /// <summary>
+        /// Computes and stores the vector blocks axis aligned bounding box into their meta data.
+        /// Skips empty blocks.
+        /// </summary>
+        /// <param name="vectorBlocks"></param>
+        public static void StoreVectorBlockBoundsInMetaData(this IEnumerable<VectorBlock> vectorBlocks)
+        {
+            foreach (var block in vectorBlocks)
+            {
+                if (block.VectorCount() > 0)
+                {
+                    block.StoreVectorBlockBoundsInMetaData();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Computes and stores the vector blocks axis aligned bounding box into its meta data.
+        /// </summary>
+        /// <param name="vectorBlock"></param>
+        public static void StoreVectorBlockBoundsInMetaData(this VectorBlock vectorBlock)
+        {
+            if (vectorBlock.MetaData == null) vectorBlock.MetaData = new VectorBlock.Types.VectorBlockMetaData();
+            vectorBlock.MetaData.Bounds = vectorBlock.Bounds2D();
         }
 
         /// <summary>
@@ -387,7 +413,7 @@ namespace OpenVectorFormat
                 case VectorBlock.VectorDataOneofCase.PointSequence3D:
                     return vectorBlock.PointSequence3D.Points;
                 case VectorBlock.VectorDataOneofCase.Arcs3D:
-                     return vectorBlock.Arcs3D.Centers;
+                    return vectorBlock.Arcs3D.Centers;
                 case VectorBlock.VectorDataOneofCase.LineSequenceParaAdapt:
                     return vectorBlock.LineSequenceParaAdapt.PointsWithParas;
                 case VectorBlock.VectorDataOneofCase.HatchParaAdapt:
@@ -443,7 +469,7 @@ namespace OpenVectorFormat
 
         private static void AddToVector2(RepeatedField<float> coordinates, Vector2 translation)
         {
-            
+
             //did some benchmarks (on AVX2 capable hardware) to estimate the threshold when the overhead of
             //getting the span with reflection is compensated by SIMD speedup => ~190
             if (coordinates.Count > 190)
@@ -482,7 +508,7 @@ namespace OpenVectorFormat
 
         private static AxisAlignedBox2D Bounds2DFromCoordinates(RepeatedField<float> coordinates, int dims)
         {
-            if (coordinates.Count == 0) 
+            if (coordinates.Count == 0)
                 return AxisAlignedBox2DExtensions.EmptyAAB2D();
             else if (coordinates.Count > 100 * dims)
             {
@@ -500,10 +526,10 @@ namespace OpenVectorFormat
                 };
                 for (int i = dims; i < coordinates.Count - 1; i += dims)
                 {
-                    if (bounds.XMin > coordinates[i]) bounds.XMin = coordinates[i];
-                    if (bounds.YMin > coordinates[i + 1]) bounds.YMin = coordinates[i + 1];
-                    if (bounds.XMax > coordinates[i]) bounds.XMax = coordinates[i];
-                    if (bounds.YMax > coordinates[i + 1]) bounds.YMax = coordinates[i + 1];
+                    if (coordinates[i] < bounds.XMin) bounds.XMin = coordinates[i];
+                    if (coordinates[i + 1] < bounds.YMin) bounds.YMin = coordinates[i + 1];
+                    if (coordinates[i] > bounds.XMax) bounds.XMax = coordinates[i];
+                    if (coordinates[i + 1] > bounds.YMax) bounds.YMax = coordinates[i + 1];
                 }
                 return bounds;
             }
