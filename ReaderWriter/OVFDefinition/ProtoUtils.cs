@@ -32,6 +32,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 
 namespace OpenVectorFormat.Utils
 {
@@ -41,8 +42,30 @@ namespace OpenVectorFormat.Utils
     public static class ProtoUtils
     {
         //this fieldInfo to access private fields of repeatedField<float> is only calculated once
-        private static readonly FieldInfo repFieldFloatPrivateArray = typeof(RepeatedField<float>).GetField("array", BindingFlags.NonPublic | BindingFlags.Instance);
-        
+        private static readonly FieldInfo repFieldPrivateArrayFieldInfo = typeof(RepeatedField<float>).GetField("array", BindingFlags.NonPublic | BindingFlags.Instance);
+
+#if NETCOREAPP3_0_OR_GREATER
+        private static readonly Func<RepeatedField<float>, float[]> repFieldArrayDynamicGetter = CreateGetter<RepeatedField<float>, float[]>(repFieldPrivateArrayFieldInfo);
+
+        private static Func<S, T> CreateGetter<S, T>(FieldInfo field)
+        {
+            string methodName = field.ReflectedType.FullName + ".get_" + field.Name;
+            DynamicMethod getterMethod = new DynamicMethod(methodName, typeof(T), new Type[1] { typeof(S) }, true);
+            ILGenerator gen = getterMethod.GetILGenerator();
+            if (field.IsStatic)
+            {
+                gen.Emit(OpCodes.Ldsfld, field);
+            }
+            else
+            {
+                gen.Emit(OpCodes.Ldarg_0);
+                gen.Emit(OpCodes.Ldfld, field);
+            }
+            gen.Emit(OpCodes.Ret);
+            return (Func<S, T>)getterMethod.CreateDelegate(typeof(Func<S, T>));
+        }
+#endif
+
         /// <summary>
         /// Creates a copy of a protobuf message with some fields excluded.
         /// </summary>
@@ -123,7 +146,11 @@ namespace OpenVectorFormat.Utils
         /// <returns></returns>
         public static Span<float> AsSpan(this RepeatedField<float> repeatedField)
         {
-            var privateArray = (float[]) repFieldFloatPrivateArray.GetValue(repeatedField);
+#if NETCOREAPP3_0_OR_GREATER
+            var privateArray = repFieldArrayDynamicGetter(repeatedField);
+#else
+            var privateArray = (float[]) repFieldPrivateArrayFieldInfo.GetValue(repeatedField);
+#endif
             return privateArray.AsSpan().Slice(0, repeatedField.Count);
         }
     }

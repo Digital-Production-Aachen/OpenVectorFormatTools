@@ -150,7 +150,7 @@ namespace OpenVectorFormat
                 case VectorBlock.VectorDataOneofCase.PointSequence:
                 case VectorBlock.VectorDataOneofCase.Arcs:
                 case VectorBlock.VectorDataOneofCase.Ellipses:
-                    AddToVector2(vectorBlock.RawCoordinates(), translation);
+                    TranslateAsVector2(vectorBlock.RawCoordinates().AsSpan(), translation);
                     break;
 
                 case VectorBlock.VectorDataOneofCase.LineSequence3D:
@@ -158,13 +158,13 @@ namespace OpenVectorFormat
                 case VectorBlock.VectorDataOneofCase.PointSequence3D:
                 case VectorBlock.VectorDataOneofCase.Arcs3D:
                 case VectorBlock.VectorDataOneofCase.LineSequenceParaAdapt:
-                    AddToVector3(vectorBlock.RawCoordinates(), translation);
+                    TranslateAsVector3(vectorBlock.RawCoordinates().AsSpan(), translation);
                     break;
 
                 case VectorBlock.VectorDataOneofCase.HatchParaAdapt:
                     foreach (var item in vectorBlock.HatchParaAdapt.HatchAsLinesequence)
                     {
-                        AddToVector3(item.PointsWithParas, translation);
+                        TranslateAsVector3(item.PointsWithParas.AsSpan(), translation);
                     }
                     break;
 
@@ -464,45 +464,6 @@ namespace OpenVectorFormat
                 float xNew = coordinates[i] * cos + coordinates[i + 1] * nsin;
                 float yNew = coordinates[i] * sin + coordinates[i + 1] * cos;
                 coordinates[i] = xNew; coordinates[i + 1] = yNew;
-            }
-        }
-
-        private static void AddToVector2(RepeatedField<float> coordinates, Vector2 translation)
-        {
-
-            //did some benchmarks (on AVX2 capable hardware) to estimate the threshold when the overhead of
-            //getting the span with reflection is compensated by SIMD speedup => ~190
-            if (coordinates.Count > 190)
-            {
-                var coordSpan = coordinates.AsSpan();
-                TranslateAsVector2(coordSpan, translation);
-            }
-            else
-            {
-                TranslateFallback(coordinates, translation, 2);
-            }
-        }
-
-        private static void AddToVector3(RepeatedField<float> coordinates, Vector2 translation)
-        {
-            if (coordinates.Count > 300)
-            {
-                var coordSpan = coordinates.AsSpan();
-                TranslateAsVector3(coordSpan, translation);
-            }
-            else
-            {
-                TranslateFallback(coordinates, translation, 3);
-            }
-        }
-
-        private static void TranslateFallback(RepeatedField<float> coordinates, Vector2 translation, int dims)
-        {
-            if (coordinates.Count % dims != 0) throw new ArgumentException($"coordinates count is {coordinates.Count} but must be a multiple of {dims}");
-            for (int i = 0; i < coordinates.Count - 1; i += dims)
-            {
-                coordinates[i] += translation.X;
-                coordinates[i + 1] += translation.Y;
             }
         }
 

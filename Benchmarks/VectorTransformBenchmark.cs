@@ -42,10 +42,10 @@ namespace Benchmarks
 {
     [MemoryDiagnoser]
     [SimpleJob(RuntimeMoniker.Net70, baseline: true)]
-    [SimpleJob(RuntimeMoniker.Net60)]
+    //[SimpleJob(RuntimeMoniker.Net60)]
     public class VectorTranslate
     {
-        [Params(1, 20, 40, 60, 80, 100, 10000, 1000000)]
+        [Params(1, 4, 8, 24, 28, 100, 10000)]
         public int numVectors { get; set; }
         [Params(2, 3)]
         public int dims { get; set; }
@@ -171,7 +171,7 @@ namespace Benchmarks
                 var coordSpan = vectorBlock.RawCoordinates().AsSpan();
                 var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordSpan);
                 int chunkSize = Vector<float>.Count;
-                var inputVec = new float[chunkSize];
+                Span<float> inputVec = stackalloc float[chunkSize];
 
                 for (int i = 0; i < chunkSize - 1; i += 2)
                 {
@@ -199,7 +199,7 @@ namespace Benchmarks
                 var coordSpan = vectorBlock.RawCoordinates().AsSpan();
                 var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordSpan);
                 int chunkSize = Vector<float>.Count;
-                var inputVec = new float[chunkSize * 3];
+                Span<float> inputVec = stackalloc float[chunkSize * 3];
 
                 for (int i = 0; i < chunkSize * 3; i += 3)
                 {
@@ -208,9 +208,9 @@ namespace Benchmarks
                     //inputVec[i + 2] = 0;
                 }
 
-                var addVec1 = new Vector<float>(inputVec, 0);
-                var addVec2 = new Vector<float>(inputVec, chunkSize);
-                var addVec3 = new Vector<float>(inputVec, chunkSize * 2);
+                var addVec1 = new Vector<float>(inputVec);
+                var addVec2 = new Vector<float>(inputVec.Slice(chunkSize));
+                var addVec3 = new Vector<float>(inputVec.Slice(chunkSize * 2));
 
                 for (int i = 0; i < vecSpan.Length - 2; i += 3)
                 {

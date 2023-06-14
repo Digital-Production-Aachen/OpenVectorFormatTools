@@ -48,13 +48,16 @@ namespace OpenVectorFormat
         public static void TranslateAsVector2(Span<float> coordinates, Vector2 translation)
         {
             if (coordinates.Length % 2 != 0) throw new ArgumentException($"count of coordinates must be even, but is {coordinates.Length}");
-            //did some benchmarks (on AVX2 capable hardware) to estimate the threshold when the overhead of
-            //getting the span with reflection is compensated by SIMD speedup => ~190
-            if (coordinates.Length > Vector<float>.Count && Vector.IsHardwareAccelerated && Vector<float>.Count % 2 == 0)
+            //did some benchmarks (on AVX2 capable hardware) to estimate the threshold of the overhead
+            if (coordinates.Length > Vector<float>.Count * 6 && Vector.IsHardwareAccelerated && Vector<float>.Count % 2 == 0)
             {
                 var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordinates);
                 int chunkSize = Vector<float>.Count;
+#if NETCOREAPP3_0_OR_GREATER
+                Span<float> inputVec = stackalloc float[chunkSize];
+#else
                 var inputVec = new float[chunkSize];
+#endif
 
                 for (int i = 0; i < chunkSize - 1; i += 2)
                 {
@@ -69,21 +72,14 @@ namespace OpenVectorFormat
                     vecSpan[i] += addVec;
                 }
 
-                var restCoord = coordinates.Slice(vecSpan.Length * chunkSize);
-
-                var vec2Span = MemoryMarshal.Cast<float, Vector2>(restCoord);
-                for (int i = 0; i < vec2Span.Length; i++)
-                {
-                    vec2Span[i] += translation;
-                }
+                //slice to let the fallback handle the rest
+                coordinates = coordinates.Slice(vecSpan.Length * chunkSize);
             }
-            else
+
+            var vec2Span = MemoryMarshal.Cast<float, Vector2>(coordinates);
+            for (int i = 0; i < vec2Span.Length; i++)
             {
-                for (int i = 0; i < coordinates.Length - 1; i += 2)
-                {
-                    coordinates[i] += translation.X;
-                    coordinates[i + 1] += translation.Y;
-                }
+                vec2Span[i] += translation;
             }
         }
 
@@ -102,10 +98,15 @@ namespace OpenVectorFormat
             {
                 int chunkSize = Vector<float>.Count;
                 var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordinates);
-
+#if NETCOREAPP3_0_OR_GREATER
+                Span<float> inputVec1 = stackalloc float[chunkSize];
+                Span<float> inputVec2 = stackalloc float[chunkSize];
+                Span<float> inputVec3 = stackalloc float[chunkSize];
+#else
                 var inputVec1 = new float[chunkSize];
                 var inputVec2 = new float[chunkSize];
                 var inputVec3 = new float[chunkSize];
+#endif
 
                 for (int i = 0; i < chunkSize; i += 3)
                 {
@@ -291,7 +292,11 @@ namespace OpenVectorFormat
                 var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordinates);
 
                 int chunkSize = Vector<float>.Count;
+#if NETCOREAPP3_0_OR_GREATER
+                Span<int> mask = stackalloc int[chunkSize * 3];
+#else
                 var mask = new int[chunkSize * 3];
+#endif
 
                 for (int i = 0; i < mask.Length; i += 3)
                 {
@@ -299,11 +304,15 @@ namespace OpenVectorFormat
                     mask[i + 1] = 0;
                     mask[i + 2] = 0;
                 }
-
+#if NETCOREAPP3_0_OR_GREATER
+                var mask1 = new Vector<int>(mask);
+                var mask2 = new Vector<int>(mask.Slice(chunkSize));
+                var mask3 = new Vector<int>(mask.Slice(chunkSize * 2));
+#else
                 var mask1 = new Vector<int>(mask);
                 var mask2 = new Vector<int>(mask, chunkSize);
                 var mask3 = new Vector<int>(mask, chunkSize * 2);
-
+#endif
                 //use conditional selects to move coordinates from 3 vectors into 2 that only contain
                 //x and y coordinates respectively (but not in order)
                 //we don't use shuffles because they would require switching to Vector256/AVX2 and not be
