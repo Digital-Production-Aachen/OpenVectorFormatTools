@@ -787,7 +787,7 @@ namespace Benchmarks
             debugVec3Rot();
             debugVec2Bounds();
             debugVec3Bounds();
-            Type[] benchmarks = { typeof(VectorBlockBounds) };//typeof(VectorBlockBounds) };//, typeof(VectorTranslate), typeof(VectorRotate) };
+            Type[] benchmarks = { typeof(VectorTranslate) };//typeof(VectorBlockBounds) };//, typeof(VectorTranslate), typeof(VectorRotate) };
             var summary = BenchmarkRunner.Run(benchmarks);
         }
 

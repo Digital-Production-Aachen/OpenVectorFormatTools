@@ -40,6 +40,9 @@ namespace OpenVectorFormat.Utils
     /// </summary>
     public static class ProtoUtils
     {
+        //this fieldInfo to access private fields of repeatedField<float> is only calculated once
+        private static readonly FieldInfo repFieldFloatPrivateArray = typeof(RepeatedField<float>).GetField("array", BindingFlags.NonPublic | BindingFlags.Instance);
+        
         /// <summary>
         /// Creates a copy of a protobuf message with some fields excluded.
         /// </summary>
@@ -106,10 +109,22 @@ namespace OpenVectorFormat.Utils
         public static Span<T> AsSpan<T>(this RepeatedField<T> repeatedField)
         {
             var arrayField = typeof(RepeatedField<T>).GetField("array", BindingFlags.NonPublic | BindingFlags.Instance);
-            var privateArray = arrayField.GetValue(repeatedField) as T[];
-            var countField = typeof(RepeatedField<T>).GetField("count", BindingFlags.NonPublic | BindingFlags.Instance);
-            var count = (int) countField.GetValue(repeatedField);
-            return privateArray.AsSpan().Slice(0, count);
+            var privateArray = (T[]) arrayField.GetValue(repeatedField);
+            return privateArray.AsSpan().Slice(0, repeatedField.Count);
+        }
+
+        /// <summary>
+        /// Creates a span for the given repeated field's underlying private array.
+        /// It is not safe to add or remove to and from the repeated field while using the Span,
+        /// since this might allocate a new private array.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="repeatedField"></param>
+        /// <returns></returns>
+        public static Span<float> AsSpan(this RepeatedField<float> repeatedField)
+        {
+            var privateArray = (float[]) repFieldFloatPrivateArray.GetValue(repeatedField);
+            return privateArray.AsSpan().Slice(0, repeatedField.Count);
         }
     }
 }
