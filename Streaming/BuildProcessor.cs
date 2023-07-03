@@ -53,9 +53,9 @@ namespace OpenVectorFormat.Streaming
         /// <param name="ovfPart">part meta data to overwrite into JobShell.partsMap and vectorBlocks.metaData.partKey</param>
         /// <param name="markAsSupport">tags all vector blocks of the slicableMesh as support if true</param>
         /// <param name="translation">translation to apply to all vectors in the slicableMesh</param>
-        public BuildProcessor(ParameterSetEngine parameterSetEngine, FileReader slicableMesh, OpenVectorFormat.Part ovfPart, bool markAsSupport = false, float translationX = 0, float translationY = 0)
+        public BuildProcessor(ParameterSetEngine parameterSetEngine, FileReader slicableMesh, OpenVectorFormat.Part ovfPart, bool markAsSupport = false, float translationX = 0, float translationY = 0, float rotationInRad = 0)
             :this(parameterSetEngine, new FileReaderToMerge() 
-            { fr = slicableMesh, markAsSupport = markAsSupport, translationX = translationX, translationY = translationY}
+            { fr = slicableMesh, markAsSupport = markAsSupport, translationX = translationX, translationY = translationY, rotationInRad = rotationInRad}
             , ovfPart)
         {}
 

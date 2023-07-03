@@ -130,6 +130,7 @@ namespace OpenVectorFormat.Streaming
                         {
                             //create deep copies of the vector blocks coordinates
                             block = block.Clone();
+                            block.Rotate(fileReader.rotationInRad);
                             block.Translate(new System.Numerics.Vector2(fileReader.translationX, fileReader.translationY));
                         }
                         else
@@ -196,6 +197,7 @@ namespace OpenVectorFormat.Streaming
                                 patch = patch.Clone();
                                 var tempBlock = new VectorBlock();
                                 tempBlock.LineSequence = patch.OuterContour;
+                                tempBlock.Rotate(fileReader.rotationInRad);
                                 tempBlock.Translate(new System.Numerics.Vector2(fileReader.translationX, fileReader.translationY));
                             }
                             workPlane.MetaData.PatchesMap.Add(kvp.Key + patchKeyOffset, patch);

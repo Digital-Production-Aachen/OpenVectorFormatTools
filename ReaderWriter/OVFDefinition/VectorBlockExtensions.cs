@@ -56,20 +56,20 @@ namespace OpenVectorFormat
             clone.MarkingParamsKey = blockToClone.MarkingParamsKey;
             clone.LaserIndex = blockToClone.LaserIndex;
             clone.Repeats = blockToClone.Repeats;
-            clone.MetaData = blockToClone.MetaData.Clone();
+            clone.MetaData = blockToClone.MetaData?.Clone();
 
-            switch (clone.ProcessMetaDataCase)
+            switch (blockToClone.ProcessMetaDataCase)
             {
                 case VectorBlock.ProcessMetaDataOneofCase.None:
                     break;
                 case VectorBlock.ProcessMetaDataOneofCase.LpbfMetadata:
-                    clone.LpbfMetadata = blockToClone.LpbfMetadata.Clone();
+                    clone.LpbfMetadata = blockToClone.LpbfMetadata?.Clone();
                     break;
                 case VectorBlock.ProcessMetaDataOneofCase.MicroStructuringMetadata:
-                    clone.MicroStructuringMetadata = blockToClone.MicroStructuringMetadata.Clone();
+                    clone.MicroStructuringMetadata = blockToClone.MicroStructuringMetadata?.Clone();
                     break;
                 case VectorBlock.ProcessMetaDataOneofCase.PolishingMetadata:
-                    clone.PolishingMetadata = blockToClone.PolishingMetadata.Clone();
+                    clone.PolishingMetadata = blockToClone.PolishingMetadata?.Clone();
                     break;
             }
 
@@ -175,6 +175,15 @@ namespace OpenVectorFormat
                     throw new NotImplementedException($"unknown VectorDataCase: {vectorBlock.VectorDataCase}");
             }
         }
+
+        /// <summary>
+        /// Translates a vector block in the x/y plane.
+        /// Uses SIMD hardware acceleration if available.
+        /// </summary>
+        /// <param name="vectorBlock"></param>
+        /// <param name="translationX"></param>
+        /// <param name="translationY"></param>
+        public static void Translate(this VectorBlock vectorBlock, float translationX, float translationY) => vectorBlock.Translate(new Vector2(translationX, translationY));
 
         /// <summary>
         /// Translates a vector blocks in the x/y plane.

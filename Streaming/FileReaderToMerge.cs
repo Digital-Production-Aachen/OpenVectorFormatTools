@@ -52,6 +52,11 @@ namespace OpenVectorFormat.Streaming
         public float translationY;
 
         /// <summary>
+        /// rotation to apply to all vectors in plane
+        /// </summary>
+        public float rotationInRad;
+
+        /// <summary>
         /// number of layers this file reader needs to be shifted
         /// to reach the correct z-Height
         /// </summary>
