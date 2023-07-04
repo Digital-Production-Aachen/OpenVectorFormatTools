@@ -84,7 +84,7 @@ namespace OpenVectorFormat.OVFReaderWriter
         public override CacheState CacheState => _cacheState;
 
         /// <inheritdoc/>
-        public override async Task OpenJobAsync(string filename, IFileReaderWriterProgress progress)
+        public override async Task OpenJobAsync(string filename, IFileReaderWriterProgress progress = null)
         {
             if (_fileOperationInProgress != FileReadOperation.None)
             {
@@ -136,7 +136,7 @@ namespace OpenVectorFormat.OVFReaderWriter
                     var task = Task.Run(() =>
                     {
                         _readJobShell(jobLUTindex);
-                        progress.IsFinished = false;
+                        if(this.progress != null) this.progress.IsFinished = false;
                         _workPlaneLUTs = new WorkPlaneLUT[_jobShell.NumWorkPlanes];
                         for (int i_plane = 0; i_plane < _jobShell.NumWorkPlanes; i_plane++)
                         {
@@ -217,8 +217,8 @@ namespace OpenVectorFormat.OVFReaderWriter
             else
             {
                 _globalstream.Dispose();
-                progress.IsCancelled = false;
-                progress.IsFinished = false;
+                if (this.progress != null) progress.IsCancelled = false;
+                if (this.progress != null) progress.IsFinished = false;
 
                 _job = _jobShell.Clone();
                 _numberOfLayers = _job.NumWorkPlanes;
@@ -273,7 +273,7 @@ namespace OpenVectorFormat.OVFReaderWriter
         }
         private void UpdateStatus()
         {
-            progress.Update("reading workPlane " + _numberOfCachedLayers, (int)(((double)(_numberOfCachedLayers * 100)) / _numberOfLayers));
+            progress?.Update("reading workPlane " + _numberOfCachedLayers, (int)(((double)(_numberOfCachedLayers * 100)) / _numberOfLayers));
         }
         public override WorkPlane GetWorkPlaneShell(int i_workPlane)
         {

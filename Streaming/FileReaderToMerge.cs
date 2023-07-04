@@ -24,7 +24,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 using OpenVectorFormat.AbstractReaderWriter;
 using System.Collections.Generic;
-//using System.Numerics;
 
 namespace OpenVectorFormat.Streaming
 {
@@ -52,7 +51,7 @@ namespace OpenVectorFormat.Streaming
         public float translationY;
 
         /// <summary>
-        /// rotation to apply to all vectors in plane
+        /// rotation around z axis to apply to all vectors in the x/y plane
         /// </summary>
         public float rotationInRad;
 

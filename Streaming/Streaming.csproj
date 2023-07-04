@@ -14,7 +14,7 @@
   <PropertyGroup>
     <PackageId>OpenVectorFormat.Streaming</PackageId>
     <Description>
-      Reference implementation for streaming ovf.
+      Reference implementation for merging and applying LPBF parameters to ovf data using workplane-wise streaming to generate build jobs
     </Description>
     <Authors>The OpenVectorFormat Authors</Authors>
     <PackageLicenseExpression>LGPL-2.1-or-later</PackageLicenseExpression>

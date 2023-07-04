@@ -32,6 +32,7 @@
     <ProjectReference Include="..\ReaderWriter\FileReaderWriterFactory\FileReaderWriterFactory.csproj" />
     <ProjectReference Include="..\ReaderWriter\OVFDefinition\OVFDefinition.csproj" />
     <ProjectReference Include="..\ReaderWriter\OVFReaderWriter\OVFReaderWriter.csproj" />
+    <ProjectReference Include="..\Streaming\Streaming.csproj" />
   </ItemGroup>
 
 </Project>

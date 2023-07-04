@@ -24,18 +24,18 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 using OpenVectorFormat;
 using OpenVectorFormat.AbstractReaderWriter;
-using OpenVectorFormat.FileReaderWriterFactory;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OpenVectorFormat.Streaming
+namespace OpenVectorFormat.OVFReaderWriter
 {
     /// <summary>
     /// This class support adding vector blocks to random heights in any order
     /// and writing the result to OVF sorted by layer height.
+    /// The data is cached in memory until the file is written.
     /// </summary>
     public class OVFRandomWriter
     {
@@ -92,8 +92,6 @@ namespace OpenVectorFormat.Streaming
 
         public void Write(string targetFile, IFileReaderWriterProgress progress = null)
         {
-            if (progress == null)
-                progress = new FileReaderWriterProgress();
             jobshell.NumWorkPlanes = workplanes.Count;
             using (var writer = new OpenVectorFormat.OVFReaderWriter.OVFFileWriter())
             {

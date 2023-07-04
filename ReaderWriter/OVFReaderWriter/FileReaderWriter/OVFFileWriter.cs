@@ -69,7 +69,7 @@ namespace OpenVectorFormat.OVFReaderWriter
         #region Partial Write. LUTs are included in file to enable partial reading.
 
         /// <inheritdoc/>
-        public override void StartWritePartial(Job jobShell, string filename, IFileReaderWriterProgress progress)
+        public override void StartWritePartial(Job jobShell, string filename, IFileReaderWriterProgress progress = null)
         {
             _fileOperationInProgress = FileWriteOperation.PartialWrite;
 
@@ -201,7 +201,7 @@ namespace OpenVectorFormat.OVFReaderWriter
                     _fs.Position = _LUTPositionIndex;
                     byte[] lutPosBytes = ConvertToByteArrayLittleEndian(LUTPosition);
                     _fs.Write(lutPosBytes, 0, lutPosBytes.Length);
-                    progress.IsFinished = true;
+                    if(progress != null) progress.IsFinished = true;
                 }
             }
             _fs?.Dispose();
@@ -212,7 +212,7 @@ namespace OpenVectorFormat.OVFReaderWriter
         }
 
         /// <inheritdoc/>
-        public override async Task SimpleJobWriteAsync(Job job, string filename, IFileReaderWriterProgress progress)
+        public override async Task SimpleJobWriteAsync(Job job, string filename, IFileReaderWriterProgress progress = null)
         {
             CheckConsistence(job.NumWorkPlanes, job.WorkPlanes.Count);
 
