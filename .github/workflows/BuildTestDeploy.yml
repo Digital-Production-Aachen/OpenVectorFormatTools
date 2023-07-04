@@ -50,11 +50,11 @@ jobs:
     - name: Test Linux
       if: contains(matrix.os, 'ubuntu')
       run: |
-        dotnet run --configuration Release --framework net7 --no-build --project ReaderWriter/FileReaderWriterFactoryGRPCWrapper/FileReaderWriterFactoryGRPCWrapper.csproj &
+        dotnet run --configuration Release --framework net6 --no-build --project ReaderWriter/FileReaderWriterFactoryGRPCWrapper/FileReaderWriterFactoryGRPCWrapper.csproj &
         grpcpid="$!"
         echo "started grpc server"
         sleep 5s
-        dotnet test --no-build --configuration Release --framework net7
+        dotnet test --no-build --configuration Release --framework net6
         kill $grpcpid
                   
     - name: Test Windows
