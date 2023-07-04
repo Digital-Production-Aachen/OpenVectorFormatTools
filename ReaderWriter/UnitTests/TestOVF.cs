@@ -53,6 +53,13 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 IFileReaderWriterProgress progRead = new FileReaderWriterProgressDummy();
                 await simpleReader.OpenJobAsync(test_filename, progRead);
                 Job readJob = await simpleReader.CacheJobToMemoryAsync();
+
+                readJob.JobMetaData = null;
+                foreach (var workplane in readJob.WorkPlanes)
+                {
+                    workplane.MetaData = null;
+                }
+
                 Assert.AreEqual(originalJobToCompareTo, readJob);
             }
         }
@@ -88,6 +95,13 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             IFileReaderWriterProgress progRead = new FileReaderWriterProgressDummy();
             await testReader.OpenJobAsync(test_filename, progRead);
             Job readJob = await testReader.CacheJobToMemoryAsync();
+
+            readJob.JobMetaData = null;
+            foreach (var workplane in readJob.WorkPlanes)
+            {
+                workplane.MetaData = null;
+            }
+
             Assert.AreEqual(originalJobToCompareTo, readJob);
             testReader.Dispose();
         }

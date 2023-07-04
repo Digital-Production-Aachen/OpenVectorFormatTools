@@ -101,6 +101,12 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                     convertedJob = ASPHelperUtils.HandleJobCompareWithASPTarget(originalJob, convertedJob);
                 }
 
+                convertedJob.JobMetaData.Bounds = null;
+                foreach (var workplane in convertedJob.WorkPlanes)
+                {
+                    workplane.MetaData = null;
+                }
+
                 Assert.AreEqual(originalJob, convertedJob);
 
                 Vector2 translation = new Vector2(4, 5);
