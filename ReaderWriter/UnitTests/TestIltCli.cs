@@ -140,7 +140,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 foreach (IVectorBlock vBlock in layer.VectorBlocks)
                 {
                     //check if Vectorblocks are not empty
-                    Assert.AreNotEqual(0, vBlock.Coordinates);
+                    Assert.AreNotEqual(0, vBlock.Coordinates.Length);
                     //Test if start and end coordinates match
                     if (vBlock is IPolyline polyline)
                     {
