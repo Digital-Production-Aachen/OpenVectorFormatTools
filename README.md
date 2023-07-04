@@ -19,17 +19,18 @@ Translate, Rotate and Bounds uses SIMD intrinsics on supported hardware with sof
 A set of reader / writer libraries providing a simple interface to manage OpenVectorFormat-Jobs in your application.
 For further information, see here: [Reader / Writer Libraries](ReaderWriter)
 
-### Streaming Capabilites to Merge, Translate, Rotate and Apply Parameters to OVF data
+### Streaming Capabilites to Merge, Translate, Rotate and Apply Parameters to OVF Data
 The BuildProcessor and StreamingMerger classes of the OVF Streaming project are used to merge sliced OVF data of single parts into full build job files.
 The BuildProcessor accepts multiple OVF data sources and applies appropriate parameters to each vector block based on the block meta data provided by the slicer (e.g. upskin, downskin, contour, volume etc.).
 It can also mark all blocks of an OVF source as support. Build Processors are initialized with an OVF ParameterSetEngine object that defines valid parameter sets and fallbacks for missing parameters.
 BuildProcessor and StreamingMerger also support translating and rotating vector data to instantiate parts in a build job, using the SIMD accelerated extansions.
+
 Streaming capable means that all operations are lazily executed only when workplanes and vector blocks are written, e.g. to an OVFFileWriter. This vastly reduced the in-memory footprint of build jobs.
 All Streaming capable classes inherit from the abstract FileReader class and can be nested this way. A typical setup is using one BuildProcessor per part to merge part and supports and apply parameters,
 and then merging multiple build processors to a job using StreamingMerger for instance-wise translations and rotations.
 
 ### Plausibility / Consistency Checker (C# only currently)
- A tool to check basic consistency of a job, e.g. to check that the number of layers is consistent throughout the job. For further information, see here: [Plausibility Checker](PlausibilityChecker)
+A tool to check basic consistency of a job, e.g. to check that the number of layers is consistent throughout the job. For further information, see here: [Plausibility Checker](PlausibilityChecker)
 
 ### Missing tools?
 Feel free to open an issue regarding any tools you would like to see - or start hacking and open a pull request for it to be integrated into this repository!
