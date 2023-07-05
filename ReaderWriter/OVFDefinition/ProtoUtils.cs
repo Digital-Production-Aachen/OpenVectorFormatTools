@@ -37,15 +37,19 @@ using System.Reflection.Emit;
 namespace OpenVectorFormat.Utils
 {
     /// <summary>
-    /// Class to hold general, usefull utilites for working with protobuf messages.
+    /// Class to hold general, useful utilities for working with protobuf messages.
     /// </summary>
     public static class ProtoUtils
     {
         //this fieldInfo to access private fields of repeatedField<float> is only calculated once
         private static readonly FieldInfo repFieldPrivateArrayFieldInfo = typeof(RepeatedField<float>).GetField("array", BindingFlags.NonPublic | BindingFlags.Instance);
 
+        private static readonly Func<RepeatedField<float>, float[]> repFieldArrayDynamicGetter =
 #if NETCOREAPP3_0_OR_GREATER
-        private static readonly Func<RepeatedField<float>, float[]> repFieldArrayDynamicGetter = CreateGetter<RepeatedField<float>, float[]>(repFieldPrivateArrayFieldInfo);
+            !System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported ?
+            ReflectGetter :
+#endif
+            CreateGetter<RepeatedField<float>, float[]>(repFieldPrivateArrayFieldInfo);
 
         private static Func<S, T> CreateGetter<S, T>(FieldInfo field)
         {
@@ -64,7 +68,11 @@ namespace OpenVectorFormat.Utils
             gen.Emit(OpCodes.Ret);
             return (Func<S, T>)getterMethod.CreateDelegate(typeof(Func<S, T>));
         }
-#endif
+
+        private static float[] ReflectGetter(RepeatedField<float> field)
+        {
+            return (float[])repFieldPrivateArrayFieldInfo.GetValue(field);
+        }
 
         /// <summary>
         /// Creates a copy of a protobuf message with some fields excluded.
@@ -141,16 +149,11 @@ namespace OpenVectorFormat.Utils
         /// It is not safe to add or remove to and from the repeated field while using the Span,
         /// since this might allocate a new private array.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="repeatedField"></param>
         /// <returns></returns>
         public static Span<float> AsSpan(this RepeatedField<float> repeatedField)
         {
-#if NETCOREAPP3_0_OR_GREATER
             var privateArray = repFieldArrayDynamicGetter(repeatedField);
-#else
-            var privateArray = (float[]) repFieldPrivateArrayFieldInfo.GetValue(repeatedField);
-#endif
             return privateArray.AsSpan().Slice(0, repeatedField.Count);
         }
     }

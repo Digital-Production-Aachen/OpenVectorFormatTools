@@ -28,6 +28,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
 
 	  <Protobuf Include="../../submodules/OpenVectorFormat/build_processor_strategy.proto" />
 	  <Protobuf Include="../../submodules/OpenVectorFormat/open_vector_format.proto" />

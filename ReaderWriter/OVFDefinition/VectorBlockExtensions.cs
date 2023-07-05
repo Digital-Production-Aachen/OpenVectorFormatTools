@@ -28,12 +28,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.InteropServices;
-#if NETCOREAPP3_0_OR_GREATER
-using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
-#endif
-using System.Transactions;
 using static OpenVectorFormat.SIMDVectorOperations;
 
 namespace OpenVectorFormat
@@ -442,66 +436,20 @@ namespace OpenVectorFormat
             }
         }
 
-#if NETCOREAPP3_0_OR_GREATER
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
-        private struct Vec256FromVec3
-        {
-            public Vector256<float> vec256;
-            private float unused;
-        }
-#endif
-
         private static void RotateVector2(RepeatedField<float> coordinates, float angleRad, int dims)
         {
-            if (coordinates.Count % dims != 0) throw new ArgumentException($"coordinates count is {coordinates.Count} but must be a multiple of {dims}");
-
-#if NETCOREAPP3_0_OR_GREATER
-            if (Avx2.IsSupported & coordinates.Count > 80 * dims)
-            {
-                var coordSpan = ProtoUtils.AsSpan<float>(coordinates);
-                RotateAsVector2(coordSpan, angleRad, dims);
-                return;
-            }
-#endif
-
-            var sin = (float)Math.Sin(angleRad);
-            var cos = (float)Math.Cos(angleRad);
-            var nsin = -sin;
-
-            for (int i = 0; i < coordinates.Count - 1; i += dims)
-            {
-                float xNew = coordinates[i] * cos + coordinates[i + 1] * nsin;
-                float yNew = coordinates[i] * sin + coordinates[i + 1] * cos;
-                coordinates[i] = xNew; coordinates[i + 1] = yNew;
-            }
+            var coordSpan = coordinates.AsSpan();
+            RotateAsVector2(coordSpan, angleRad, dims);
         }
 
         private static AxisAlignedBox2D Bounds2DFromCoordinates(RepeatedField<float> coordinates, int dims)
         {
             if (coordinates.Count == 0)
                 return AxisAlignedBox2DExtensions.EmptyAAB2D();
-            else if (coordinates.Count > 100 * dims)
+            else
             {
                 var coordSpan = coordinates.AsSpan();
                 return SIMDVectorOperations.Bounds2D(coordSpan, dims);
-            }
-            else
-            {
-                var bounds = new AxisAlignedBox2D()
-                {
-                    XMin = coordinates[0],
-                    YMin = coordinates[1],
-                    XMax = coordinates[0],
-                    YMax = coordinates[1],
-                };
-                for (int i = dims; i < coordinates.Count - 1; i += dims)
-                {
-                    if (coordinates[i] < bounds.XMin) bounds.XMin = coordinates[i];
-                    if (coordinates[i + 1] < bounds.YMin) bounds.YMin = coordinates[i + 1];
-                    if (coordinates[i] > bounds.XMax) bounds.XMax = coordinates[i];
-                    if (coordinates[i + 1] > bounds.YMax) bounds.YMax = coordinates[i + 1];
-                }
-                return bounds;
             }
         }
 
@@ -514,7 +462,6 @@ namespace OpenVectorFormat
         /// <returns></returns>
         public static List<Vector2> ToVector2(this VectorBlock vectorBlock)
         {
-            var list = new List<Vector2>();
             switch (vectorBlock.VectorDataCase)
             {
                 case VectorBlock.VectorDataOneofCase.LineSequence:
@@ -556,7 +503,6 @@ namespace OpenVectorFormat
         /// <returns></returns>
         public static List<Vector3> ToVector3(this VectorBlock vectorBlock)
         {
-            var list = new List<Vector2>();
             switch (vectorBlock.VectorDataCase)
             {
                 case VectorBlock.VectorDataOneofCase.LineSequence:

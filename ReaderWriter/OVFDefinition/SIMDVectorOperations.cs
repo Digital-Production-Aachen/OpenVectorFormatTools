@@ -23,16 +23,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.InteropServices;
 #if NETCOREAPP3_0_OR_GREATER
 using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics;
 #endif
-using System.Text;
-using System.Transactions;
-using System.Threading;
 
 namespace OpenVectorFormat
 {

@@ -389,7 +389,7 @@ namespace Benchmarks
 
             if (dims == 2 && coordinates.Count >= Vector<float>.Count)
             {
-                var coordSpan = vectorBlock.RawCoordinates().AsSpan();
+                var coordSpan = coordinates.AsSpan();
                 var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordSpan);
                 int chunkSize = Vector<float>.Count;
 
@@ -417,7 +417,7 @@ namespace Benchmarks
                     bounds.YMax = Math.Max(bounds.YMax, maxVector[i + 1]);
                 }
             }
-            else if(coordinates.Count >= 24) { 
+            else if(coordinates.Count >= Vector<float>.Count * 3) { 
                 var coordSpan = vectorBlock.RawCoordinates().AsSpan();
                 var vecSpan = MemoryMarshal.Cast<float, Vector<float>>(coordSpan);
                 //var vecSpanShifted = MemoryMarshal.Cast<float, Vector<float>>(coordSpan.Slice(1));
@@ -787,7 +787,7 @@ namespace Benchmarks
             debugVec3Rot();
             debugVec2Bounds();
             debugVec3Bounds();
-            Type[] benchmarks = { typeof(VectorTranslate) };//typeof(VectorBlockBounds) };//, typeof(VectorTranslate), typeof(VectorRotate) };
+            Type[] benchmarks = { typeof(VectorBlockBounds) };//typeof(VectorBlockBounds) };//, typeof(VectorTranslate), typeof(VectorRotate) };
             var summary = BenchmarkRunner.Run(benchmarks);
         }
 
