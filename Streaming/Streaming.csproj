@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReaderWriter\AbstractReaderWriter\AbstractReaderWriter.csproj" />
+    <ProjectReference Include="..\ReaderWriter\FileReaderWriterFactory\FileReaderWriterFactory.csproj" />
+    <ProjectReference Include="..\ReaderWriter\OVFDefinition\OVFDefinition.csproj" />
+    <ProjectReference Include="..\ReaderWriter\OVFReaderWriter\OVFReaderWriter.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <PackageId>OpenVectorFormat.Streaming</PackageId>
+    <Description>
+      Reference implementation for merging and applying LPBF parameters to ovf data using workplane-wise streaming to generate build jobs
+    </Description>
+    <Authors>The OpenVectorFormat Authors</Authors>
+    <PackageLicenseExpression>LGPL-2.1-or-later</PackageLicenseExpression>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/Digital-Production-Aachen/OpenVectorFormatTools</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/Digital-Production-Aachen/OpenVectorFormatTools</PackageProjectUrl>
+    <PackageIconUrl>https://github.com/Digital-Production-Aachen/OpenVectorFormatTools/blob/main/icon.png</PackageIconUrl>
+  </PropertyGroup>
+
+</Project>

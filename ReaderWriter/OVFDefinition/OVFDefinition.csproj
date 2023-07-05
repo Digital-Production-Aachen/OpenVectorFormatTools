@@ -1,13 +1,13 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.0;netstandard2.0</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup>
     <PackageId>OpenVectorFormat.OVFDefinition</PackageId>
     <Description>
-      This package provides a precompiled version of the proto definition for the OpenVectorFormat.
+      This package provides a precompiled version of the proto definition for the OpenVectorFormat. It also contains extension methods for Vector Block Translate and rotate operations.
     </Description>
     <Authors>The OpenVectorFormat Authors</Authors>
     <PackageLicenseExpression>LGPL-2.1-or-later</PackageLicenseExpression>
@@ -23,12 +23,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.19.1" />
-    <PackageReference Include="Grpc.Tools" Version="2.42.0">
+    <PackageReference Include="Google.Protobuf" Version="3.23.3" />
+    <PackageReference Include="Grpc.Tools" Version="2.56.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
 
+	  <Protobuf Include="../../submodules/OpenVectorFormat/build_processor_strategy.proto" />
 	  <Protobuf Include="../../submodules/OpenVectorFormat/open_vector_format.proto" />
 	  <Protobuf Include="../../submodules/OpenVectorFormat/ovf_lut.proto" />
 

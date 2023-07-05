@@ -3,7 +3,7 @@
 
 This file is part of the OpenVectorFormatTools collection. This collection provides tools to facilitate the usage of the OpenVectorFormat.
 
-Copyright (C) 2022 Digital-Production-Aachen
+Copyright (C) 2023 Digital-Production-Aachen
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -69,7 +69,7 @@ namespace OpenVectorFormat.OVFReaderWriter
         #region Partial Write. LUTs are included in file to enable partial reading.
 
         /// <inheritdoc/>
-        public override void StartWritePartial(Job jobShell, string filename, IFileReaderWriterProgress progress)
+        public override void StartWritePartial(Job jobShell, string filename, IFileReaderWriterProgress progress = null)
         {
             _fileOperationInProgress = FileWriteOperation.PartialWrite;
 
@@ -79,6 +79,8 @@ namespace OpenVectorFormat.OVFReaderWriter
             ProtoUtils.CopyWithExclude(jobShell, newJobShell, new List<int> { Job.WorkPlanesFieldNumber });
             _jobShell = newJobShell;
             _jobShell.NumWorkPlanes = 0;
+            if(_jobShell.JobMetaData == null) _jobShell.JobMetaData = new Job.Types.JobMetaData();
+            _jobShell.JobMetaData.Bounds = AxisAlignedBox2DExtensions.EmptyAAB2D();
 
             this.progress = progress;
             this.filename = filename;
@@ -140,6 +142,10 @@ namespace OpenVectorFormat.OVFReaderWriter
 
                     _currentWorkPlaneShell.WorkPlaneNumber = _jobShell.NumWorkPlanes;
                     _currentWorkPlaneShell.NumBlocks = _currentWorkPlaneShell.VectorBlocks.Count;
+                    if (_currentWorkPlaneShell.MetaData == null) _currentWorkPlaneShell.MetaData = new WorkPlane.Types.WorkPlaneMetaData();
+                    _currentWorkPlaneShell.MetaData.Bounds = _currentWorkPlaneShell.Bounds2D();
+                    _jobShell.JobMetaData.Bounds.Contain(_currentWorkPlaneShell.MetaData.Bounds);
+
                     var tempShell = new WorkPlane();
                     ProtoUtils.CopyWithExclude(_currentWorkPlaneShell, tempShell, new List<int> { WorkPlane.VectorBlocksFieldNumber });
 
@@ -195,7 +201,7 @@ namespace OpenVectorFormat.OVFReaderWriter
                     _fs.Position = _LUTPositionIndex;
                     byte[] lutPosBytes = ConvertToByteArrayLittleEndian(LUTPosition);
                     _fs.Write(lutPosBytes, 0, lutPosBytes.Length);
-                    progress.IsFinished = true;
+                    if(progress != null) progress.IsFinished = true;
                 }
             }
             _fs?.Dispose();
@@ -206,7 +212,7 @@ namespace OpenVectorFormat.OVFReaderWriter
         }
 
         /// <inheritdoc/>
-        public override async Task SimpleJobWriteAsync(Job job, string filename, IFileReaderWriterProgress progress)
+        public override async Task SimpleJobWriteAsync(Job job, string filename, IFileReaderWriterProgress progress = null)
         {
             CheckConsistence(job.NumWorkPlanes, job.WorkPlanes.Count);
 

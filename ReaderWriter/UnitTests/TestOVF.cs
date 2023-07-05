@@ -3,7 +3,7 @@
 
 This file is part of the OpenVectorFormatTools collection. This collection provides tools to facilitate the usage of the OpenVectorFormat.
 
-Copyright (C) 2022 Digital-Production-Aachen
+Copyright (C) 2023 Digital-Production-Aachen
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -53,6 +53,13 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 IFileReaderWriterProgress progRead = new FileReaderWriterProgressDummy();
                 await simpleReader.OpenJobAsync(test_filename, progRead);
                 Job readJob = await simpleReader.CacheJobToMemoryAsync();
+
+                readJob.JobMetaData = null;
+                foreach (var workplane in readJob.WorkPlanes)
+                {
+                    workplane.MetaData = null;
+                }
+
                 Assert.AreEqual(originalJobToCompareTo, readJob);
             }
         }
@@ -88,6 +95,13 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             IFileReaderWriterProgress progRead = new FileReaderWriterProgressDummy();
             await testReader.OpenJobAsync(test_filename, progRead);
             Job readJob = await testReader.CacheJobToMemoryAsync();
+
+            readJob.JobMetaData = null;
+            foreach (var workplane in readJob.WorkPlanes)
+            {
+                workplane.MetaData = null;
+            }
+
             Assert.AreEqual(originalJobToCompareTo, readJob);
             testReader.Dispose();
         }

@@ -3,7 +3,7 @@
 
 This file is part of the OpenVectorFormatTools collection. This collection provides tools to facilitate the usage of the OpenVectorFormat.
 
-Copyright (C) 2022 Digital-Production-Aachen
+Copyright (C) 2023 Digital-Production-Aachen
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -25,17 +25,55 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 using Google.Protobuf;
+using Google.Protobuf.Collections;
 using Google.Protobuf.Reflection;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 
 namespace OpenVectorFormat.Utils
 {
     /// <summary>
-    /// Class to hold general, usefull utilites for working with protobuf messages.
+    /// Class to hold general, useful utilities for working with protobuf messages.
     /// </summary>
     public static class ProtoUtils
     {
+        //this fieldInfo to access private fields of repeatedField<float> is only calculated once
+        private static readonly FieldInfo repFieldPrivateArrayFieldInfo = typeof(RepeatedField<float>).GetField("array", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        private static readonly Func<RepeatedField<float>, float[]> repFieldArrayDynamicGetter =
+#if NETCOREAPP3_0_OR_GREATER
+            !System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeSupported ?
+            ReflectGetter :
+#endif
+            CreateGetter<RepeatedField<float>, float[]>(repFieldPrivateArrayFieldInfo);
+
+        private static Func<S, T> CreateGetter<S, T>(FieldInfo field)
+        {
+            string methodName = field.ReflectedType.FullName + ".get_" + field.Name;
+            DynamicMethod getterMethod = new DynamicMethod(methodName, typeof(T), new Type[1] { typeof(S) }, true);
+            ILGenerator gen = getterMethod.GetILGenerator();
+            if (field.IsStatic)
+            {
+                gen.Emit(OpCodes.Ldsfld, field);
+            }
+            else
+            {
+                gen.Emit(OpCodes.Ldarg_0);
+                gen.Emit(OpCodes.Ldfld, field);
+            }
+            gen.Emit(OpCodes.Ret);
+            return (Func<S, T>)getterMethod.CreateDelegate(typeof(Func<S, T>));
+        }
+
+        private static float[] ReflectGetter(RepeatedField<float> field)
+        {
+            return (float[])repFieldPrivateArrayFieldInfo.GetValue(field);
+        }
+
         /// <summary>
         /// Creates a copy of a protobuf message with some fields excluded.
         /// </summary>
@@ -89,6 +127,34 @@ namespace OpenVectorFormat.Utils
                     field.Accessor.SetValue(target, field.Accessor.GetValue(source));
                 }
             }
+        }
+
+        /// <summary>
+        /// Creates a span for the given repeated field's underlying private array.
+        /// It is not safe to add or remove to and from the repeated field while using the Span,
+        /// since this might allocate a new private array.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="repeatedField"></param>
+        /// <returns></returns>
+        public static Span<T> AsSpan<T>(this RepeatedField<T> repeatedField)
+        {
+            var arrayField = typeof(RepeatedField<T>).GetField("array", BindingFlags.NonPublic | BindingFlags.Instance);
+            var privateArray = (T[]) arrayField.GetValue(repeatedField);
+            return privateArray.AsSpan().Slice(0, repeatedField.Count);
+        }
+
+        /// <summary>
+        /// Creates a span for the given repeated field's underlying private array.
+        /// It is not safe to add or remove to and from the repeated field while using the Span,
+        /// since this might allocate a new private array.
+        /// </summary>
+        /// <param name="repeatedField"></param>
+        /// <returns></returns>
+        public static Span<float> AsSpan(this RepeatedField<float> repeatedField)
+        {
+            var privateArray = repFieldArrayDynamicGetter(repeatedField);
+            return privateArray.AsSpan().Slice(0, repeatedField.Count);
         }
     }
 }

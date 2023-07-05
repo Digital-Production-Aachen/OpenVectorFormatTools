@@ -3,7 +3,7 @@
 
 This file is part of the OpenVectorFormatTools collection. This collection provides tools to facilitate the usage of the OpenVectorFormat.
 
-Copyright (C) 2022 Digital-Production-Aachen
+Copyright (C) 2023 Digital-Production-Aachen
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -140,7 +140,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 foreach (IVectorBlock vBlock in layer.VectorBlocks)
                 {
                     //check if Vectorblocks are not empty
-                    Assert.AreNotEqual(0, vBlock.Coordinates);
+                    Assert.AreNotEqual(0, vBlock.Coordinates.Length);
                     //Test if start and end coordinates match
                     if (vBlock is IPolyline polyline)
                     {

@@ -1,0 +1,727 @@
+// * Summary *
+
+BenchmarkDotNet=v0.13.5, OS=Windows 11 (10.0.22621.1702/22H2/2022Update/SunValley2)
+AMD Ryzen 9 7950X3D, 1 CPU, 32 logical and 16 physical cores
+.NET SDK=7.0.203
+  [Host]   : .NET 7.0.5 (7.0.523.17405), X64 RyuJIT AVX2 [AttachedDebugger]
+  .NET 6.0 : .NET 6.0.16 (6.0.1623.17311), X64 RyuJIT AVX2
+  .NET 7.0 : .NET 7.0.5 (7.0.523.17405), X64 RyuJIT AVX2
+
+
+|                  Method |      Job |  Runtime | numVectors | dims |              Mean |          Error |         StdDev |            Median | Ratio | RatioSD |   Gen0 | Allocated | Alloc Ratio |
+|------------------------ |--------- |--------- |----------- |----- |------------------:|---------------:|---------------:|------------------:|------:|--------:|-------:|----------:|------------:|
+|          BoundsBaseline | .NET 6.0 | .NET 6.0 |          1 |    2 |         9.7970 ns |      0.2124 ns |      0.2608 ns |         9.9115 ns |  1.41 |    0.04 | 0.0008 |      40 B |        1.00 |
+|        BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |          1 |    2 |         8.3996 ns |      0.1158 ns |      0.1083 ns |         8.4129 ns |  1.21 |    0.02 | 0.0008 |      40 B |        1.00 |
+| TranslateSpanSIMDVector | .NET 6.0 | .NET 6.0 |          1 |    2 |                NA |             NA |             NA |                NA |     ? |       ? |      - |         - |           ? |
+|          BoundsBaseline | .NET 7.0 | .NET 7.0 |          1 |    2 |         6.9700 ns |      0.0356 ns |      0.0333 ns |         6.9695 ns |  1.00 |    0.00 | 0.0008 |      40 B |        1.00 |
+|        BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |          1 |    2 |         4.9697 ns |      0.0334 ns |      0.0279 ns |         4.9703 ns |  0.71 |    0.01 | 0.0008 |      40 B |        1.00 |
+| TranslateSpanSIMDVector | .NET 7.0 | .NET 7.0 |          1 |    2 |                NA |             NA |             NA |                NA |     ? |       ? |      - |         - |           ? |
+|                         |          |          |            |      |                   |                |                |                   |       |         |        |           |             |
+|          BoundsBaseline | .NET 6.0 | .NET 6.0 |          1 |    3 |        14.7256 ns |      0.0356 ns |      0.0297 ns |        14.7283 ns | 1.621 |    0.00 | 0.0008 |      40 B |        1.00 |
+|        BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |          1 |    3 |        14.5196 ns |      0.0531 ns |      0.0443 ns |        14.5065 ns | 1.598 |    0.01 | 0.0008 |      40 B |        1.00 |
+| TranslateSpanSIMDVector | .NET 6.0 | .NET 6.0 |          1 |    3 |         0.0252 ns |      0.0019 ns |      0.0018 ns |         0.0245 ns | 0.003 |    0.00 |      - |         - |        0.00 |
+|          BoundsBaseline | .NET 7.0 | .NET 7.0 |          1 |    3 |         9.0826 ns |      0.0205 ns |      0.0191 ns |         9.0798 ns | 1.000 |    0.00 | 0.0008 |      40 B |        1.00 |
+|        BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |          1 |    3 |         5.8359 ns |      0.0245 ns |      0.0205 ns |         5.8342 ns | 0.642 |    0.00 | 0.0008 |      40 B |        1.00 |
+| TranslateSpanSIMDVector | .NET 7.0 | .NET 7.0 |          1 |    3 |         0.0219 ns |      0.0028 ns |      0.0026 ns |         0.0213 ns | 0.002 |    0.00 |      - |         - |        0.00 |
+|                         |          |          |            |      |                   |                |                |                   |       |         |        |           |             |
+|          BoundsBaseline | .NET 6.0 | .NET 6.0 |         60 |    2 |       356.2776 ns |      0.5983 ns |      0.5597 ns |       356.1965 ns |  2.01 |    0.01 | 0.0005 |      40 B |        1.00 |
+|        BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         60 |    2 |       318.1891 ns |      0.8300 ns |      0.7764 ns |       318.2427 ns |  1.79 |    0.01 | 0.0005 |      40 B |        1.00 |
+| TranslateSpanSIMDVector | .NET 6.0 | .NET 6.0 |         60 |    2 |        64.7053 ns |      0.1399 ns |      0.1308 ns |        64.7072 ns |  0.36 |    0.00 | 0.0005 |      24 B |        0.60 |
+|          BoundsBaseline | .NET 7.0 | .NET 7.0 |         60 |    2 |       177.3554 ns |      1.4751 ns |      1.3076 ns |       177.4649 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|        BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         60 |    2 |        78.5648 ns |      0.3180 ns |      0.2975 ns |        78.4801 ns |  0.44 |    0.00 | 0.0007 |      40 B |        1.00 |
+| TranslateSpanSIMDVector | .NET 7.0 | .NET 7.0 |         60 |    2 |        66.8737 ns |      0.1640 ns |      0.1454 ns |        66.8643 ns |  0.38 |    0.00 | 0.0005 |      24 B |        0.60 |
+|                         |          |          |            |      |                   |                |                |                   |       |         |        |           |             |
+|          BoundsBaseline | .NET 6.0 | .NET 6.0 |         60 |    3 |       362.1439 ns |      0.5911 ns |      0.5529 ns |       362.1512 ns | 2.041 |    0.02 | 0.0005 |      40 B |        1.00 |
+|        BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         60 |    3 |       326.9003 ns |      0.9182 ns |      0.7667 ns |       326.9701 ns | 1.842 |    0.01 | 0.0005 |      40 B |        1.00 |
+| TranslateSpanSIMDVector | .NET 6.0 | .NET 6.0 |         60 |    3 |         0.0073 ns |      0.0036 ns |      0.0034 ns |         0.0066 ns | 0.000 |    0.00 |      - |         - |        0.00 |
+|          BoundsBaseline | .NET 7.0 | .NET 7.0 |         60 |    3 |       177.4420 ns |      1.4175 ns |      1.2566 ns |       177.2131 ns | 1.000 |    0.00 | 0.0007 |      40 B |        1.00 |
+|        BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         60 |    3 |        82.4968 ns |      0.7174 ns |      0.6711 ns |        82.3387 ns | 0.465 |    0.00 | 0.0007 |      40 B |        1.00 |
+| TranslateSpanSIMDVector | .NET 7.0 | .NET 7.0 |         60 |    3 |         0.0281 ns |      0.0033 ns |      0.0029 ns |         0.0278 ns | 0.000 |    0.00 |      - |         - |        0.00 |
+|                         |          |          |            |      |                   |                |                |                   |       |         |        |           |             |
+|          BoundsBaseline | .NET 6.0 | .NET 6.0 |        100 |    2 |       601.2074 ns |     11.8929 ns |     11.6804 ns |       594.2591 ns |  2.12 |    0.04 |      - |      40 B |        1.00 |
+|        BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |        100 |    2 |       525.8046 ns |      2.6012 ns |      2.3059 ns |       525.7444 ns |  1.86 |    0.01 |      - |      40 B |        1.00 |
+| TranslateSpanSIMDVector | .NET 6.0 | .NET 6.0 |        100 |    2 |        65.6982 ns |      0.8109 ns |      0.7188 ns |        65.3877 ns |  0.23 |    0.00 | 0.0005 |      24 B |        0.60 |
+|          BoundsBaseline | .NET 7.0 | .NET 7.0 |        100 |    2 |       282.3679 ns |      1.5192 ns |      1.2686 ns |       282.7343 ns |  1.00 |    0.00 | 0.0005 |      40 B |        1.00 |
+|        BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |        100 |    2 |       133.5660 ns |      2.3384 ns |      2.1873 ns |       133.8332 ns |  0.47 |    0.01 | 0.0007 |      40 B |        1.00 |
+| TranslateSpanSIMDVector | .NET 7.0 | .NET 7.0 |        100 |    2 |        71.2034 ns |      0.3112 ns |      0.2759 ns |        71.2093 ns |  0.25 |    0.00 | 0.0005 |      24 B |        0.60 |
+|                         |          |          |            |      |                   |                |                |                   |       |         |        |           |             |
+|          BoundsBaseline | .NET 6.0 | .NET 6.0 |        100 |    3 |       597.8349 ns |      1.6417 ns |      1.4554 ns |       598.0373 ns | 2.074 |    0.01 |      - |      40 B |        1.00 |
+|        BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |        100 |    3 |       534.3983 ns |      3.5735 ns |      3.1679 ns |       533.5358 ns | 1.854 |    0.01 |      - |      40 B |        1.00 |
+| TranslateSpanSIMDVector | .NET 6.0 | .NET 6.0 |        100 |    3 |         0.0279 ns |      0.0022 ns |      0.0020 ns |         0.0280 ns | 0.000 |    0.00 |      - |         - |        0.00 |
+|          BoundsBaseline | .NET 7.0 | .NET 7.0 |        100 |    3 |       288.1640 ns |      1.4758 ns |      1.3804 ns |       288.0484 ns | 1.000 |    0.00 | 0.0005 |      40 B |        1.00 |
+|        BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |        100 |    3 |       124.4116 ns |      0.6023 ns |      0.5339 ns |       124.2649 ns | 0.432 |    0.00 | 0.0007 |      40 B |        1.00 |
+| TranslateSpanSIMDVector | .NET 7.0 | .NET 7.0 |        100 |    3 |         0.0192 ns |      0.0017 ns |      0.0014 ns |         0.0195 ns | 0.000 |    0.00 |      - |         - |        0.00 |
+|                         |          |          |            |      |                   |                |                |                   |       |         |        |           |             |
+|          BoundsBaseline | .NET 6.0 | .NET 6.0 |      10000 |    2 |    59,433.6648 ns |    125.7448 ns |    117.6217 ns |    59,460.6232 ns |  2.47 |    0.01 |      - |      40 B |        1.00 |
+|        BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |      10000 |    2 |    49,962.6434 ns |     86.0799 ns |     76.3076 ns |    49,972.0551 ns |  2.08 |    0.01 |      - |      40 B |        1.00 |
+| TranslateSpanSIMDVector | .NET 6.0 | .NET 6.0 |      10000 |    2 |       984.6517 ns |      7.4239 ns |      6.9443 ns |       981.5533 ns |  0.04 |    0.00 |      - |      24 B |        0.60 |
+|          BoundsBaseline | .NET 7.0 | .NET 7.0 |      10000 |    2 |    24,055.1986 ns |     94.0756 ns |     78.5574 ns |    24,050.6226 ns |  1.00 |    0.00 |      - |      40 B |        1.00 |
+|        BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |      10000 |    2 |     9,962.1136 ns |     44.7418 ns |     41.8515 ns |     9,956.5315 ns |  0.41 |    0.00 |      - |      40 B |        1.00 |
+| TranslateSpanSIMDVector | .NET 7.0 | .NET 7.0 |      10000 |    2 |       983.5861 ns |      2.2956 ns |      1.9169 ns |       983.4726 ns |  0.04 |    0.00 |      - |      24 B |        0.60 |
+|                         |          |          |            |      |                   |                |                |                   |       |         |        |           |             |
+|          BoundsBaseline | .NET 6.0 | .NET 6.0 |      10000 |    3 |    59,177.5271 ns |     73.6917 ns |     68.9312 ns |    59,171.9879 ns | 2.436 |    0.01 |      - |      40 B |        1.00 |
+|        BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |      10000 |    3 |    49,998.3869 ns |    100.4079 ns |     89.0090 ns |    50,029.4342 ns | 2.058 |    0.01 |      - |      40 B |        1.00 |
+| TranslateSpanSIMDVector | .NET 6.0 | .NET 6.0 |      10000 |    3 |         0.1942 ns |      0.0062 ns |      0.0055 ns |         0.1945 ns | 0.000 |    0.00 |      - |         - |        0.00 |
+|          BoundsBaseline | .NET 7.0 | .NET 7.0 |      10000 |    3 |    24,293.6147 ns |    126.0829 ns |    117.9380 ns |    24,305.5328 ns | 1.000 |    0.00 |      - |      40 B |        1.00 |
+|        BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |      10000 |    3 |    10,023.3940 ns |     22.2216 ns |     17.3492 ns |    10,026.0559 ns | 0.413 |    0.00 |      - |      40 B |        1.00 |
+| TranslateSpanSIMDVector | .NET 7.0 | .NET 7.0 |      10000 |    3 |         0.0003 ns |      0.0007 ns |      0.0006 ns |         0.0000 ns | 0.000 |    0.00 |      - |         - |        0.00 |
+|                         |          |          |            |      |                   |                |                |                   |       |         |        |           |             |
+|          BoundsBaseline | .NET 6.0 | .NET 6.0 |    1000000 |    2 | 5,899,925.8929 ns |  3,714.1997 ns |  3,292.5413 ns | 5,900,724.6094 ns |  2.43 |    0.01 |      - |      45 B |        1.07 |
+|        BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |    1000000 |    2 | 4,984,855.9710 ns |  4,432.2304 ns |  3,929.0568 ns | 4,985,510.9375 ns |  2.05 |    0.00 |      - |      44 B |        1.05 |
+| TranslateSpanSIMDVector | .NET 6.0 | .NET 6.0 |    1000000 |    2 |    91,500.8187 ns |    481.9046 ns |    450.7738 ns |    91,335.7544 ns |  0.04 |    0.00 |      - |      24 B |        0.57 |
+|          BoundsBaseline | .NET 7.0 | .NET 7.0 |    1000000 |    2 | 2,427,467.2852 ns |  5,967.0662 ns |  4,658.6928 ns | 2,427,455.8594 ns |  1.00 |    0.00 |      - |      42 B |        1.00 |
+|        BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |    1000000 |    2 |   984,985.7722 ns |  2,139.2512 ns |  1,786.3716 ns |   985,480.8594 ns |  0.41 |    0.00 |      - |      41 B |        0.98 |
+| TranslateSpanSIMDVector | .NET 7.0 | .NET 7.0 |    1000000 |    2 |    90,688.9409 ns |    120.4287 ns |    100.5634 ns |    90,675.5066 ns |  0.04 |    0.00 |      - |      24 B |        0.57 |
+|                         |          |          |            |      |                   |                |                |                   |       |         |        |           |             |
+|          BoundsBaseline | .NET 6.0 | .NET 6.0 |    1000000 |    3 | 5,923,544.3750 ns | 12,401.3387 ns | 11,600.2199 ns | 5,922,753.1250 ns | 2.444 |    0.01 |      - |      44 B |        1.05 |
+|        BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |    1000000 |    3 | 5,000,586.8229 ns |  7,863.8184 ns |  7,355.8206 ns | 4,998,743.7500 ns | 2.062 |    0.01 |      - |      44 B |        1.05 |
+| TranslateSpanSIMDVector | .NET 6.0 | .NET 6.0 |    1000000 |    3 |         0.0254 ns |      0.0014 ns |      0.0013 ns |         0.0250 ns | 0.000 |    0.00 |      - |         - |        0.00 |
+|          BoundsBaseline | .NET 7.0 | .NET 7.0 |    1000000 |    3 | 2,424,274.8948 ns | 13,404.9645 ns | 11,193.7525 ns | 2,424,304.8828 ns | 1.000 |    0.00 |      - |      42 B |        1.00 |
+|        BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |    1000000 |    3 |   993,136.6350 ns |  5,220.7740 ns |  4,628.0802 ns |   992,975.6836 ns | 0.410 |    0.00 |      - |      41 B |        0.98 |
+| TranslateSpanSIMDVector | .NET 7.0 | .NET 7.0 |    1000000 |    3 |         0.0234 ns |      0.0025 ns |      0.0023 ns |         0.0224 ns | 0.000 |    0.00 |      - |         - |        0.00 |
+
+
+
+
+|               Method |      Job |  Runtime | numVectors | dims |             Mean |          Error |         StdDev | Ratio | RatioSD |   Gen0 | Allocated | Alloc Ratio |
+|--------------------- |--------- |--------- |----------- |----- |-----------------:|---------------:|---------------:|------:|--------:|-------:|----------:|------------:|
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |          1 |    2 |        10.195 ns |      0.2385 ns |      0.2929 ns |  1.38 |    0.05 | 0.0008 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |          1 |    2 |         8.693 ns |      0.2037 ns |      0.2001 ns |  1.19 |    0.02 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |          1 |    2 |               NA |             NA |             NA |     ? |       ? |      - |         - |           ? |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |          1 |    2 |               NA |             NA |             NA |     ? |       ? |      - |         - |           ? |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |          1 |    2 |         7.328 ns |      0.1621 ns |      0.1516 ns |  1.00 |    0.00 | 0.0008 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |          1 |    2 |         5.509 ns |      0.1453 ns |      0.1615 ns |  0.76 |    0.02 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |          1 |    2 |               NA |             NA |             NA |     ? |       ? |      - |         - |           ? |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |          1 |    2 |               NA |             NA |             NA |     ? |       ? |      - |         - |           ? |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |          1 |    3 |         9.847 ns |      0.0761 ns |      0.0674 ns |  1.40 |    0.01 | 0.0008 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |          1 |    3 |         8.748 ns |      0.1216 ns |      0.1137 ns |  1.25 |    0.01 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |          1 |    3 |               NA |             NA |             NA |     ? |       ? |      - |         - |           ? |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |          1 |    3 |               NA |             NA |             NA |     ? |       ? |      - |         - |           ? |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |          1 |    3 |         7.009 ns |      0.0371 ns |      0.0329 ns |  1.00 |    0.00 | 0.0008 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |          1 |    3 |         5.403 ns |      0.1326 ns |      0.1175 ns |  0.77 |    0.02 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |          1 |    3 |               NA |             NA |             NA |     ? |       ? |      - |         - |           ? |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |          1 |    3 |               NA |             NA |             NA |     ? |       ? |      - |         - |           ? |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         20 |    2 |       122.523 ns |      0.8704 ns |      0.8142 ns |  2.03 |    0.01 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         20 |    2 |       116.408 ns |      0.3695 ns |      0.3456 ns |  1.93 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         20 |    2 |        78.394 ns |      0.3527 ns |      0.3299 ns |  1.30 |    0.01 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         20 |    2 |        80.064 ns |      0.3577 ns |      0.3346 ns |  1.33 |    0.01 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         20 |    2 |        60.220 ns |      0.4495 ns |      0.3509 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         20 |    2 |        28.630 ns |      0.2752 ns |      0.2574 ns |  0.47 |    0.00 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         20 |    2 |        82.883 ns |      0.3900 ns |      0.3648 ns |  1.38 |    0.01 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         20 |    2 |        82.286 ns |      0.5396 ns |      0.5048 ns |  1.37 |    0.01 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         20 |    3 |       122.893 ns |      1.7019 ns |      1.5920 ns |  2.04 |    0.03 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         20 |    3 |       114.025 ns |      0.5922 ns |      0.5249 ns |  1.89 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         20 |    3 |        81.458 ns |      0.2788 ns |      0.2472 ns |  1.35 |    0.00 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         20 |    3 |        80.962 ns |      0.1913 ns |      0.1696 ns |  1.34 |    0.01 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         20 |    3 |        60.264 ns |      0.2866 ns |      0.2541 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         20 |    3 |        28.552 ns |      0.1247 ns |      0.1166 ns |  0.47 |    0.00 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         20 |    3 |        84.201 ns |      0.4037 ns |      0.3371 ns |  1.40 |    0.01 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         20 |    3 |        84.620 ns |      0.3856 ns |      0.3607 ns |  1.40 |    0.01 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         40 |    2 |       242.365 ns |      0.6355 ns |      0.5944 ns |  2.02 |    0.01 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         40 |    2 |       223.704 ns |      0.8842 ns |      0.8271 ns |  1.86 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         40 |    2 |        80.178 ns |      0.2580 ns |      0.2155 ns |  0.67 |    0.00 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         40 |    2 |        79.887 ns |      0.4684 ns |      0.4152 ns |  0.66 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         40 |    2 |       120.199 ns |      0.5765 ns |      0.4814 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         40 |    2 |        54.957 ns |      0.2585 ns |      0.2291 ns |  0.46 |    0.00 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         40 |    2 |        85.869 ns |      0.6004 ns |      0.5322 ns |  0.71 |    0.01 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         40 |    2 |        85.274 ns |      0.5219 ns |      0.4882 ns |  0.71 |    0.01 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         40 |    3 |       242.776 ns |      1.0556 ns |      0.9874 ns |  2.05 |    0.02 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         40 |    3 |       211.177 ns |      0.5997 ns |      0.5317 ns |  1.78 |    0.02 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         40 |    3 |        77.710 ns |      0.9502 ns |      0.8888 ns |  0.66 |    0.01 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         40 |    3 |        77.686 ns |      0.1680 ns |      0.1489 ns |  0.66 |    0.01 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         40 |    3 |       118.408 ns |      1.0303 ns |      0.9638 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         40 |    3 |        54.699 ns |      0.2078 ns |      0.1944 ns |  0.46 |    0.00 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         40 |    3 |        82.205 ns |      0.4231 ns |      0.3958 ns |  0.69 |    0.00 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         40 |    3 |        81.743 ns |      0.3308 ns |      0.2932 ns |  0.69 |    0.01 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         60 |    2 |       362.321 ns |      0.7323 ns |      0.6491 ns |  1.98 |    0.02 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         60 |    2 |       320.496 ns |      1.5497 ns |      1.3738 ns |  1.75 |    0.02 | 0.0005 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         60 |    2 |        83.078 ns |      0.3159 ns |      0.2955 ns |  0.45 |    0.00 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         60 |    2 |        82.491 ns |      0.2146 ns |      0.1902 ns |  0.45 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         60 |    2 |       183.422 ns |      1.6327 ns |      1.3633 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         60 |    2 |        85.398 ns |      0.7597 ns |      0.6735 ns |  0.47 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         60 |    2 |        91.885 ns |      0.3987 ns |      0.3112 ns |  0.50 |    0.00 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         60 |    2 |        88.078 ns |      0.7716 ns |      0.7217 ns |  0.48 |    0.01 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         60 |    3 |       364.555 ns |      2.4360 ns |      2.1594 ns |  2.11 |    0.02 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         60 |    3 |       319.164 ns |      2.6328 ns |      2.4627 ns |  1.85 |    0.01 | 0.0005 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         60 |    3 |        87.968 ns |      0.7396 ns |      0.6918 ns |  0.51 |    0.00 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         60 |    3 |        88.952 ns |      0.5858 ns |      0.5479 ns |  0.51 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         60 |    3 |       172.985 ns |      0.8143 ns |      0.7617 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         60 |    3 |        84.538 ns |      1.7280 ns |      3.0716 ns |  0.49 |    0.02 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         60 |    3 |        89.354 ns |      0.4272 ns |      0.3996 ns |  0.52 |    0.00 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         60 |    3 |        88.677 ns |      0.4945 ns |      0.4625 ns |  0.51 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |        100 |    2 |       611.045 ns |      6.0853 ns |      5.6922 ns |  2.07 |    0.02 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |        100 |    2 |       535.223 ns |      2.6225 ns |      2.4531 ns |  1.81 |    0.02 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |        100 |    2 |        87.459 ns |      0.1481 ns |      0.1313 ns |  0.30 |    0.00 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |        100 |    2 |        85.523 ns |      0.1683 ns |      0.1574 ns |  0.29 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |        100 |    2 |       295.500 ns |      1.8955 ns |      1.7731 ns |  1.00 |    0.00 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |        100 |    2 |       126.714 ns |      0.9834 ns |      0.9199 ns |  0.43 |    0.00 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |        100 |    2 |        92.064 ns |      0.3928 ns |      0.3067 ns |  0.31 |    0.00 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |        100 |    2 |        90.310 ns |      0.2575 ns |      0.2283 ns |  0.31 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |        100 |    3 |       602.554 ns |      1.6721 ns |      1.5640 ns |  1.96 |    0.02 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |        100 |    3 |       525.865 ns |      1.3100 ns |      1.2254 ns |  1.71 |    0.02 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |        100 |    3 |        92.604 ns |      0.1914 ns |      0.1599 ns |  0.30 |    0.00 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |        100 |    3 |        95.522 ns |      0.4935 ns |      0.4375 ns |  0.31 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |        100 |    3 |       307.518 ns |      2.9971 ns |      2.8035 ns |  1.00 |    0.00 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |        100 |    3 |       145.644 ns |      0.8664 ns |      0.8104 ns |  0.47 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |        100 |    3 |        97.235 ns |      0.3430 ns |      0.3209 ns |  0.32 |    0.00 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |        100 |    3 |       124.371 ns |      2.4985 ns |      4.5686 ns |  0.40 |    0.03 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |      10000 |    2 |    60,421.170 ns |    133.0103 ns |    117.9102 ns |  2.43 |    0.02 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |      10000 |    2 |    50,919.554 ns |    166.1192 ns |    155.3880 ns |  2.05 |    0.02 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |      10000 |    2 |     1,043.400 ns |      7.1371 ns |      6.6760 ns |  0.04 |    0.00 |      - |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |      10000 |    2 |     1,044.903 ns |      7.3882 ns |      6.9110 ns |  0.04 |    0.00 |      - |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |      10000 |    2 |    24,875.556 ns |    191.7318 ns |    179.3461 ns |  1.00 |    0.00 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |      10000 |    2 |    10,346.609 ns |     47.6819 ns |     44.6016 ns |  0.42 |    0.00 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |      10000 |    2 |     1,043.039 ns |      8.9134 ns |      8.3376 ns |  0.04 |    0.00 |      - |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |      10000 |    2 |     1,040.073 ns |      5.8045 ns |      5.4295 ns |  0.04 |    0.00 |      - |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |      10000 |    3 |    60,335.900 ns |    102.6583 ns |     96.0267 ns |  2.38 |    0.03 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |      10000 |    3 |    50,748.837 ns |    112.0907 ns |    104.8497 ns |  2.00 |    0.02 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |      10000 |    3 |     1,504.664 ns |      7.2412 ns |      6.7734 ns |  0.06 |    0.00 |      - |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |      10000 |    3 |     1,509.928 ns |      9.2449 ns |      8.6477 ns |  0.06 |    0.00 |      - |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |      10000 |    3 |    25,346.049 ns |    271.9771 ns |    254.4076 ns |  1.00 |    0.00 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |      10000 |    3 |    10,497.321 ns |     41.0303 ns |     38.3797 ns |  0.41 |    0.00 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |      10000 |    3 |     1,528.388 ns |      6.9212 ns |      6.4741 ns |  0.06 |    0.00 |      - |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |      10000 |    3 |     1,531.709 ns |      5.3317 ns |      4.4522 ns |  0.06 |    0.00 |      - |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |    1000000 |    2 | 6,044,737.865 ns | 14,996.2808 ns | 14,027.5304 ns |  2.43 |    0.03 |      - |      44 B |        1.05 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |    1000000 |    2 | 5,089,699.271 ns | 13,166.5613 ns | 12,316.0096 ns |  2.04 |    0.03 |      - |      44 B |        1.05 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |    1000000 |    2 |    95,763.315 ns |    743.1742 ns |    695.1656 ns |  0.04 |    0.00 |      - |      64 B |        1.52 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |    1000000 |    2 |    95,235.736 ns |    587.1333 ns |    549.2048 ns |  0.04 |    0.00 |      - |      64 B |        1.52 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |    1000000 |    2 | 2,489,406.146 ns | 31,535.1005 ns | 29,497.9526 ns |  1.00 |    0.00 |      - |      42 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |    1000000 |    2 | 1,026,587.018 ns |  4,162.0725 ns |  3,893.2052 ns |  0.41 |    0.00 |      - |      41 B |        0.98 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |    1000000 |    2 |    94,633.498 ns |    533.6616 ns |    499.1874 ns |  0.04 |    0.00 |      - |      64 B |        1.52 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |    1000000 |    2 |    94,937.899 ns |    484.8432 ns |    429.8009 ns |  0.04 |    0.00 |      - |      64 B |        1.52 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |    1000000 |    3 | 6,077,416.587 ns | 38,148.3090 ns | 31,855.5658 ns |  2.40 |    0.02 |      - |      44 B |        1.05 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |    1000000 |    3 | 5,096,611.172 ns | 12,645.3232 ns | 11,828.4431 ns |  2.01 |    0.01 |      - |      45 B |        1.07 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |    1000000 |    3 |   144,767.015 ns |    495.4939 ns |    463.4853 ns |  0.06 |    0.00 |      - |      64 B |        1.52 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |    1000000 |    3 |   145,277.616 ns |    174.2526 ns |    154.4704 ns |  0.06 |    0.00 |      - |      64 B |        1.52 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |    1000000 |    3 | 2,531,250.312 ns | 15,060.9052 ns | 14,087.9800 ns |  1.00 |    0.00 |      - |      42 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |    1000000 |    3 | 1,065,955.586 ns |  9,349.6542 ns |  8,745.6724 ns |  0.42 |    0.00 |      - |      41 B |        0.98 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |    1000000 |    3 |   146,131.138 ns |    336.8456 ns |    298.6049 ns |  0.06 |    0.00 |      - |      64 B |        1.52 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |    1000000 |    3 |   145,842.130 ns |    536.9722 ns |    502.2841 ns |  0.06 |    0.00 |      - |      64 B |        1.52 |
+
+
+
+
+// * Summary *
+
+BenchmarkDotNet=v0.13.5, OS=Windows 11 (10.0.22621.1702/22H2/2022Update/SunValley2)
+AMD Ryzen 9 7950X3D, 1 CPU, 32 logical and 16 physical cores
+.NET SDK=7.0.203
+  [Host]   : .NET 7.0.5 (7.0.523.17405), X64 RyuJIT AVX2 [AttachedDebugger]
+  .NET 6.0 : .NET 6.0.16 (6.0.1623.17311), X64 RyuJIT AVX2
+  .NET 7.0 : .NET 7.0.5 (7.0.523.17405), X64 RyuJIT AVX2
+
+
+|               Method |      Job |  Runtime | numVectors | dims |             Mean |          Error |         StdDev |           Median | Ratio | RatioSD |   Gen0 | Allocated | Alloc Ratio |
+|--------------------- |--------- |--------- |----------- |----- |-----------------:|---------------:|---------------:|-----------------:|------:|--------:|-------:|----------:|------------:|
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |          1 |    2 |        10.242 ns |      0.2166 ns |      0.2407 ns |        10.206 ns |  1.44 |    0.05 | 0.0008 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |          1 |    2 |         8.486 ns |      0.0899 ns |      0.0840 ns |         8.503 ns |  1.20 |    0.03 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |          1 |    2 |               NA |             NA |             NA |               NA |     ? |       ? |      - |         - |           ? |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |          1 |    2 |               NA |             NA |             NA |               NA |     ? |       ? |      - |         - |           ? |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |          1 |    2 |         7.091 ns |      0.1708 ns |      0.1754 ns |         7.032 ns |  1.00 |    0.00 | 0.0008 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |          1 |    2 |         5.608 ns |      0.1402 ns |      0.1439 ns |         5.650 ns |  0.79 |    0.03 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |          1 |    2 |               NA |             NA |             NA |               NA |     ? |       ? |      - |         - |           ? |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |          1 |    2 |               NA |             NA |             NA |               NA |     ? |       ? |      - |         - |           ? |
+|                      |          |          |            |      |                  |                |                |
+|       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |          1 |    3 |         9.828 ns |      0.1036 ns |      0.0969 ns |         9.816 ns |  1.33 |    0.04 | 0.0008 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |          1 |    3 |         8.590 ns |      0.1140 ns |      0.0952 ns |         8.601 ns |  1.17 |    0.03 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |          1 |    3 |               NA |             NA |             NA |               NA |     ? |       ? |      - |         - |           ? |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |          1 |    3 |               NA |             NA |             NA |               NA |     ? |       ? |      - |         - |           ? |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |          1 |    3 |         7.379 ns |      0.1816 ns |      0.2162 ns |         7.404 ns |  1.00 |    0.00 | 0.0008 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |          1 |    3 |         5.320 ns |      0.0817 ns |      0.0765 ns |         5.328 ns |  0.72 |    0.03 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |          1 |    3 |               NA |             NA |             NA |               NA |     ? |       ? |      - |         - |           ? |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |          1 |    3 |               NA |             NA |             NA |               NA |     ? |       ? |      - |         - |           ? |
+|                      |          |          |            |      |                  |                |                |
+|       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         20 |    2 |       121.221 ns |      0.2883 ns |      0.2696 ns |       121.196 ns |  2.05 |    0.01 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         20 |    2 |       112.860 ns |      0.3881 ns |      0.3631 ns |       112.711 ns |  1.91 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         20 |    2 |        86.473 ns |      1.1605 ns |      1.0855 ns |        86.263 ns |  1.46 |    0.02 | 0.0025 |     128 B |        3.20 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         20 |    2 |        80.138 ns |      0.1808 ns |      0.1603 ns |        80.133 ns |  1.35 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         20 |    2 |        59.250 ns |      0.2111 ns |      0.1872 ns |        59.279 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         20 |    2 |        28.539 ns |      0.0834 ns |      0.0780 ns |        28.553 ns |  0.48 |    0.00 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         20 |    2 |       100.548 ns |      2.1953 ns |      6.4730 ns |       103.421 ns |  1.68 |    0.10 | 0.0025 |     128 B |        3.20 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         20 |    2 |        81.565 ns |      0.2730 ns |      0.2131 ns |        81.603 ns |  1.38 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |
+|       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         20 |    3 |       120.644 ns |      0.2997 ns |      0.2656 ns |       120.586 ns |  2.01 |    0.01 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         20 |    3 |       113.027 ns |      0.0989 ns |      0.0925 ns |       113.013 ns |  1.89 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         20 |    3 |        89.264 ns |      0.6737 ns |      0.6302 ns |        89.318 ns |  1.49 |    0.01 | 0.0026 |     136 B |        3.40 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         20 |    3 |        80.287 ns |      0.0857 ns |      0.0801 ns |        80.265 ns |  1.34 |    0.01 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         20 |    3 |        59.941 ns |      0.2661 ns |      0.2489 ns |        59.877 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         20 |    3 |        28.579 ns |      0.1010 ns |      0.0945 ns |        28.585 ns |  0.48 |    0.00 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         20 |    3 |        92.900 ns |      0.3626 ns |      0.3392 ns |        92.881 ns |  1.55 |    0.01 | 0.0026 |     136 B |        3.40 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         20 |    3 |        85.915 ns |      0.5154 ns |      0.4569 ns |        85.813 ns |  1.43 |    0.01 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |
+|       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         40 |    2 |       239.654 ns |      0.6599 ns |      0.6173 ns |       239.648 ns |  2.03 |    0.01 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         40 |    2 |       217.882 ns |      0.6276 ns |      0.5870 ns |       217.954 ns |  1.84 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         40 |    2 |        89.238 ns |      0.3634 ns |      0.3399 ns |        89.215 ns |  0.75 |    0.00 | 0.0025 |     128 B |        3.20 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         40 |    2 |        82.424 ns |      0.3178 ns |      0.2973 ns |        82.443 ns |  0.70 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         40 |    2 |       118.316 ns |      0.5861 ns |      0.4894 ns |       118.376 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         40 |    2 |        58.318 ns |      0.2558 ns |      0.2392 ns |        58.258 ns |  0.49 |    0.00 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         40 |    2 |        95.035 ns |      0.2831 ns |      0.2648 ns |        95.063 ns |  0.80 |    0.00 | 0.0025 |     128 B |        3.20 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         40 |    2 |        85.492 ns |      0.2125 ns |      0.1988 ns |        85.519 ns |  0.72 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |
+|       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         40 |    3 |       240.407 ns |      0.6440 ns |      0.6024 ns |       240.583 ns |  1.94 |    0.01 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         40 |    3 |       211.243 ns |      0.4993 ns |      0.4427 ns |       211.177 ns |  1.71 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         40 |    3 |        83.205 ns |      1.3557 ns |      1.3315 ns |        82.779 ns |  0.67 |    0.01 | 0.0026 |     136 B |        3.40 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         40 |    3 |        78.572 ns |      0.4745 ns |      0.4439 ns |        78.606 ns |  0.63 |    0.01 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         40 |    3 |       123.772 ns |      0.5794 ns |      0.5420 ns |       123.579 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         40 |    3 |        53.633 ns |      0.2063 ns |      0.1930 ns |        53.551 ns |  0.43 |    0.00 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         40 |    3 |        90.947 ns |      0.3298 ns |      0.3085 ns |        90.850 ns |  0.73 |    0.00 | 0.0026 |     136 B |        3.40 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         40 |    3 |        81.453 ns |      0.2457 ns |      0.2052 ns |        81.498 ns |  0.66 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |
+|       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         60 |    2 |       359.697 ns |      0.5409 ns |      0.4516 ns |       359.667 ns |  2.10 |    0.01 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         60 |    2 |       318.223 ns |      1.0179 ns |      0.9522 ns |       318.341 ns |  1.86 |    0.01 | 0.0005 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         60 |    2 |        89.771 ns |      0.4540 ns |      0.3544 ns |        89.777 ns |  0.52 |    0.00 | 0.0025 |     128 B |        3.20 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         60 |    2 |        82.613 ns |      0.3001 ns |      0.2807 ns |        82.709 ns |  0.48 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         60 |    2 |       171.436 ns |      1.1681 ns |      1.0355 ns |       171.174 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         60 |    2 |        82.597 ns |      0.4647 ns |      0.4347 ns |        82.704 ns |  0.48 |    0.00 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         60 |    2 |        94.756 ns |      0.4122 ns |      0.3856 ns |        94.817 ns |  0.55 |    0.00 | 0.0025 |     128 B |        3.20 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         60 |    2 |        86.039 ns |      0.2194 ns |      0.2052 ns |        86.053 ns |  0.50 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |
+|       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         60 |    3 |       359.715 ns |      0.8299 ns |      0.7763 ns |       359.484 ns |  2.04 |    0.01 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         60 |    3 |       322.603 ns |      0.9042 ns |      0.8458 ns |       322.597 ns |  1.83 |    0.01 | 0.0005 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         60 |    3 |        92.820 ns |      0.3149 ns |      0.2629 ns |        92.832 ns |  0.53 |    0.00 | 0.0026 |     136 B |        3.40 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         60 |    3 |        86.698 ns |      0.4807 ns |      0.4496 ns |        86.698 ns |  0.49 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         60 |    3 |       176.235 ns |      0.6517 ns |      0.6096 ns |       176.385 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         60 |    3 |        80.511 ns |      0.4072 ns |      0.3809 ns |        80.504 ns |  0.46 |    0.00 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         60 |    3 |        97.069 ns |      0.4086 ns |      0.3822 ns |        96.873 ns |  0.55 |    0.00 | 0.0026 |     136 B |        3.40 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         60 |    3 |        87.598 ns |      0.1441 ns |      0.1125 ns |        87.575 ns |  0.50 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |
+|       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |        100 |    2 |       596.772 ns |      1.2074 ns |      0.9427 ns |       596.717 ns |  2.25 |    0.01 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |        100 |    2 |       521.242 ns |      0.8408 ns |      0.6564 ns |       521.177 ns |  1.97 |    0.01 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |        100 |    2 |        91.610 ns |      0.3014 ns |      0.2672 ns |        91.604 ns |  0.35 |    0.00 | 0.0025 |     128 B |        3.20 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |        100 |    2 |        85.625 ns |      0.1272 ns |      0.1128 ns |        85.628 ns |  0.32 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |        100 |    2 |       264.564 ns |      1.7567 ns |      1.6432 ns |       264.401 ns |  1.00 |    0.00 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |        100 |    2 |       137.237 ns |      1.8642 ns |      1.7438 ns |       137.051 ns |  0.52 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |        100 |    2 |        98.637 ns |      0.6251 ns |      0.5541 ns |        98.550 ns |  0.37 |    0.00 | 0.0025 |     128 B |        3.20 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |        100 |    2 |        89.108 ns |      0.3767 ns |      0.3524 ns |        89.034 ns |  0.34 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |
+|       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |        100 |    3 |       599.394 ns |      1.5305 ns |      1.4316 ns |       599.519 ns |  1.97 |    0.01 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |        100 |    3 |       517.823 ns |      1.2784 ns |      1.1958 ns |       517.992 ns |  1.70 |    0.01 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |        100 |    3 |        97.364 ns |      0.7732 ns |      0.7233 ns |        97.568 ns |  0.32 |    0.00 | 0.0026 |     136 B |        3.40 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |        100 |    3 |        91.785 ns |      0.3501 ns |      0.3275 ns |        91.650 ns |  0.30 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |        100 |    3 |       304.444 ns |      1.2230 ns |      1.0842 ns |       304.310 ns |  1.00 |    0.00 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |        100 |    3 |       136.731 ns |      0.8770 ns |      0.8204 ns |       136.485 ns |  0.45 |    0.00 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |        100 |    3 |        99.566 ns |      0.3678 ns |      0.3440 ns |        99.557 ns |  0.33 |    0.00 | 0.0026 |     136 B |        3.40 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |        100 |    3 |        92.930 ns |      0.3316 ns |      0.3102 ns |        92.972 ns |  0.31 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |
+|       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |      10000 |    2 |    59,643.008 ns |    116.2727 ns |    103.0727 ns |    59,638.242 ns |  2.45 |    0.01 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |      10000 |    2 |    50,329.329 ns |     72.8311 ns |     64.5629 ns |    50,318.381 ns |  2.06 |    0.01 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |      10000 |    2 |       699.590 ns |     12.7990 ns |     11.9722 ns |       703.895 ns |  0.03 |    0.00 | 0.0019 |     128 B |        3.20 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |      10000 |    2 |     1,031.977 ns |      6.1119 ns |      5.7171 ns |     1,032.884 ns |  0.04 |    0.00 |      - |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |      10000 |    2 |    24,392.911 ns |    132.3119 ns |    117.2910 ns |    24,411.473 ns |  1.00 |    0.00 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |      10000 |    2 |    10,099.563 ns |     34.6152 ns |     28.9053 ns |    10,108.372 ns |  0.41 |    0.00 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |      10000 |    2 |       709.476 ns |     13.7134 ns |     12.8275 ns |       704.588 ns |  0.03 |    0.00 | 0.0019 |     128 B |        3.20 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |      10000 |    2 |     1,030.994 ns |      4.2842 ns |      3.7978 ns |     1,031.253 ns |  0.04 |    0.00 |      - |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |
+|       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |      10000 |    3 |    60,057.154 ns |    162.0560 ns |    151.5873 ns |    60,100.540 ns |  2.40 |    0.03 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |      10000 |    3 |    50,426.166 ns |     69.2266 ns |     64.7546 ns |    50,398.175 ns |  2.01 |    0.02 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |      10000 |    3 |     1,011.207 ns |      8.2483 ns |      7.7154 ns |     1,007.637 ns |  0.04 |    0.00 | 0.0019 |     136 B |        3.40 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |      10000 |    3 |     1,488.033 ns |      8.5190 ns |      7.9687 ns |     1,488.806 ns |  0.06 |    0.00 |      - |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |      10000 |    3 |    25,057.340 ns |    277.2326 ns |    259.3236 ns |    24,989.601 ns |  1.00 |    0.00 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |      10000 |    3 |    10,177.677 ns |     62.9413 ns |     58.8753 ns |    10,195.561 ns |  0.41 |    0.01 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |      10000 |    3 |     1,030.270 ns |     13.4787 ns |     12.6080 ns |     1,031.170 ns |  0.04 |    0.00 | 0.0019 |     136 B |        3.40 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |      10000 |    3 |     1,490.879 ns |      9.8770 ns |      9.2389 ns |     1,489.154 ns |  0.06 |    0.00 |      - |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |
+|       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |    1000000 |    2 | 5,967,551.004 ns | 13,982.9918 ns | 12,395.5580 ns | 5,964,328.516 ns |  2.44 |    0.01 |      - |      44 B |        1.05 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |    1000000 |    2 | 5,047,424.010 ns | 13,523.6879 ns | 12,650.0660 ns | 5,049,785.156 ns |  2.06 |    0.01 |      - |      44 B |        1.05 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |    1000000 |    2 |    62,404.445 ns |    500.5218 ns |    468.1884 ns |    62,307.397 ns |  0.03 |    0.00 |      - |     128 B |        3.05 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |    1000000 |    2 |    93,638.600 ns |    481.2671 ns |    450.1776 ns |    93,764.905 ns |  0.04 |    0.00 |      - |      64 B |        1.52 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |    1000000 |    2 | 2,447,317.243 ns | 12,348.2017 ns | 10,946.3592 ns | 2,444,574.414 ns |  1.00 |    0.00 |      - |      42 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |    1000000 |    2 | 1,017,265.625 ns |  3,101.1769 ns |  2,900.8428 ns | 1,016,195.898 ns |  0.42 |    0.00 |      - |      41 B |        0.98 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |    1000000 |    2 |    62,174.830 ns |    286.4126 ns |    267.9105 ns |    62,188.782 ns |  0.03 |    0.00 |      - |     128 B |        3.05 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |    1000000 |    2 |    94,603.624 ns |    387.6280 ns |    343.6221 ns |    94,508.636 ns |  0.04 |    0.00 |      - |      64 B |        1.52 |
+|                      |          |          |            |      |                  |                |                |
+|       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |    1000000 |    3 | 6,015,189.740 ns | 39,234.6010 ns | 36,700.0702 ns | 6,006,392.969 ns |  2.40 |    0.02 |      - |      44 B |        1.05 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |    1000000 |    3 | 5,062,509.431 ns | 19,737.9526 ns | 17,497.1809 ns | 5,058,336.719 ns |  2.02 |    0.02 |      - |      44 B |        1.05 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |    1000000 |    3 |    93,652.214 ns |    862.2625 ns |    806.5609 ns |    93,603.540 ns |  0.04 |    0.00 |      - |     136 B |        3.24 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |    1000000 |    3 |   144,924.590 ns |  2,557.2871 ns |  2,392.0880 ns |   144,447.461 ns |  0.06 |    0.00 |      - |      64 B |        1.52 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |    1000000 |    3 | 2,503,165.156 ns | 17,527.3234 ns | 16,395.0692 ns | 2,499,642.578 ns |  1.00 |    0.00 |      - |      42 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |    1000000 |    3 | 1,018,979.450 ns |  9,870.3496 ns |  8,749.8078 ns | 1,019,660.254 ns |  0.41 |    0.00 |      - |      41 B |        0.98 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |    1000000 |    3 |    96,147.178 ns |    839.2710 ns |    785.0547 ns |    96,000.037 ns |  0.04 |    0.00 |      - |     136 B |        3.24 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |    1000000 |    3 |   141,518.872 ns |  1,026.1480 ns |    909.6535 ns |   141,553.760 ns |  0.06 |    0.00 |      - |      64 B |        1.52 |
+
+
+
+// * Summary *
+
+BenchmarkDotNet=v0.13.5, OS=Windows 11 (10.0.22621.1702/22H2/2022Update/SunValley2)
+AMD Ryzen 9 7950X3D, 1 CPU, 32 logical and 16 physical cores
+.NET SDK=7.0.203
+  [Host]   : .NET 7.0.5 (7.0.523.17405), X64 RyuJIT AVX2 [AttachedDebugger]
+  .NET 6.0 : .NET 6.0.16 (6.0.1623.17311), X64 RyuJIT AVX2
+  .NET 7.0 : .NET 7.0.5 (7.0.523.17405), X64 RyuJIT AVX2
+
+
+|               Method |      Job |  Runtime | numVectors | dims |             Mean |          Error |         StdDev | Ratio | RatioSD |   Gen0 | Allocated | Alloc Ratio |
+|--------------------- |--------- |--------- |----------- |----- |-----------------:|---------------:|---------------:|------:|--------:|-------:|----------:|------------:|
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |          1 |    2 |        11.045 ns |      0.2400 ns |      0.2358 ns |  1.58 |    0.03 | 0.0008 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |          1 |    2 |         8.480 ns |      0.2052 ns |      0.3372 ns |  1.24 |    0.05 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |          1 |    2 |               NA |             NA |             NA |     ? |       ? |      - |         - |           ? |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |          1 |    2 |               NA |             NA |             NA |     ? |       ? |      - |         - |           ? |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |          1 |    2 |         6.972 ns |      0.0279 ns |      0.0233 ns |  1.00 |    0.00 | 0.0008 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |          1 |    2 |         5.342 ns |      0.0728 ns |      0.0645 ns |  0.77 |    0.01 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |          1 |    2 |               NA |             NA |             NA |     ? |       ? |      - |         - |           ? |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |          1 |    2 |               NA |             NA |             NA |     ? |       ? |      - |         - |           ? |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |          1 |    3 |        10.248 ns |      0.1445 ns |      0.1281 ns |  1.31 |    0.05 | 0.0008 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |          1 |    3 |         8.331 ns |      0.1370 ns |      0.1070 ns |  1.06 |    0.04 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |          1 |    3 |         5.378 ns |      0.0402 ns |      0.0376 ns |  0.69 |    0.02 | 0.0008 |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |          1 |    3 |               NA |             NA |             NA |     ? |       ? |      - |         - |           ? |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |          1 |    3 |         7.895 ns |      0.1942 ns |      0.2386 ns |  1.00 |    0.00 | 0.0008 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |          1 |    3 |         5.398 ns |      0.1386 ns |      0.1297 ns |  0.69 |    0.02 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |          1 |    3 |         6.321 ns |      0.0561 ns |      0.0497 ns |  0.81 |    0.03 | 0.0008 |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |          1 |    3 |               NA |             NA |             NA |     ? |       ? |      - |         - |           ? |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         20 |    2 |       122.464 ns |      0.9467 ns |      0.8392 ns |  2.01 |    0.03 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         20 |    2 |       113.494 ns |      0.6330 ns |      0.5921 ns |  1.86 |    0.02 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         20 |    2 |        80.398 ns |      0.3413 ns |      0.3026 ns |  1.32 |    0.01 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         20 |    2 |        90.433 ns |      0.6776 ns |      0.6338 ns |  1.48 |    0.02 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         20 |    2 |        60.950 ns |      0.5747 ns |      0.5376 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         20 |    2 |        30.973 ns |      0.1586 ns |      0.1484 ns |  0.51 |    0.01 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         20 |    2 |        84.001 ns |      0.3847 ns |      0.3411 ns |  1.38 |    0.01 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         20 |    2 |        82.666 ns |      0.6156 ns |      0.5140 ns |  1.36 |    0.01 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         20 |    3 |       122.573 ns |      0.3094 ns |      0.2583 ns |  2.08 |    0.01 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         20 |    3 |       115.854 ns |      1.6620 ns |      1.4733 ns |  1.97 |    0.03 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         20 |    3 |       125.935 ns |      0.7860 ns |      0.7352 ns |  2.14 |    0.01 | 0.0036 |     184 B |        4.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         20 |    3 |        81.648 ns |      0.6368 ns |      0.5957 ns |  1.38 |    0.01 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         20 |    3 |        58.963 ns |      0.3004 ns |      0.2810 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         20 |    3 |        31.022 ns |      0.2648 ns |      0.2477 ns |  0.53 |    0.00 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         20 |    3 |       116.658 ns |      0.4521 ns |      0.3776 ns |  1.98 |    0.01 | 0.0036 |     184 B |        4.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         20 |    3 |        84.346 ns |      0.7831 ns |      0.6114 ns |  1.43 |    0.01 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         40 |    2 |       243.202 ns |      0.8570 ns |      0.7597 ns |  2.03 |    0.01 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         40 |    2 |       205.720 ns |      3.4825 ns |      3.0872 ns |  1.72 |    0.03 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         40 |    2 |        80.219 ns |      0.6228 ns |      0.5825 ns |  0.67 |    0.01 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         40 |    2 |        80.661 ns |      1.2044 ns |      1.1266 ns |  0.67 |    0.01 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         40 |    2 |       119.931 ns |      0.7640 ns |      0.6380 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         40 |    2 |        60.533 ns |      0.8099 ns |      0.9641 ns |  0.51 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         40 |    2 |        86.642 ns |      0.8417 ns |      0.6571 ns |  0.72 |    0.01 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         40 |    2 |        84.870 ns |      0.3802 ns |      0.3370 ns |  0.71 |    0.01 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         40 |    3 |       241.903 ns |      0.6044 ns |      0.5357 ns |  2.03 |    0.01 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         40 |    3 |       229.019 ns |      1.7113 ns |      1.5170 ns |  1.92 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         40 |    3 |       100.290 ns |      0.3091 ns |      0.2740 ns |  0.84 |    0.00 | 0.0036 |     184 B |        4.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         40 |    3 |        78.403 ns |      0.3905 ns |      0.3462 ns |  0.66 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         40 |    3 |       118.894 ns |      0.7109 ns |      0.5936 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         40 |    3 |        65.298 ns |      1.2954 ns |      1.3303 ns |  0.55 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         40 |    3 |       107.817 ns |      0.7807 ns |      0.6095 ns |  0.91 |    0.01 | 0.0036 |     184 B |        4.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         40 |    3 |        82.021 ns |      0.2338 ns |      0.1825 ns |  0.69 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         60 |    2 |       367.749 ns |      2.3530 ns |      2.2010 ns |  1.99 |    0.05 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         60 |    2 |       331.443 ns |      1.3061 ns |      1.2218 ns |  1.79 |    0.04 | 0.0005 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         60 |    2 |        84.592 ns |      0.2900 ns |      0.2713 ns |  0.46 |    0.01 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         60 |    2 |        84.604 ns |      1.0624 ns |      0.9938 ns |  0.46 |    0.01 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         60 |    2 |       184.441 ns |      3.6959 ns |      3.9545 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         60 |    2 |        92.571 ns |      0.4227 ns |      0.3300 ns |  0.50 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         60 |    2 |        88.249 ns |      0.5301 ns |      0.4426 ns |  0.48 |    0.01 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         60 |    2 |        88.171 ns |      0.6419 ns |      0.5690 ns |  0.48 |    0.01 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         60 |    3 |       367.397 ns |      2.1128 ns |      1.9763 ns |  1.97 |    0.03 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         60 |    3 |       334.862 ns |      2.1630 ns |      1.6887 ns |  1.80 |    0.03 | 0.0005 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         60 |    3 |       128.082 ns |      1.0485 ns |      0.9808 ns |  0.69 |    0.01 | 0.0036 |     184 B |        4.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         60 |    3 |        89.232 ns |      1.1329 ns |      1.0597 ns |  0.48 |    0.01 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         60 |    3 |       186.172 ns |      2.3928 ns |      2.2382 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         60 |    3 |       100.335 ns |      0.3690 ns |      0.3271 ns |  0.54 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         60 |    3 |       122.909 ns |      0.3341 ns |      0.3125 ns |  0.66 |    0.01 | 0.0036 |     184 B |        4.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         60 |    3 |        88.702 ns |      0.2872 ns |      0.2242 ns |  0.48 |    0.01 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |        100 |    2 |       606.572 ns |      3.9085 ns |      3.6560 ns |  1.97 |    0.02 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |        100 |    2 |       543.126 ns |      1.6768 ns |      1.5684 ns |  1.77 |    0.01 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |        100 |    2 |        84.703 ns |      0.7166 ns |      0.6703 ns |  0.28 |    0.00 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |        100 |    2 |        85.688 ns |      0.1771 ns |      0.1657 ns |  0.28 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |        100 |    2 |       307.803 ns |      1.7370 ns |      1.4505 ns |  1.00 |    0.00 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |        100 |    2 |       143.601 ns |      0.5837 ns |      0.5460 ns |  0.47 |    0.00 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |        100 |    2 |        91.576 ns |      0.1827 ns |      0.1620 ns |  0.30 |    0.00 | 0.0012 |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |        100 |    2 |        90.887 ns |      0.4381 ns |      0.4098 ns |  0.30 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |        100 |    3 |       599.839 ns |      1.0372 ns |      0.8098 ns |  2.06 |    0.01 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |        100 |    3 |       534.895 ns |      2.3049 ns |      2.0433 ns |  1.84 |    0.01 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |        100 |    3 |       125.653 ns |      0.4611 ns |      0.3851 ns |  0.43 |    0.00 | 0.0036 |     184 B |        4.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |        100 |    3 |        93.235 ns |      0.5526 ns |      0.5169 ns |  0.32 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |        100 |    3 |       291.181 ns |      0.5204 ns |      0.4868 ns |  1.00 |    0.00 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |        100 |    3 |       144.876 ns |      0.2622 ns |      0.2325 ns |  0.50 |    0.00 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |        100 |    3 |       125.612 ns |      0.1599 ns |      0.1417 ns |  0.43 |    0.00 | 0.0036 |     184 B |        4.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |        100 |    3 |        97.721 ns |      0.4513 ns |      0.4221 ns |  0.34 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |      10000 |    2 |    60,630.040 ns |    407.4424 ns |    381.1219 ns |  2.36 |    0.02 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |      10000 |    2 |    52,787.092 ns |    259.3976 ns |    216.6088 ns |  2.06 |    0.01 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |      10000 |    2 |     1,040.985 ns |      2.7611 ns |      2.5827 ns |  0.04 |    0.00 |      - |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |      10000 |    2 |     1,046.897 ns |      5.0883 ns |      4.5106 ns |  0.04 |    0.00 |      - |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |      10000 |    2 |    25,684.786 ns |    141.7947 ns |    125.6973 ns |  1.00 |    0.00 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |      10000 |    2 |    10,545.592 ns |     77.8726 ns |     72.8421 ns |  0.41 |    0.00 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |      10000 |    2 |     1,069.802 ns |      4.6782 ns |      4.3760 ns |  0.04 |    0.00 |      - |      64 B |        1.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |      10000 |    2 |     1,065.344 ns |      3.0934 ns |      2.8935 ns |  0.04 |    0.00 |      - |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |      10000 |    3 |    60,856.242 ns |    339.4570 ns |    317.5282 ns |  2.41 |    0.02 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |      10000 |    3 |    52,739.761 ns |    151.5570 ns |    126.5570 ns |  2.08 |    0.01 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |      10000 |    3 |       570.604 ns |      2.3578 ns |      2.0901 ns |  0.02 |    0.00 | 0.0029 |     184 B |        4.60 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |      10000 |    3 |     1,521.014 ns |      3.2527 ns |      3.0426 ns |  0.06 |    0.00 |      - |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |      10000 |    3 |    25,292.224 ns |    133.2885 ns |    124.6781 ns |  1.00 |    0.00 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |      10000 |    3 |    10,376.939 ns |     47.1338 ns |     44.0890 ns |  0.41 |    0.00 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |      10000 |    3 |     1,064.072 ns |      8.9378 ns |      8.3604 ns |  0.04 |    0.00 | 0.0019 |     184 B |        4.60 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |      10000 |    3 |     1,503.726 ns |      4.7762 ns |      4.2340 ns |  0.06 |    0.00 |      - |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |    1000000 |    2 | 5,978,082.708 ns |  9,740.5843 ns |  9,111.3486 ns |  2.33 |    0.02 |      - |      45 B |        1.07 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |    1000000 |    2 | 5,222,896.562 ns | 12,162.5024 ns | 11,376.8123 ns |  2.03 |    0.01 |      - |      45 B |        1.07 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |    1000000 |    2 |    93,502.398 ns |    159.5685 ns |    133.2469 ns |  0.04 |    0.00 |      - |      64 B |        1.52 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |    1000000 |    2 |    94,586.969 ns |    200.2970 ns |    187.3580 ns |  0.04 |    0.00 |      - |      64 B |        1.52 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |    1000000 |    2 | 2,569,015.260 ns | 17,386.9369 ns | 16,263.7516 ns |  1.00 |    0.00 |      - |      42 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |    1000000 |    2 | 1,024,105.190 ns |  3,684.7812 ns |  3,266.4625 ns |  0.40 |    0.00 |      - |      41 B |        0.98 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |    1000000 |    2 |    94,685.074 ns |    225.2110 ns |    188.0614 ns |  0.04 |    0.00 |      - |      64 B |        1.52 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |    1000000 |    2 |    94,506.597 ns |    386.3021 ns |    361.3472 ns |  0.04 |    0.00 |      - |      64 B |        1.52 |
+|                      |          |          |            |      |                  |                |                |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |    1000000 |    3 | 6,008,894.271 ns | 15,317.2415 ns | 14,327.7572 ns |  2.39 |    0.02 |      - |      45 B |        1.07 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |    1000000 |    3 | 5,230,581.250 ns |  8,890.2680 ns |  7,880.9910 ns |  2.08 |    0.02 |      - |      44 B |        1.05 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |    1000000 |    3 |    46,596.388 ns |    429.4336 ns |    401.6924 ns |  0.02 |    0.00 |      - |     184 B |        4.38 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |    1000000 |    3 |   142,407.012 ns |    885.7544 ns |    785.1982 ns |  0.06 |    0.00 |      - |      64 B |        1.52 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |    1000000 |    3 | 2,512,937.165 ns | 25,235.2567 ns | 22,370.3978 ns |  1.00 |    0.00 |      - |      42 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |    1000000 |    3 | 1,015,148.939 ns |  6,915.8455 ns |  6,469.0862 ns |  0.40 |    0.00 |      - |      41 B |        0.98 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |    1000000 |    3 |    95,521.617 ns |    520.8617 ns |    461.7303 ns |  0.04 |    0.00 |      - |     184 B |        4.38 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |    1000000 |    3 |   142,736.450 ns |  2,172.0263 ns |  2,031.7147 ns |  0.06 |    0.00 |      - |      64 B |        1.52 |
+
+
+// * Summary *
+
+BenchmarkDotNet=v0.13.5, OS=Windows 11 (10.0.22621.1778/22H2/2022Update/SunValley2)
+AMD Ryzen 9 7950X3D, 1 CPU, 32 logical and 16 physical cores
+.NET SDK=7.0.203
+  [Host]   : .NET 7.0.5 (7.0.523.17405), X64 RyuJIT AVX2 [AttachedDebugger]
+  .NET 6.0 : .NET 6.0.16 (6.0.1623.17311), X64 RyuJIT AVX2
+  .NET 7.0 : .NET 7.0.5 (7.0.523.17405), X64 RyuJIT AVX2
+
+
+|               Method |      Job |  Runtime | numVectors | dims |             Mean |          Error |         StdDev |           Median | Ratio | RatioSD |   Gen0 | Allocated | Alloc Ratio |
+|--------------------- |--------- |--------- |----------- |----- |-----------------:|---------------:|---------------:|-----------------:|------:|--------:|-------:|----------:|------------:|
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |          1 |    2 |         9.688 ns |      0.1907 ns |      0.2734 ns |         9.715 ns |  1.31 |    0.05 | 0.0008 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |          1 |    2 |         8.832 ns |      0.2110 ns |      0.3964 ns |         8.892 ns |  1.18 |    0.06 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |          1 |    2 |         8.517 ns |      0.2042 ns |      0.3522 ns |         8.365 ns |  1.20 |    0.05 | 0.0008 |      40 B |        1.00 |
+|          BoundsFinal | .NET 6.0 | .NET 6.0 |          1 |    2 |        10.049 ns |      0.2280 ns |      0.2964 ns |        10.102 ns |  1.37 |    0.05 | 0.0008 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 6.0 | .NET 6.0 |          1 |    2 |         4.178 ns |      0.0434 ns |      0.0362 ns |         4.181 ns |  0.57 |    0.01 | 0.0008 |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |          1 |    2 |               NA |             NA |             NA |               NA |     ? |       ? |      - |         - |           ? |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |          1 |    2 |         7.355 ns |      0.1769 ns |      0.1893 ns |         7.315 ns |  1.00 |    0.00 | 0.0008 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |          1 |    2 |         5.467 ns |      0.0782 ns |      0.0694 ns |         5.451 ns |  0.74 |    0.02 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |          1 |    2 |         6.749 ns |      0.0997 ns |      0.0932 ns |         6.710 ns |  0.92 |    0.03 | 0.0008 |      40 B |        1.00 |
+|          BoundsFinal | .NET 7.0 | .NET 7.0 |          1 |    2 |         7.446 ns |      0.1787 ns |      0.2128 ns |         7.435 ns |  1.01 |    0.03 | 0.0008 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 7.0 | .NET 7.0 |          1 |    2 |         5.589 ns |      0.0360 ns |      0.0319 ns |         5.587 ns |  0.76 |    0.02 | 0.0008 |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |          1 |    2 |               NA |             NA |             NA |               NA |     ? |       ? |      - |         - |           ? |
+|                      |          |          |            |      |                  |                |                |                  |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |          1 |    3 |        10.127 ns |      0.2345 ns |      0.4107 ns |        10.030 ns |  1.41 |    0.07 | 0.0008 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |          1 |    3 |         8.792 ns |      0.2063 ns |      0.3024 ns |         8.711 ns |  1.23 |    0.04 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |          1 |    3 |         8.418 ns |      0.1733 ns |      0.1353 ns |         8.396 ns |  1.17 |    0.03 | 0.0008 |      40 B |        1.00 |
+|          BoundsFinal | .NET 6.0 | .NET 6.0 |          1 |    3 |         9.836 ns |      0.1172 ns |      0.0978 ns |         9.873 ns |  1.37 |    0.03 | 0.0008 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 6.0 | .NET 6.0 |          1 |    3 |         4.178 ns |      0.0629 ns |      0.0588 ns |         4.165 ns |  0.58 |    0.01 | 0.0008 |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |          1 |    3 |               NA |             NA |             NA |               NA |     ? |       ? |      - |         - |           ? |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |          1 |    3 |         7.201 ns |      0.1229 ns |      0.1027 ns |         7.205 ns |  1.00 |    0.00 | 0.0008 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |          1 |    3 |         5.572 ns |      0.0920 ns |      0.0861 ns |         5.532 ns |  0.77 |    0.02 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |          1 |    3 |         6.723 ns |      0.1492 ns |      0.1396 ns |         6.655 ns |  0.94 |    0.03 | 0.0008 |      40 B |        1.00 |
+|          BoundsFinal | .NET 7.0 | .NET 7.0 |          1 |    3 |         7.780 ns |      0.1880 ns |      0.1759 ns |         7.828 ns |  1.08 |    0.03 | 0.0008 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 7.0 | .NET 7.0 |          1 |    3 |         5.276 ns |      0.0552 ns |      0.0490 ns |         5.271 ns |  0.73 |    0.01 | 0.0008 |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |          1 |    3 |               NA |             NA |             NA |               NA |     ? |       ? |      - |         - |           ? |
+|                      |          |          |            |      |                  |                |                |                  |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         20 |    2 |       120.101 ns |      0.2367 ns |      0.2099 ns |       120.057 ns |  1.86 |    0.07 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         20 |    2 |       108.155 ns |      0.2990 ns |      0.2797 ns |       108.198 ns |  1.67 |    0.07 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         20 |    2 |        80.075 ns |      0.1878 ns |      0.1757 ns |        80.105 ns |  1.24 |    0.05 | 0.0012 |      64 B |        1.60 |
+|          BoundsFinal | .NET 6.0 | .NET 6.0 |         20 |    2 |       118.958 ns |      2.5588 ns |      7.5447 ns |       122.012 ns |  1.84 |    0.15 | 0.0007 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 6.0 | .NET 6.0 |         20 |    2 |        13.351 ns |      0.0489 ns |      0.0458 ns |        13.345 ns |  0.21 |    0.01 | 0.0008 |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         20 |    2 |        79.374 ns |      1.5882 ns |      1.6994 ns |        78.592 ns |  1.22 |    0.05 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         20 |    2 |        64.293 ns |      1.3191 ns |      2.3446 ns |        63.211 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         20 |    2 |        28.626 ns |      0.2391 ns |      0.1996 ns |        28.611 ns |  0.45 |    0.02 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         20 |    2 |        83.035 ns |      0.5063 ns |      0.4736 ns |        83.223 ns |  1.28 |    0.06 | 0.0012 |      64 B |        1.60 |
+|          BoundsFinal | .NET 7.0 | .NET 7.0 |         20 |    2 |        30.257 ns |      0.2452 ns |      0.2294 ns |        30.305 ns |  0.47 |    0.02 | 0.0008 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 7.0 | .NET 7.0 |         20 |    2 |        15.332 ns |      0.0232 ns |      0.0194 ns |        15.325 ns |  0.24 |    0.01 | 0.0008 |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         20 |    2 |        82.747 ns |      0.1873 ns |      0.1564 ns |        82.734 ns |  1.29 |    0.05 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |                  |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         20 |    3 |       120.710 ns |      0.4497 ns |      0.3986 ns |       120.646 ns |  1.93 |    0.01 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         20 |    3 |       105.804 ns |      0.5876 ns |      0.4907 ns |       105.654 ns |  1.69 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         20 |    3 |       119.974 ns |      0.6735 ns |      0.5970 ns |       120.082 ns |  1.91 |    0.01 | 0.0036 |     184 B |        4.60 |
+|          BoundsFinal | .NET 6.0 | .NET 6.0 |         20 |    3 |       113.752 ns |      0.7609 ns |      1.0913 ns |       114.112 ns |  1.81 |    0.02 | 0.0007 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 6.0 | .NET 6.0 |         20 |    3 |        39.817 ns |      0.2579 ns |      0.2412 ns |        39.777 ns |  0.64 |    0.00 | 0.0032 |     160 B |        4.00 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         20 |    3 |        80.537 ns |      0.3077 ns |      0.2878 ns |        80.527 ns |  1.28 |    0.01 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         20 |    3 |        62.703 ns |      0.2873 ns |      0.2547 ns |        62.685 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         20 |    3 |        28.451 ns |      0.1226 ns |      0.1086 ns |        28.445 ns |  0.45 |    0.00 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         20 |    3 |       118.463 ns |      2.2352 ns |      2.1953 ns |       118.690 ns |  1.89 |    0.04 | 0.0036 |     184 B |        4.60 |
+|          BoundsFinal | .NET 7.0 | .NET 7.0 |         20 |    3 |        30.031 ns |      0.1839 ns |      0.1630 ns |        30.067 ns |  0.48 |    0.00 | 0.0008 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 7.0 | .NET 7.0 |         20 |    3 |        42.502 ns |      0.3071 ns |      0.2872 ns |        42.497 ns |  0.68 |    0.01 | 0.0032 |     160 B |        4.00 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         20 |    3 |        82.477 ns |      0.1387 ns |      0.1229 ns |        82.491 ns |  1.32 |    0.01 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |                  |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         40 |    2 |       239.967 ns |      0.6713 ns |      0.6280 ns |       239.940 ns |  1.93 |    0.01 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         40 |    2 |       205.370 ns |      0.4754 ns |      0.4447 ns |       205.439 ns |  1.66 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         40 |    2 |        79.653 ns |      0.2296 ns |      0.2035 ns |        79.616 ns |  0.64 |    0.00 | 0.0012 |      64 B |        1.60 |
+|          BoundsFinal | .NET 6.0 | .NET 6.0 |         40 |    2 |       236.072 ns |      4.7033 ns |     11.7130 ns |       240.363 ns |  1.86 |    0.10 | 0.0007 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 6.0 | .NET 6.0 |         40 |    2 |        15.219 ns |      0.0427 ns |      0.0474 ns |        15.210 ns |  0.12 |    0.00 | 0.0008 |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         40 |    2 |        79.321 ns |      0.1407 ns |      0.1175 ns |        79.309 ns |  0.64 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         40 |    2 |       124.034 ns |      0.8355 ns |      0.7406 ns |       123.909 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         40 |    2 |        54.224 ns |      0.2402 ns |      0.2247 ns |        54.235 ns |  0.44 |    0.00 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         40 |    2 |        84.092 ns |      0.2618 ns |      0.2321 ns |        84.082 ns |  0.68 |    0.00 | 0.0012 |      64 B |        1.60 |
+|          BoundsFinal | .NET 7.0 | .NET 7.0 |         40 |    2 |        61.025 ns |      0.5353 ns |      0.5008 ns |        60.897 ns |  0.49 |    0.00 | 0.0007 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 7.0 | .NET 7.0 |         40 |    2 |        16.895 ns |      0.1683 ns |      0.1574 ns |        16.954 ns |  0.14 |    0.00 | 0.0008 |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         40 |    2 |        84.560 ns |      0.6431 ns |      0.6016 ns |        84.911 ns |  0.68 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |                  |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         40 |    3 |       240.264 ns |      0.3800 ns |      0.2967 ns |       240.349 ns |  1.88 |    0.02 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         40 |    3 |       208.557 ns |      0.5872 ns |      0.5206 ns |       208.651 ns |  1.63 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         40 |    3 |        98.492 ns |      0.2924 ns |      0.2735 ns |        98.419 ns |  0.77 |    0.01 | 0.0036 |     184 B |        4.60 |
+|          BoundsFinal | .NET 6.0 | .NET 6.0 |         40 |    3 |       234.642 ns |      4.7856 ns |     14.1106 ns |       224.821 ns |  1.85 |    0.12 | 0.0007 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 6.0 | .NET 6.0 |         40 |    3 |        36.337 ns |      0.2326 ns |      0.2176 ns |        36.382 ns |  0.28 |    0.00 | 0.0032 |     160 B |        4.00 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         40 |    3 |        76.822 ns |      0.6658 ns |      0.7401 ns |        76.530 ns |  0.60 |    0.01 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         40 |    3 |       127.832 ns |      0.9684 ns |      0.9058 ns |       127.770 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         40 |    3 |        53.884 ns |      0.3195 ns |      0.2495 ns |        53.916 ns |  0.42 |    0.00 | 0.0008 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         40 |    3 |       106.436 ns |      0.1996 ns |      0.5043 ns |       106.290 ns |  0.84 |    0.01 | 0.0036 |     184 B |        4.60 |
+|          BoundsFinal | .NET 7.0 | .NET 7.0 |         40 |    3 |        59.847 ns |      0.4964 ns |      0.4401 ns |        59.810 ns |  0.47 |    0.00 | 0.0007 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 7.0 | .NET 7.0 |         40 |    3 |        39.347 ns |      0.3426 ns |      0.2861 ns |        39.305 ns |  0.31 |    0.00 | 0.0032 |     160 B |        4.00 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         40 |    3 |        80.501 ns |      0.2828 ns |      0.2361 ns |        80.482 ns |  0.63 |    0.01 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |                  |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         60 |    2 |       357.769 ns |      1.3179 ns |      1.1005 ns |       357.834 ns |  1.84 |    0.03 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         60 |    2 |       306.057 ns |      1.7059 ns |      1.5957 ns |       306.114 ns |  1.58 |    0.03 | 0.0005 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         60 |    2 |        83.395 ns |      0.7866 ns |      0.7358 ns |        83.181 ns |  0.43 |    0.01 | 0.0012 |      64 B |        1.60 |
+|          BoundsFinal | .NET 6.0 | .NET 6.0 |         60 |    2 |       323.790 ns |      3.3218 ns |      4.4345 ns |       322.240 ns |  1.68 |    0.04 | 0.0005 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 6.0 | .NET 6.0 |         60 |    2 |        17.140 ns |      0.1774 ns |      0.1660 ns |        17.143 ns |  0.09 |    0.00 | 0.0008 |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         60 |    2 |        81.686 ns |      0.3192 ns |      0.2829 ns |        81.773 ns |  0.42 |    0.01 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         60 |    2 |       193.511 ns |      3.7950 ns |      3.5498 ns |       192.598 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         60 |    2 |        79.326 ns |      0.3090 ns |      0.2890 ns |        79.261 ns |  0.41 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         60 |    2 |        87.548 ns |      0.4760 ns |      0.4453 ns |        87.615 ns |  0.45 |    0.01 | 0.0012 |      64 B |        1.60 |
+|          BoundsFinal | .NET 7.0 | .NET 7.0 |         60 |    2 |        80.654 ns |      0.4196 ns |      0.3925 ns |        80.783 ns |  0.42 |    0.01 | 0.0007 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 7.0 | .NET 7.0 |         60 |    2 |        18.427 ns |      0.0451 ns |      0.0400 ns |        18.413 ns |  0.10 |    0.00 | 0.0008 |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         60 |    2 |        85.151 ns |      0.1261 ns |      0.1053 ns |        85.162 ns |  0.44 |    0.01 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |                  |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         60 |    3 |       357.036 ns |      0.6373 ns |      0.5962 ns |       357.034 ns |  1.92 |    0.01 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         60 |    3 |       291.833 ns |      0.6596 ns |      0.5847 ns |       291.939 ns |  1.57 |    0.01 | 0.0005 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         60 |    3 |       119.974 ns |      0.6050 ns |      0.5659 ns |       120.035 ns |  0.65 |    0.01 | 0.0036 |     184 B |        4.60 |
+|          BoundsFinal | .NET 6.0 | .NET 6.0 |         60 |    3 |       320.331 ns |      0.6828 ns |      0.6387 ns |       320.171 ns |  1.72 |    0.01 | 0.0005 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 6.0 | .NET 6.0 |         60 |    3 |        40.709 ns |      0.2459 ns |      0.2300 ns |        40.697 ns |  0.22 |    0.00 | 0.0032 |     160 B |        4.00 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         60 |    3 |        84.536 ns |      0.1929 ns |      0.1804 ns |        84.545 ns |  0.45 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         60 |    3 |       185.983 ns |      1.1749 ns |      1.0990 ns |       185.420 ns |  1.00 |    0.00 | 0.0007 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         60 |    3 |        83.335 ns |      0.3581 ns |      0.3175 ns |        83.215 ns |  0.45 |    0.00 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         60 |    3 |       111.144 ns |      0.2310 ns |      0.2161 ns |       111.088 ns |  0.60 |    0.00 | 0.0036 |     184 B |        4.60 |
+|          BoundsFinal | .NET 7.0 | .NET 7.0 |         60 |    3 |        84.907 ns |      0.3956 ns |      0.3701 ns |        84.866 ns |  0.46 |    0.00 | 0.0007 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 7.0 | .NET 7.0 |         60 |    3 |        44.254 ns |      0.3354 ns |      0.3137 ns |        44.319 ns |  0.24 |    0.00 | 0.0032 |     160 B |        4.00 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         60 |    3 |        89.184 ns |      0.5614 ns |      0.5251 ns |        89.083 ns |  0.48 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |                  |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         80 |    2 |       475.017 ns |      1.6461 ns |      1.5398 ns |       474.874 ns |  1.92 |    0.01 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         80 |    2 |       393.391 ns |      1.4142 ns |      1.3229 ns |       393.503 ns |  1.59 |    0.01 | 0.0005 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         80 |    2 |        83.274 ns |      0.1309 ns |      0.1160 ns |        83.299 ns |  0.34 |    0.00 | 0.0012 |      64 B |        1.60 |
+|          BoundsFinal | .NET 6.0 | .NET 6.0 |         80 |    2 |       416.003 ns |      1.5493 ns |      1.4492 ns |       415.715 ns |  1.68 |    0.01 | 0.0005 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 6.0 | .NET 6.0 |         80 |    2 |        18.706 ns |      0.0660 ns |      0.0618 ns |        18.699 ns |  0.08 |    0.00 | 0.0008 |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         80 |    2 |        83.792 ns |      0.2429 ns |      0.2028 ns |        83.841 ns |  0.34 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         80 |    2 |       247.737 ns |      1.5118 ns |      1.3402 ns |       247.526 ns |  1.00 |    0.00 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         80 |    2 |       107.553 ns |      0.6041 ns |      0.5355 ns |       107.375 ns |  0.43 |    0.00 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         80 |    2 |        86.795 ns |      0.3795 ns |      0.3549 ns |        86.809 ns |  0.35 |    0.00 | 0.0012 |      64 B |        1.60 |
+|          BoundsFinal | .NET 7.0 | .NET 7.0 |         80 |    2 |       105.256 ns |      0.6208 ns |      0.5184 ns |       105.426 ns |  0.42 |    0.00 | 0.0007 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 7.0 | .NET 7.0 |         80 |    2 |        20.494 ns |      0.0602 ns |      0.0534 ns |        20.508 ns |  0.08 |    0.00 | 0.0008 |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         80 |    2 |        88.441 ns |      0.3460 ns |      0.3067 ns |        88.444 ns |  0.36 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |                  |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |         80 |    3 |       475.942 ns |      1.0507 ns |      0.8774 ns |       475.782 ns |  1.85 |    0.03 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |         80 |    3 |       375.438 ns |      1.3669 ns |      1.2786 ns |       375.425 ns |  1.46 |    0.02 | 0.0005 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |         80 |    3 |       100.137 ns |      0.4647 ns |      0.4347 ns |       100.118 ns |  0.39 |    0.01 | 0.0036 |     184 B |        4.60 |
+|          BoundsFinal | .NET 6.0 | .NET 6.0 |         80 |    3 |       389.620 ns |      1.1947 ns |      1.1175 ns |       389.701 ns |  1.52 |    0.02 | 0.0005 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 6.0 | .NET 6.0 |         80 |    3 |        46.939 ns |      0.1736 ns |      0.1356 ns |        46.957 ns |  0.18 |    0.00 | 0.0032 |     160 B |        4.00 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |         80 |    3 |        81.345 ns |      0.4086 ns |      0.3622 ns |        81.255 ns |  0.32 |    0.01 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |         80 |    3 |       256.706 ns |      3.8781 ns |      3.6275 ns |       256.411 ns |  1.00 |    0.00 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |         80 |    3 |       113.738 ns |      2.2733 ns |      2.2327 ns |       114.925 ns |  0.44 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |         80 |    3 |       110.254 ns |      0.4931 ns |      0.4371 ns |       110.230 ns |  0.43 |    0.01 | 0.0036 |     184 B |        4.60 |
+|          BoundsFinal | .NET 7.0 | .NET 7.0 |         80 |    3 |       106.984 ns |      0.5984 ns |      0.5597 ns |       106.913 ns |  0.42 |    0.01 | 0.0007 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 7.0 | .NET 7.0 |         80 |    3 |        43.056 ns |      0.2210 ns |      0.1959 ns |        43.055 ns |  0.17 |    0.00 | 0.0032 |     160 B |        4.00 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |         80 |    3 |        87.985 ns |      0.6714 ns |      0.5951 ns |        87.848 ns |  0.34 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |                  |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |        100 |    2 |       599.236 ns |      3.3335 ns |      3.1182 ns |       599.070 ns |  2.07 |    0.03 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |        100 |    2 |       482.081 ns |      1.3681 ns |      1.2797 ns |       482.385 ns |  1.67 |    0.02 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |        100 |    2 |        85.580 ns |      0.2803 ns |      0.2622 ns |        85.566 ns |  0.30 |    0.00 | 0.0012 |      64 B |        1.60 |
+|          BoundsFinal | .NET 6.0 | .NET 6.0 |        100 |    2 |       518.552 ns |      1.6453 ns |      1.5390 ns |       518.541 ns |  1.79 |    0.02 |      - |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 6.0 | .NET 6.0 |        100 |    2 |        20.930 ns |      0.0756 ns |      0.0707 ns |        20.943 ns |  0.07 |    0.00 | 0.0008 |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |        100 |    2 |        84.472 ns |      0.1951 ns |      0.1729 ns |        84.427 ns |  0.29 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |        100 |    2 |       289.117 ns |      3.5281 ns |      3.3002 ns |       290.426 ns |  1.00 |    0.00 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |        100 |    2 |       132.313 ns |      1.1926 ns |      1.1155 ns |       132.360 ns |  0.46 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |        100 |    2 |        90.415 ns |      1.4003 ns |      1.3098 ns |        90.004 ns |  0.31 |    0.01 | 0.0012 |      64 B |        1.60 |
+|          BoundsFinal | .NET 7.0 | .NET 7.0 |        100 |    2 |       138.864 ns |      1.6079 ns |      1.4254 ns |       138.856 ns |  0.48 |    0.01 | 0.0007 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 7.0 | .NET 7.0 |        100 |    2 |        21.857 ns |      0.1128 ns |      0.1055 ns |        21.832 ns |  0.08 |    0.00 | 0.0008 |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |        100 |    2 |        88.526 ns |      0.1553 ns |      0.1377 ns |        88.507 ns |  0.31 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |                  |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |        100 |    3 |       600.673 ns |      3.9703 ns |      3.7138 ns |       598.624 ns |  2.01 |    0.03 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |        100 |    3 |       467.039 ns |      0.5620 ns |      0.4693 ns |       467.090 ns |  1.57 |    0.02 | 0.0005 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |        100 |    3 |       122.878 ns |      0.2545 ns |      0.1987 ns |       122.921 ns |  0.41 |    0.00 | 0.0036 |     184 B |        4.60 |
+|          BoundsFinal | .NET 6.0 | .NET 6.0 |        100 |    3 |       488.462 ns |      0.6835 ns |      0.6393 ns |       488.464 ns |  1.64 |    0.02 |      - |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 6.0 | .NET 6.0 |        100 |    3 |        43.323 ns |      0.1794 ns |      0.1591 ns |        43.295 ns |  0.15 |    0.00 | 0.0032 |     160 B |        4.00 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |        100 |    3 |        90.825 ns |      0.4960 ns |      0.4397 ns |        90.728 ns |  0.30 |    0.00 | 0.0012 |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |        100 |    3 |       298.492 ns |      3.7821 ns |      3.5378 ns |       299.790 ns |  1.00 |    0.00 | 0.0005 |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |        100 |    3 |       131.080 ns |      0.8280 ns |      0.7340 ns |       131.181 ns |  0.44 |    0.01 | 0.0007 |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |        100 |    3 |       116.439 ns |      0.1983 ns |      0.1655 ns |       116.479 ns |  0.39 |    0.00 | 0.0036 |     184 B |        4.60 |
+|          BoundsFinal | .NET 7.0 | .NET 7.0 |        100 |    3 |       129.513 ns |      0.8537 ns |      0.7985 ns |       129.518 ns |  0.43 |    0.01 | 0.0007 |      40 B |        1.00 |
+|      BoundsFloatSpan | .NET 7.0 | .NET 7.0 |        100 |    3 |        48.180 ns |      0.3285 ns |      0.2912 ns |        48.108 ns |  0.16 |    0.00 | 0.0032 |     160 B |        4.00 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |        100 |    3 |        96.757 ns |      0.6520 ns |      0.6099 ns |        96.531 ns |  0.32 |    0.00 | 0.0012 |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |                  |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |      10000 |    2 |    59,521.218 ns |    169.6553 ns |    158.6957 ns |    59,483.875 ns |  2.38 |    0.02 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |      10000 |    2 |    44,911.084 ns |     95.2195 ns |     89.0684 ns |    44,908.276 ns |  1.80 |    0.01 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |      10000 |    2 |     1,025.590 ns |     12.7365 ns |     11.9137 ns |     1,023.197 ns |  0.04 |    0.00 |      - |      64 B |        1.60 |
+|          BoundsFinal | .NET 6.0 | .NET 6.0 |      10000 |    2 |     1,020.209 ns |      9.0986 ns |      8.5109 ns |     1,020.787 ns |  0.04 |    0.00 |      - |      64 B |        1.60 |
+|      BoundsFloatSpan | .NET 6.0 | .NET 6.0 |      10000 |    2 |       934.007 ns |     10.2215 ns |      9.5612 ns |       933.613 ns |  0.04 |    0.00 |      - |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |      10000 |    2 |     1,022.721 ns |      9.1661 ns |      8.5740 ns |     1,021.374 ns |  0.04 |    0.00 |      - |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |      10000 |    2 |    25,011.712 ns |    186.1145 ns |    164.9857 ns |    24,972.504 ns |  1.00 |    0.00 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |      10000 |    2 |    10,194.802 ns |     92.8393 ns |     86.8420 ns |    10,188.126 ns |  0.41 |    0.00 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |      10000 |    2 |     1,038.635 ns |     19.8365 ns |     18.5551 ns |     1,040.875 ns |  0.04 |    0.00 |      - |      64 B |        1.60 |
+|          BoundsFinal | .NET 7.0 | .NET 7.0 |      10000 |    2 |     1,021.047 ns |      7.6906 ns |      6.8176 ns |     1,021.377 ns |  0.04 |    0.00 |      - |      64 B |        1.60 |
+|      BoundsFloatSpan | .NET 7.0 | .NET 7.0 |      10000 |    2 |       922.462 ns |      1.9445 ns |      1.5181 ns |       922.139 ns |  0.04 |    0.00 |      - |      40 B |        1.00 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |      10000 |    2 |     1,027.236 ns |      8.6873 ns |      8.1261 ns |     1,027.314 ns |  0.04 |    0.00 |      - |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |                  |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |      10000 |    3 |    59,612.346 ns |    181.5246 ns |    151.5813 ns |    59,696.722 ns |  2.41 |    0.02 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |      10000 |    3 |    44,975.903 ns |    177.4141 ns |    148.1488 ns |    44,977.179 ns |  1.82 |    0.02 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |      10000 |    3 |       546.665 ns |      4.3444 ns |      4.0637 ns |       546.610 ns |  0.02 |    0.00 | 0.0029 |     184 B |        4.60 |
+|          BoundsFinal | .NET 6.0 | .NET 6.0 |      10000 |    3 |       820.785 ns |      7.8774 ns |      7.3685 ns |       820.315 ns |  0.03 |    0.00 | 0.0029 |     184 B |        4.60 |
+|      BoundsFloatSpan | .NET 6.0 | .NET 6.0 |      10000 |    3 |       483.643 ns |      6.5182 ns |      6.0971 ns |       483.895 ns |  0.02 |    0.00 | 0.0029 |     160 B |        4.00 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |      10000 |    3 |     1,473.210 ns |     13.2112 ns |     12.3577 ns |     1,472.250 ns |  0.06 |    0.00 |      - |      64 B |        1.60 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |      10000 |    3 |    24,710.398 ns |    180.0060 ns |    159.5706 ns |    24,700.494 ns |  1.00 |    0.00 |      - |      40 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |      10000 |    3 |    10,345.188 ns |     92.9631 ns |     86.9577 ns |    10,330.232 ns |  0.42 |    0.00 |      - |      40 B |        1.00 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |      10000 |    3 |     1,041.359 ns |      3.4155 ns |      3.0277 ns |     1,041.402 ns |  0.04 |    0.00 | 0.0019 |     184 B |        4.60 |
+|          BoundsFinal | .NET 7.0 | .NET 7.0 |      10000 |    3 |     1,065.029 ns |     16.6970 ns |     15.6184 ns |     1,061.083 ns |  0.04 |    0.00 | 0.0019 |     184 B |        4.60 |
+|      BoundsFloatSpan | .NET 7.0 | .NET 7.0 |      10000 |    3 |     1,012.775 ns |     19.3497 ns |     20.7040 ns |     1,018.737 ns |  0.04 |    0.00 | 0.0019 |     160 B |        4.00 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |      10000 |    3 |     1,498.137 ns |      5.8626 ns |      5.1970 ns |     1,498.328 ns |  0.06 |    0.00 |      - |      64 B |        1.60 |
+|                      |          |          |            |      |                  |                |                |                  |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |    1000000 |    2 | 6,003,139.583 ns |  9,744.8274 ns |  9,115.3176 ns | 6,004,289.062 ns |  2.41 |    0.01 |      - |      45 B |        1.07 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |    1000000 |    2 | 4,532,979.855 ns | 26,589.1288 ns | 23,570.5701 ns | 4,521,172.656 ns |  1.82 |    0.02 |      - |      44 B |        1.05 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |    1000000 |    2 |    93,699.076 ns |    414.5508 ns |    387.7711 ns |    93,705.676 ns |  0.04 |    0.00 |      - |      64 B |        1.52 |
+|          BoundsFinal | .NET 6.0 | .NET 6.0 |    1000000 |    2 |    93,628.410 ns |    361.4523 ns |    282.1982 ns |    93,712.512 ns |  0.04 |    0.00 |      - |      64 B |        1.52 |
+|      BoundsFloatSpan | .NET 6.0 | .NET 6.0 |    1000000 |    2 |    93,596.350 ns |    253.3585 ns |    236.9917 ns |    93,604.858 ns |  0.04 |    0.00 |      - |      40 B |        0.95 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |    1000000 |    2 |    93,966.895 ns |    735.1050 ns |    902.7749 ns |    93,767.712 ns |  0.04 |    0.00 |      - |      64 B |        1.52 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |    1000000 |    2 | 2,495,448.516 ns | 15,107.9819 ns | 14,132.0156 ns | 2,498,791.406 ns |  1.00 |    0.00 |      - |      42 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |    1000000 |    2 | 1,009,540.247 ns | 10,102.2946 ns |  9,449.6927 ns | 1,007,209.766 ns |  0.40 |    0.00 |      - |      41 B |        0.98 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |    1000000 |    2 |    93,161.145 ns |    953.1719 ns |    891.5976 ns |    92,997.943 ns |  0.04 |    0.00 |      - |      64 B |        1.52 |
+|          BoundsFinal | .NET 7.0 | .NET 7.0 |    1000000 |    2 |    92,201.951 ns |    765.8348 ns |    678.8926 ns |    92,129.272 ns |  0.04 |    0.00 |      - |      64 B |        1.52 |
+|      BoundsFloatSpan | .NET 7.0 | .NET 7.0 |    1000000 |    2 |    93,611.348 ns |    879.4381 ns |    822.6270 ns |    93,759.662 ns |  0.04 |    0.00 |      - |      40 B |        0.95 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |    1000000 |    2 |    93,270.149 ns |    451.8134 ns |    422.6265 ns |    93,276.160 ns |  0.04 |    0.00 |      - |      64 B |        1.52 |
+|                      |          |          |            |      |                  |                |                |                  |       |         |        |           |             |
+|       BoundsBaseline | .NET 6.0 | .NET 6.0 |    1000000 |    3 | 5,966,374.583 ns | 10,412.1333 ns |  9,739.5159 ns | 5,964,045.312 ns |  2.38 |    0.01 |      - |      44 B |        1.05 |
+|     BoundsSimpleLoop | .NET 6.0 | .NET 6.0 |    1000000 |    3 | 4,484,799.107 ns |  8,361.7468 ns |  7,412.4707 ns | 4,486,746.484 ns |  1.79 |    0.01 |      - |      45 B |        1.07 |
+| BoundsSpanSIMDVector | .NET 6.0 | .NET 6.0 |    1000000 |    3 |    46,098.823 ns |    214.8803 ns |    190.4858 ns |    46,098.251 ns |  0.02 |    0.00 |      - |     184 B |        4.38 |
+|          BoundsFinal | .NET 6.0 | .NET 6.0 |    1000000 |    3 |    46,655.197 ns |    813.1109 ns |    760.5845 ns |    46,574.976 ns |  0.02 |    0.00 |      - |     184 B |        4.38 |
+|      BoundsFloatSpan | .NET 6.0 | .NET 6.0 |    1000000 |    3 |    45,864.368 ns |    636.9943 ns |    595.8448 ns |    45,753.076 ns |  0.02 |    0.00 |      - |     160 B |        3.81 |
+|     BoundsSpanAVX256 | .NET 6.0 | .NET 6.0 |    1000000 |    3 |   141,295.836 ns |    603.6106 ns |    535.0850 ns |   141,378.467 ns |  0.06 |    0.00 |      - |      64 B |        1.52 |
+|       BoundsBaseline | .NET 7.0 | .NET 7.0 |    1000000 |    3 | 2,502,578.516 ns | 14,330.0016 ns | 13,404.2924 ns | 2,504,621.484 ns |  1.00 |    0.00 |      - |      42 B |        1.00 |
+|     BoundsSimpleLoop | .NET 7.0 | .NET 7.0 |    1000000 |    3 | 1,021,435.365 ns |  8,929.8035 ns |  8,352.9437 ns | 1,017,467.383 ns |  0.41 |    0.00 |      - |      41 B |        0.98 |
+| BoundsSpanSIMDVector | .NET 7.0 | .NET 7.0 |    1000000 |    3 |    95,296.561 ns |    638.6785 ns |    566.1719 ns |    95,362.122 ns |  0.04 |    0.00 |      - |     184 B |        4.38 |
+|          BoundsFinal | .NET 7.0 | .NET 7.0 |    1000000 |    3 |    95,433.602 ns |    716.8974 ns |    670.5863 ns |    95,286.450 ns |  0.04 |    0.00 |      - |     184 B |        4.38 |
+|      BoundsFloatSpan | .NET 7.0 | .NET 7.0 |    1000000 |    3 |    95,492.698 ns |    812.4430 ns |    720.2096 ns |    95,310.254 ns |  0.04 |    0.00 |      - |     160 B |        3.81 |
+|     BoundsSpanAVX256 | .NET 7.0 | .NET 7.0 |    1000000 |    3 |   139,579.650 ns |    766.4616 ns |    716.9486 ns |   139,381.177 ns |  0.06 |    0.00 |      - |      64 B |        1.52 |

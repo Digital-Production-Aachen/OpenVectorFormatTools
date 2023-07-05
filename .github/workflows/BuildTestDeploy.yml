@@ -7,13 +7,13 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Setup python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.x'
         architecture: 'x64'
         
     - name: Checkout repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: true
         
@@ -31,14 +31,14 @@ jobs:
     steps:
     
     - name: Checkout repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: true
         
     - name: Setup Dotnet sdk
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 7.0.x
 
     - name: Remove GUI Projects (Linux)
       if: contains(matrix.os, 'ubuntu')
@@ -74,14 +74,14 @@ jobs:
     
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: true
         
     - name: Setup Dotnet sdk
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 6.0.x
+        dotnet-version: 7.0.x
                   
     - name: Build Windows
       run: |
@@ -94,9 +94,9 @@ jobs:
         echo $env:RELEASE_VERSION
         echo $env:GITHUB_SHA
         mkdir nupkg
-        dotnet pack -p:PackageVersion=$env:RELEASE_VERSION -o  $PWD\nupkg -p:RepositoryCommit=$env:GITHUB_SHA --configuration Release
+        dotnet pack -p:PackageVersion=$env:RELEASE_VERSION -o  $PWD\nupkg -p:RepositoryCommit=$env:GITHUB_SHA --configuration Release -p:IncludeSymbols=true -p:SymbolPackageFormat=snupkg
         cd nupkg
-        dotnet nuget push "**/*.nupkg" --api-key ${{secrets.NUGET_DEPLOY_KEY}} --source "https://api.nuget.org/v3/index.json" --no-symbols true --skip-duplicate
+        dotnet nuget push "**/*.nupkg" --api-key ${{secrets.NUGET_DEPLOY_KEY}} --source "https://api.nuget.org/v3/index.json" --skip-duplicate
 
   publish_docker:
     needs: [check_license, build_and_test]
@@ -105,7 +105,7 @@ jobs:
         
     steps:
     - name: Checkout repo
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: true
 
