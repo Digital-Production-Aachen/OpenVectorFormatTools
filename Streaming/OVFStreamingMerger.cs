@@ -48,9 +48,9 @@ namespace OpenVectorFormat.Streaming
         /// <param name="parameterSetEngine">parameters to apply</param>
         /// <param name="slicableMesh">FileReader to wrap</param>
         /// <param name="markAsSupport">tags all vector blocks of the slicableMesh as support if true</param>
-        public OVFStreamingMerger(FileReader slicableMesh, bool markAsSupport = false, float translationX = 0, float translationY = 0)
+        public OVFStreamingMerger(FileReader slicableMesh, bool markAsSupport = false, float translationX = 0, float translationY = 0, float rotationInRad = 0)
             :this(new FileReaderToMerge() 
-            { fr = slicableMesh, markAsSupport = markAsSupport, translationX = translationX, translationY = translationY })
+            { fr = slicableMesh, markAsSupport = markAsSupport, translationX = translationX, translationY = translationY, rotationInRad = rotationInRad })
         {}
 
 
