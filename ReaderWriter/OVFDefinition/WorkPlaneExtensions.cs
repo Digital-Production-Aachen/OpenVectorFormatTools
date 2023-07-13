@@ -34,6 +34,32 @@ namespace OpenVectorFormat
     public static class WorkPlaneExtensions
     {
         /// <summary>
+        /// Clones this work plane without cloning any vector blocks.
+        /// The cloned work plane will have NumBlocks == 0 and Bounds == null.
+        /// </summary>
+        /// <param name="wpToClone"></param>
+        /// <returns></returns>
+        public static WorkPlane CloneWithoutVectorData(this WorkPlane wpToClone)
+        {
+            var clone = new WorkPlane();
+            clone.XPosInMm = wpToClone.XPosInMm;
+            clone.YPosInMm = wpToClone.YPosInMm;
+            clone.ZPosInMm = wpToClone.ZPosInMm;
+            clone.XRotInDeg = wpToClone.XRotInDeg;
+            clone.YRotInDeg = wpToClone.YRotInDeg;
+            clone.ZRotInDeg = wpToClone.ZRotInDeg;
+            //clone.NumBlocks = 0;
+            clone.Repeats = wpToClone.Repeats;
+            clone.WorkPlaneNumber = wpToClone.WorkPlaneNumber;
+            clone.MachineType = wpToClone.MachineType;
+            clone.AdditionalAxisPositions.AddRange(wpToClone.AdditionalAxisPositions);
+            clone.MetaData = wpToClone.MetaData?.Clone();
+            if(clone.MetaData?.Bounds != null) clone.MetaData.Bounds = null;
+
+            return clone;
+        }
+
+        /// <summary>
         /// Translates all vector block coordinates of the work plane in the x/y plane.
         /// Uses SIMD hardware acceleration if available.
         /// </summary>
