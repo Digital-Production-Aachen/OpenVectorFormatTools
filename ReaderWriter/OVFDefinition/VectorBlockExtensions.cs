@@ -24,8 +24,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 using Google.Protobuf.Collections;
 using OpenVectorFormat.Utils;
+using OVFDefinition;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Numerics;
 using static OpenVectorFormat.SIMDVectorOperations;
@@ -336,6 +338,16 @@ namespace OpenVectorFormat
         {
             if (vectorBlock.MetaData == null) vectorBlock.MetaData = new VectorBlock.Types.VectorBlockMetaData();
             vectorBlock.MetaData.Bounds = vectorBlock.Bounds2D();
+        }
+
+        public static void SetDisplayColor(this VectorBlock.Types.VectorBlockMetaData metaData, Color color)
+        {
+            metaData.DisplayColor = ColorConversions.ColorToInt(color);
+        }
+
+        public static Color GetDisplayColor(this VectorBlock.Types.VectorBlockMetaData metaData)
+        {
+            return ColorConversions.IntToColor(metaData.DisplayColor);
         }
 
         /// <summary>
