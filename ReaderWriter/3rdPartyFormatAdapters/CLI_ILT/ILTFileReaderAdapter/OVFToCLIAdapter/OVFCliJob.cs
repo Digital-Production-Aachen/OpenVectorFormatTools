@@ -36,7 +36,7 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
             get
             {
                 var dateTime = job.JobMetaData != null ? DateTimeOffset.FromUnixTimeSeconds(job.JobMetaData.JobCreationTime) : DateTimeOffset.Now;
-                int result = dateTime.Day * 10000 + dateTime.Month * 100 + dateTime.Year;
+                int result = dateTime.Day * 10000 + dateTime.Month * 100 + (dateTime.Year - 2000);
                 return result;
             }
         }
