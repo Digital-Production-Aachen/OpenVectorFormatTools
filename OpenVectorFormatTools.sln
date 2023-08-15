@@ -43,6 +43,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Streaming", "Streaming\Stre
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmarks", "Benchmarks\Benchmarks.csproj", "{367575BF-AB6E-4198-829B-5E673A1A3D59}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IltCliWriterAdapter", "IltCliWriterAdapter\IltCliWriterAdapter.csproj", "{D3114FEE-D211-42E6-85EB-EAE733CACF7D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -179,6 +181,14 @@ Global
 		{367575BF-AB6E-4198-829B-5E673A1A3D59}.Release|Any CPU.Build.0 = Release|Any CPU
 		{367575BF-AB6E-4198-829B-5E673A1A3D59}.Release|x64.ActiveCfg = Release|x64
 		{367575BF-AB6E-4198-829B-5E673A1A3D59}.Release|x64.Build.0 = Release|x64
+		{D3114FEE-D211-42E6-85EB-EAE733CACF7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3114FEE-D211-42E6-85EB-EAE733CACF7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3114FEE-D211-42E6-85EB-EAE733CACF7D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D3114FEE-D211-42E6-85EB-EAE733CACF7D}.Debug|x64.Build.0 = Debug|Any CPU
+		{D3114FEE-D211-42E6-85EB-EAE733CACF7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3114FEE-D211-42E6-85EB-EAE733CACF7D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3114FEE-D211-42E6-85EB-EAE733CACF7D}.Release|x64.ActiveCfg = Release|Any CPU
+		{D3114FEE-D211-42E6-85EB-EAE733CACF7D}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -200,6 +210,7 @@ Global
 		{0675AEB6-C16F-4212-A05D-0DEB841BE125} = {6EA9E843-2975-492E-9708-D9D01BB3CB70}
 		{F6370325-0E67-4992-BCBC-A43389FEFAAA} = {0675AEB6-C16F-4212-A05D-0DEB841BE125}
 		{53B98E35-F85D-4A8B-B929-7DAB37D362A1} = {6EA9E843-2975-492E-9708-D9D01BB3CB70}
+		{D3114FEE-D211-42E6-85EB-EAE733CACF7D} = {CE9DAE0F-0DDA-481A-9379-EE248BCAD8C0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {81069E5C-493A-4E13-A016-D655D9189166}

@@ -24,14 +24,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 
-using System;
 using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Diagnostics;
 using System.Collections.Generic;
 using OpenVectorFormat.ILTFileReader.Controller;
 using OpenVectorFormat.ILTFileReader;
 using OpenVectorFormat.Plausibility;
+using IltCliWriterAdapter;
+using OpenVectorFormat.FileReaderWriterFactory;
+using System.Runtime.Intrinsics.Arm;
+using OpenVectorFormat.OVFReaderWriter;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
@@ -47,6 +49,26 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             CliFileAccess cliFile = new CliFileAccess();
             cliFile.OpenFile(fileName.FullName);
             TestCLIFile(cliFile);
+        }
+        [TestMethod]
+        public void TestWritesCliFiles()
+        {
+            //var cliFile = new FileInfo(@"C:\\Users\\Dominick\\Desktop\\sink\\test.cli");
+            var cliFile = new FileInfo(@"D:\GitHub\DAP\OpenVectorFormatTools\ReaderWriter\UnitTests\TestFiles\frustrum_ASCII.cli");
+            var ovfFile = new FileInfo(@"C:\\Users\\Dominick\\Desktop\\sink\\test.ovf");
+            var writer = new ILTWriterAdapter();
+
+
+            var fileReader = new OVFFileReader();
+            var progress = new FileReaderWriterProgress();
+            fileReader.OpenJobAsync(ovfFile.FullName, progress).GetAwaiter().GetResult();
+            writer.Write(fileReader.JobShell , cliFile);
+
+            //CliFileAccess cliFileAccess = new CliFileAccess();
+            //cliFileAccess.OpenFile(cliFile.FullName);
+            //TestCLIFile(cliFileAccess);
+            var progress = new FileReaderWriterProgress();
+            FileReaderWriterFactory.FileConverter.ConvertAsync(cliFile, ovfFile, progress).GetAwaiter().GetResult();
         }
 
         [DynamicData("CliFiles")]
