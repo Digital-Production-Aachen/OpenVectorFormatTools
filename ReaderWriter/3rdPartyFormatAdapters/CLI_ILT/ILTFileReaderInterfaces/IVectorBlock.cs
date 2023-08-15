@@ -42,7 +42,7 @@ namespace OpenVectorFormat.ILTFileReader {
         /// <summary>
         /// Raw coordiantes of points.
         /// </summary>
-		float[] Coordinates{
+		Span<float> Coordinates{
 			get;
 		}
         /// <summary>

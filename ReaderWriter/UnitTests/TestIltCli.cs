@@ -30,10 +30,10 @@ using System.Collections.Generic;
 using OpenVectorFormat.ILTFileReader.Controller;
 using OpenVectorFormat.ILTFileReader;
 using OpenVectorFormat.Plausibility;
-using IltCliWriterAdapter;
 using OpenVectorFormat.FileReaderWriterFactory;
 using System.Runtime.Intrinsics.Arm;
 using OpenVectorFormat.OVFReaderWriter;
+using ILTFileReaderAdapter.OVFToCLIAdapter;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
@@ -50,25 +50,18 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             cliFile.OpenFile(fileName.FullName);
             TestCLIFile(cliFile);
         }
-        [TestMethod]
-        public void TestWritesCliFiles()
+
+        [DynamicData("CliFiles")]
+        [DataTestMethod]
+        public void TestWriteCliFiles(FileInfo fileName)
         {
-            //var cliFile = new FileInfo(@"C:\\Users\\Dominick\\Desktop\\sink\\test.cli");
-            var cliFile = new FileInfo(@"D:\GitHub\DAP\OpenVectorFormatTools\ReaderWriter\UnitTests\TestFiles\frustrum_ASCII.cli");
-            var ovfFile = new FileInfo(@"C:\\Users\\Dominick\\Desktop\\sink\\test.ovf");
-            var writer = new ILTWriterAdapter();
-
-
-            var fileReader = new OVFFileReader();
+            var reader = new ILTFileReaderAdapter.ILTFileReaderAdapter(new CliFileAccess());
             var progress = new FileReaderWriterProgress();
-            fileReader.OpenJobAsync(ovfFile.FullName, progress).GetAwaiter().GetResult();
-            writer.Write(fileReader.JobShell , cliFile);
+            reader.OpenJobAsync(fileName.FullName, progress).GetAwaiter().GetResult();
+            var job = reader.CacheJobToMemoryAsync().GetAwaiter().GetResult();
 
-            //CliFileAccess cliFileAccess = new CliFileAccess();
-            //cliFileAccess.OpenFile(cliFile.FullName);
-            //TestCLIFile(cliFileAccess);
-            var progress = new FileReaderWriterProgress();
-            FileReaderWriterFactory.FileConverter.ConvertAsync(cliFile, ovfFile, progress).GetAwaiter().GetResult();
+            CLIWriterAdapter cliWriter = new CLIWriterAdapter();
+            cliWriter.SimpleJobWriteAsync(job, fileName.FullName + ".cli", progress).Wait();
         }
 
         [DynamicData("CliFiles")]

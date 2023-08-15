@@ -55,7 +55,7 @@ namespace OpenVectorFormat.ILTFileReader.Model
         }
         
 
-       override public float[] Coordinates
+       override public Span<float> Coordinates
         {
             get
             {

@@ -22,43 +22,31 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
-﻿using OpenVectorFormat.ILTFileReader;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using OpenVectorFormat.ILTFileReader;
 
-namespace OpenVectorFormat.ILTFileReader.Model
+namespace ILTFileReader.OVFToCLIAdapter
 {
-    public struct Point2D : IPoint2D
+    class Hatch : IHatch
     {
-        public Point2D(float x, float y) {
-            this.X = x;
-            this.Y = y;
-        }
-
-        public float X
+        public Hatch(Point2D start, Point2D end)
         {
-            get;
-            private set;
-
+            this.Start = start;
+            this.End = end;
         }
 
-        public float Y
+        public IPoint2D End
         {
             get;
             private set;
         }
 
-        public override bool Equals(object obj)
+        public IPoint2D Start
         {
-            return base.Equals(obj);
-        }
-
-        public override int GetHashCode()
-        {
-            return base.GetHashCode();
+            get;
+            private set;
         }
     }
 }

@@ -20,7 +20,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\IltCliWriterAdapter\IltCliWriterAdapter.csproj" />
     <ProjectReference Include="..\3rdPartyFormatAdapters\ASP\ASPFileReaderWriter\ASPFileReaderWriter.csproj" />
     <ProjectReference Include="..\3rdPartyFormatAdapters\CLI_ILT\ILTFileReaderAdapter\ILTFileReaderAdapter.csproj" />
     <ProjectReference Include="..\3rdPartyFormatAdapters\CLI_ILT\iltFileReader\ILTFileReader.csproj" />

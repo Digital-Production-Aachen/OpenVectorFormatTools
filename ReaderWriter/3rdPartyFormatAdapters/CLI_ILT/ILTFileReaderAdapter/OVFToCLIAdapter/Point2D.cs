@@ -22,34 +22,27 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
-﻿using OpenVectorFormat.ILTFileReader;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace OpenVectorFormat.ILTFileReader.Model
+namespace ILTFileReader.OVFToCLIAdapter
 {
-    public struct Point2D : IPoint2D
+    public class Point2D : OpenVectorFormat.ILTFileReader.IPoint2D
     {
+        private float x;
+        private float y;
+
         public Point2D(float x, float y) {
-            this.X = x;
-            this.Y = y;
+            this.x = x;
+            this.y = y;
         }
 
-        public float X
-        {
-            get;
-            private set;
+        public float X => x;
 
-        }
-
-        public float Y
-        {
-            get;
-            private set;
-        }
+        public float Y => y;
 
         public override bool Equals(object obj)
         {

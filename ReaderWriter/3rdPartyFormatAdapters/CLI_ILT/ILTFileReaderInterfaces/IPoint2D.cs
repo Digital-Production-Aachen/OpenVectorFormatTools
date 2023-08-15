@@ -35,19 +35,19 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 
+namespace OpenVectorFormat.ILTFileReader
+{
+    public interface IPoint2D
+    {
+        float X
+        {
+            get;
+        }
 
-
-namespace OpenVectorFormat.ILTFileReader {
-	public interface IPoint2D    {
-
-	
-		float X{
-			get;
-		}
-
-		float Y{
-			get;
-		}
-}//end IPoint2D
+        float Y
+        {
+            get;
+        }
+    }//end IPoint2D
 
 }//end namespace OpenVectorFormat.ILTFileReader

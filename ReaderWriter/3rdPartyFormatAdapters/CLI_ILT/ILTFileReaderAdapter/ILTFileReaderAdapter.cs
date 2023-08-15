@@ -222,6 +222,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             }
             _fileLoadingFinished = true;
             _cacheState = CacheState.CompleteJobCached;
+            vectorDataLoaded = true;
         }
 
         public override void UnloadJobFromMemory()
