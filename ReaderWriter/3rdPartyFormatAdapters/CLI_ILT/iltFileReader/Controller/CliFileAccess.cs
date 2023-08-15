@@ -53,6 +53,11 @@ namespace OpenVectorFormat.ILTFileReader.Controller
         private long index; // index where we are at the moment, different from StreamReader.BaseStream.Position because this is actuelle a buffered reader
         private static List<string> fileFormats = new List<string>() { ".cli" };
 
+        public BinaryWriteStyle HatchesStyle { get; set; } = BinaryWriteStyle.SHORT;
+        public BinaryWriteStyle PolylineStyle { get; set; } = BinaryWriteStyle.LONG;
+        public BinaryWriteStyle LayerStyle { get; set; } = BinaryWriteStyle.LONG;
+        public float units { get; set; } = 1;
+
         public CliFileAccess()
         {
             this.parts = new List<IPart>();
@@ -106,7 +111,7 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                 // only commands used: long hatches/polylines (32bit number of points), long layer (z is float)
                 foreach (var layer in fileToWrite.Geometry.Layers)
                 {
-                    AppendLayer(bW, layerStyle, hatchesStyle, polylineStyle, convertUnits, units, layer);
+                    AppendLayer(bW, layer, convertUnits);
                 }
             }
         }
@@ -388,7 +393,7 @@ namespace OpenVectorFormat.ILTFileReader.Controller
         /// write the given header
         /// </summary>
         /// <returns></returns>
-        internal void WriteHeader(StreamWriter sW, ICLIFile file)
+        public static void WriteHeader(StreamWriter sW, ICLIFile file)
         {
             sW.NewLine = "\n"; //sets the newline format to unix lf
             var header = file.Header;
@@ -413,10 +418,19 @@ namespace OpenVectorFormat.ILTFileReader.Controller
             sW.Write("$$HEADEREND");//no new line at header end
         }
 
-        internal static void AppendLayer(BinaryWriter bW, BinaryWriteStyle layerStyle, BinaryWriteStyle hatchesStyle, BinaryWriteStyle polylineStyle, bool convertUnits, float units, ILayer layer)
+        public void AppendLayer(BinaryWriter bW, ILayer layer, bool convertUnits = true)
+        {
+            AppendLayerHeader(bW, layer, convertUnits);
+            foreach (var block in layer.VectorBlocks)
+            {
+                AppendVectorBlock(bW, block, convertUnits);
+            }
+        }
+
+        public void AppendLayerHeader(BinaryWriter bW, ILayer layer, bool convertUnits = true)
         {
             // for hatches and polylines
-            if (layerStyle == BinaryWriteStyle.LONG)
+            if (LayerStyle == BinaryWriteStyle.LONG)
             {
                 //write as float
                 bW.Write(layerStartLong);
@@ -441,117 +455,118 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                     bW.Write(Convert.ToUInt16(layer.Height / units));
                 }
             }
-            foreach (var block in layer.VectorBlocks)
+        }
+
+        public void AppendVectorBlock(BinaryWriter bW, IVectorBlock block, bool convertUnits = true)
+        {
+            if (block is IHatches)
             {
-                if (block is IHatches)
+                if (block.Coordinates.Length % 4 != 0)
                 {
-                    if (block.Coordinates.Length % 4 != 0)
-                    {
-                        throw new ArgumentException("Number of Points of Hatch is not a multiple of four.");
-                    }
-
-                    if (hatchesStyle == BinaryWriteStyle.LONG)
-                    {
-                        bW.Write(hatchStartLong);
-                        bW.Write(block.Id);
-                        bW.Write(block.Coordinates.Length / 4);//ignore number in the layer interface for hatches and polylines
-                        foreach (var coord in block.Coordinates)
-                        {
-                            if (!convertUnits)
-                            {
-                                bW.Write(coord);
-                            }
-                            else
-                            {
-                                bW.Write(coord / units);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        bW.Write(hatchStartShort);
-                        bW.Write(Convert.ToUInt16(block.Id));
-                        bW.Write(Convert.ToUInt16(block.Coordinates.Length / 4));//ignore number in the layer interface for hatches and polylines
-                        foreach (var coord in block.Coordinates)
-                        {
-                            if (!convertUnits)
-                            {
-                                bW.Write(Convert.ToUInt16((coord)));
-                            }
-                            else
-                            {
-                                bW.Write(Convert.ToUInt16((coord / units)));
-                            }
-                        }
-                    }
+                    throw new ArgumentException("Number of Points of Hatch is not a multiple of four.");
                 }
-                else if (block is IPolyline)
+
+                if (HatchesStyle == BinaryWriteStyle.LONG)
                 {
-                    if (block.Coordinates.Length % 2 != 0)
+                    bW.Write(hatchStartLong);
+                    bW.Write(block.Id);
+                    bW.Write(block.Coordinates.Length / 4);//ignore number in the layer interface for hatches and polylines
+                    foreach (var coord in block.Coordinates)
                     {
-                        throw new ArgumentException("Number of Points of Polylines is not even.");
-                    }
-                    Int32 dir;
-                    switch ((block as IPolyline).Dir)
-                    {
-                        case Direction.clockwise:
-                            dir = 0;
-                            break;
-                        case Direction.counterClockwise:
-                            dir = 1;
-                            break;
-                        case Direction.openLine:
-                            dir = 2;
-                            break;
-                        default:
-                            throw new ArgumentException("direction (clockwise, counterClockwise, openLine) of polyline in block " + block.Id + " not set");
-                    }
-
-                    if (polylineStyle == BinaryWriteStyle.LONG)
-                    {
-                        bW.Write(polylineStartLong);
-                        bW.Write(block.Id);
-
-                        bW.Write(dir);
-
-                        bW.Write(block.Coordinates.Length / 2);//ignore number in the layer interface// for hatches and polylines
-                        foreach (var coord in block.Coordinates)
+                        if (!convertUnits)
                         {
-                            if (!convertUnits)
-                            {
-                                bW.Write(coord);
-                            }
-                            else
-                            {
-                                bW.Write(coord / units);
-                            }
+                            bW.Write(coord);
                         }
-                    }
-                    else
-                    {
-                        bW.Write(polylineStartShort);
-                        bW.Write(Convert.ToUInt16(block.Id));
-
-                        bW.Write(Convert.ToUInt16(dir));
-
-                        bW.Write(Convert.ToUInt16((block.Coordinates.Length / 2)));//ignore number in the layer interface// for hatches and polylines
-                        foreach (var coord in block.Coordinates)
+                        else
                         {
-                            if (!convertUnits)
-                            {
-                                bW.Write(Convert.ToUInt16((coord)));
-                            }
-                            else
-                            {
-                                bW.Write(Convert.ToUInt16((coord / units)));
-                            }
+                            bW.Write(coord / units);
                         }
                     }
                 }
                 else
                 {
-                    throw new ArgumentException("Invalid block detected. CLI Format only supports hatches and polylines. All blocks have to be either IHatches or IPolyline.");
+                    bW.Write(hatchStartShort);
+                    bW.Write(Convert.ToUInt16(block.Id));
+                    bW.Write(Convert.ToUInt16(block.Coordinates.Length / 4));//ignore number in the layer interface for hatches and polylines
+                    foreach (var coord in block.Coordinates)
+                    {
+                        if (!convertUnits)
+                        {
+                            bW.Write(Convert.ToUInt16((coord)));
+                        }
+                        else
+                        {
+                            bW.Write(Convert.ToUInt16((coord / units)));
+                        }
+                    }
                 }
+            }
+            else if (block is IPolyline)
+            {
+                if (block.Coordinates.Length % 2 != 0)
+                {
+                    throw new ArgumentException("Number of Points of Polylines is not even.");
+                }
+                Int32 dir;
+                switch ((block as IPolyline).Dir)
+                {
+                    case Direction.clockwise:
+                        dir = 0;
+                        break;
+                    case Direction.counterClockwise:
+                        dir = 1;
+                        break;
+                    case Direction.openLine:
+                        dir = 2;
+                        break;
+                    default:
+                        throw new ArgumentException("direction (clockwise, counterClockwise, openLine) of polyline in block " + block.Id + " not set");
+                }
+
+                if (PolylineStyle == BinaryWriteStyle.LONG)
+                {
+                    bW.Write(polylineStartLong);
+                    bW.Write(block.Id);
+
+                    bW.Write(dir);
+
+                    bW.Write(block.Coordinates.Length / 2);//ignore number in the layer interface// for hatches and polylines
+                    foreach (var coord in block.Coordinates)
+                    {
+                        if (!convertUnits)
+                        {
+                            bW.Write(coord);
+                        }
+                        else
+                        {
+                            bW.Write(coord / units);
+                        }
+                    }
+                }
+                else
+                {
+                    bW.Write(polylineStartShort);
+                    bW.Write(Convert.ToUInt16(block.Id));
+
+                    bW.Write(Convert.ToUInt16(dir));
+
+                    bW.Write(Convert.ToUInt16((block.Coordinates.Length / 2)));//ignore number in the layer interface// for hatches and polylines
+                    foreach (var coord in block.Coordinates)
+                    {
+                        if (!convertUnits)
+                        {
+                            bW.Write(Convert.ToUInt16((coord)));
+                        }
+                        else
+                        {
+                            bW.Write(Convert.ToUInt16((coord / units)));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                throw new ArgumentException("Invalid block detected. CLI Format only supports hatches and polylines. All blocks have to be either IHatches or IPolyline.");
             }
         }
     }

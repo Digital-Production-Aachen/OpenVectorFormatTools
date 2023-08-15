@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ILTFileReaderAdapter.OVFToCLIAdapter;
 using OpenVectorFormat.AbstractReaderWriter;
 
 namespace OpenVectorFormat.FileReaderWriterFactory
@@ -43,6 +44,10 @@ namespace OpenVectorFormat.FileReaderWriterFactory
             else if (ASPFileReaderWriter.ASPFileWriter.SupportedFileFormats.Contains(extension, StringComparer.OrdinalIgnoreCase))
             {
                 newFileWriter = new ASPFileReaderWriter.ASPFileWriter();
+            }
+            else if (CLIWriterAdapter.SupportedFileFormats.Contains(extension, StringComparer.OrdinalIgnoreCase))
+            {
+                newFileWriter = new CLIWriterAdapter();
             }
             else
             {
