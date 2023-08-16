@@ -45,7 +45,7 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
 
         public int NumLayers => job.WorkPlanes?.Count > 0 ? job.WorkPlanes.Count : job.NumWorkPlanes;
 
-        public float Units => 1;
+        public float Units { get; set; }
 
         public IUserData UserData => throw new NotImplementedException();
 

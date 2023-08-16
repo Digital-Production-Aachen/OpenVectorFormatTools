@@ -64,6 +64,19 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             cliWriter.SimpleJobWriteAsync(job, fileName.FullName + ".cli", progress).Wait();
         }
 
+        [TestMethod]
+        public void TestWriteCliFile()
+        {
+            string fileName = @"C:\Users\sebas\Downloads\buildJob.ovf";
+            var reader = new OVFFileReader();
+            var progress = new FileReaderWriterProgress();
+            reader.OpenJobAsync(fileName, progress).GetAwaiter().GetResult();
+            var job = reader.CacheJobToMemoryAsync().GetAwaiter().GetResult();
+
+            CLIWriterAdapter cliWriter = new CLIWriterAdapter() { units = 1/200f };
+            cliWriter.SimpleJobWriteAsync(job, fileName + ".cli", progress).Wait();
+        }
+
         [DynamicData("CliFiles")]
         [DataTestMethod]
         public void TestCliFilesAddParams(FileInfo fileName)

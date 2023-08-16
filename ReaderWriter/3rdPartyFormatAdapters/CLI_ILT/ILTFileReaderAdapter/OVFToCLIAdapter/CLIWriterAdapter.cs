@@ -69,8 +69,8 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
 
         public override Task SimpleJobWriteAsync(Job job, string filename, IFileReaderWriterProgress progress)
         {
-            var adapter = new CliFileAccess();
-            adapter.WriteFile(filename, new OVFCliJob(job) , LayerStyle, HatchesStyle, PolylineStyle);
+            var adapter = new CliFileAccess() { units = units };
+            adapter.WriteFile(filename, new OVFCliJob(job) { Units = units } , LayerStyle, HatchesStyle, PolylineStyle, units != 1);
             return Task.CompletedTask;
         }
 
@@ -80,7 +80,7 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
             this.progress = progress;
             using (var sW = new StreamWriter(filename, false))
             {
-                WriteHeader(sW, new OVFCliJob(jobShell));
+                WriteHeader(sW, new OVFCliJob(jobShell) { Units = units });
             }
             binaryWriter = new BinaryWriter(new FileStream(filename, FileMode.Append, FileAccess.Write, FileShare.None));
             cliAdapter = new CliFileAccess() { HatchesStyle = HatchesStyle, PolylineStyle = PolylineStyle, LayerStyle = LayerStyle, units = units };
