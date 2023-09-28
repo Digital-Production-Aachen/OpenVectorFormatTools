@@ -45,6 +45,7 @@ namespace OpenVectorFormat.Streaming
         //File Readers to merge (including main File Reader) and if they are to be tagged as support
         protected List<FileReaderToMerge> fileReaders = new List<FileReaderToMerge>();
 
+#if false
         /// <summary>
         /// Adds another file reader to merge while streaming layers.
         /// Supports only merging of same layer thicknesses
@@ -69,6 +70,55 @@ namespace OpenVectorFormat.Streaming
                 foreach(var fileReader in fileReaders)
                 {
                     fileReader.layerOffset = (int)Math.Round((fileReader.zMin - zMin) / processStrategy.LayerThicknessInMm);
+                }
+                mergedJobShell.NumWorkPlanes = fileReaders.Max(x => x.layerOffset + x.fr.JobShell.NumWorkPlanes);
+                fileReaders.Add(fileReaderToMerge);
+            }
+        }
+#endif
+        public void AddFileReaderToMerge(FileReaderToMerge fileReaderToMerge)
+        {
+            // determine layer thickness
+            float layerThicknessThis = -1;
+            var processStrategyThis = mergedJobShell.PartsMap.FirstOrDefault().Value.ProcessStrategy;
+            // if a process strategy is given, read layer thickness from there
+            if (processStrategyThis != null)
+            {
+                layerThicknessThis = processStrategyThis.LayerThicknessInMm;
+            }
+            // else try calculating it from the difference of the first two layers
+            else if (mergedJobShell.WorkPlanes.Count() >= 2)
+            {
+                layerThicknessThis = mergedJobShell.WorkPlanes[1].ZPosInMm - mergedJobShell.WorkPlanes[0].ZPosInMm;
+            }
+            // if only one layer exists, thickness does not matter
+
+            // same procedure for the file reader to merge
+            float layerThicknessToMerge = -1;
+            var processStrategyToMerge = fileReaderToMerge.fr.JobShell?.PartsMap.FirstOrDefault().Value.ProcessStrategy;
+            if (processStrategyToMerge != null)
+            {
+                layerThicknessToMerge =  processStrategyToMerge.LayerThicknessInMm;
+            }
+            else if (fileReaderToMerge.fr.JobShell != null && fileReaderToMerge.fr.JobShell.WorkPlanes.Count >= 2)
+            {
+                layerThicknessToMerge = fileReaderToMerge.fr.JobShell.WorkPlanes[1].ZPosInMm - fileReaderToMerge.fr.JobShell.WorkPlanes[0].ZPosInMm;
+            }
+
+            // -1 means no thickness given (i.e. there is only one layer)
+            if ((layerThicknessThis != layerThicknessToMerge) && !(layerThicknessThis == -1 || layerThicknessToMerge == -1))
+            {
+                throw new NotSupportedException($"BuildProcessor only supports merging FileReader with same layer thickness");
+            }
+            else
+            {
+                //determine min z and offsets
+                fileReaderToMerge.zMin = fileReaderToMerge.fr.GetWorkPlaneShell(0).ZPosInMm;
+                var zMin = fileReaders.Min(x => x.zMin);
+                foreach (var fileReader in fileReaders)
+                {
+                    float layerThickness = layerThicknessThis == -1 ? 1 : layerThicknessThis;
+                    fileReader.layerOffset = (int)Math.Round((fileReader.zMin - zMin) / layerThickness);
                 }
                 mergedJobShell.NumWorkPlanes = fileReaders.Max(x => x.layerOffset + x.fr.JobShell.NumWorkPlanes);
                 fileReaders.Add(fileReaderToMerge);

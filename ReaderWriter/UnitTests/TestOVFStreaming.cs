@@ -26,11 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 using OpenVectorFormat.OVFReaderWriter;
 using OpenVectorFormat.Plausibility;
 using OpenVectorFormat.Streaming;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace UnitTests
 {
@@ -54,13 +50,15 @@ namespace UnitTests
 
                 // load part and support ovf
                 partReader.OpenJobAsync(sourceDir + partFile + ".ovf", null).GetAwaiter().GetResult();
-                //partReader.CacheJobToMemoryAsync().GetAwaiter().GetResult();
                 supportReader.OpenJobAsync(sourceDir + supportFile + ".ovf", null).GetAwaiter().GetResult();
-                //supportReader.CacheJobToMemoryAsync().GetAwaiter().GetResult();
 
                 // merge part with supports
                 var merger = new OVFStreamingMerger(partReader);
                 merger.AddFileReaderToMerge(new FileReaderToMerge() { fr = supportReader, markAsSupport = true });
+
+                // run plausibility checks on result
+                var job = merger.CacheJobToMemoryAsync().GetAwaiter().GetResult();
+                PlausibilityChecker.CheckJob(job, new CheckerConfig()).GetAwaiter().GetResult();
             }
         }
 
@@ -108,6 +106,10 @@ namespace UnitTests
                     if (i == 0) jobMerger = new OVFStreamingMerger(toMerge);
                     else if (i > 0) jobMerger?.AddFileReaderToMerge(toMerge);
                 }
+
+                // run plausibility checks on result
+                var job = jobMerger.CacheJobToMemoryAsync().GetAwaiter().GetResult();
+                PlausibilityChecker.CheckJob(job, new CheckerConfig()).GetAwaiter().GetResult();
             }
         }
     }
