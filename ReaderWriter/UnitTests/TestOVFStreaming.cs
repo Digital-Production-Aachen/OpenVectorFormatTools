@@ -27,6 +27,8 @@ using OpenVectorFormat.OVFReaderWriter;
 using OpenVectorFormat.Plausibility;
 using OpenVectorFormat.Streaming;
 using System;
+using System.IO;
+using System.Linq;
 
 namespace UnitTests
 {
@@ -37,20 +39,22 @@ namespace UnitTests
         [TestMethod]
         public void TestMergePartConfig()
         {
-            string sourceDir = @"../../../TestFiles/";
+            string sourceDir = new[] {"..", "..", "..", "TestFiles"}.Aggregate(Path.Combine); 
             string partFile = "bunny";
             string supportFile = "bunny (solidsupport)";
 
             using (OVFFileReader partReader = new OVFFileReader())
             using (OVFFileReader supportReader = new OVFFileReader())
             {
-                // run plausibility checks on input
-                PlausibilityCheckOVFFile.CheckJobFile(sourceDir + partFile + ".ovf", new CheckerConfig()).GetAwaiter().GetResult();
-                PlausibilityCheckOVFFile.CheckJobFile(sourceDir + supportFile + ".ovf", new CheckerConfig()).GetAwaiter().GetResult();
-
                 // load part and support ovf
-                partReader.OpenJobAsync(sourceDir + partFile + ".ovf", null).GetAwaiter().GetResult();
-                supportReader.OpenJobAsync(sourceDir + supportFile + ".ovf", null).GetAwaiter().GetResult();
+                partReader.OpenJobAsync(Path.Combine(sourceDir, partFile) + ".ovf", null).GetAwaiter().GetResult();
+                supportReader.OpenJobAsync(Path.Combine(sourceDir, supportFile) + ".ovf", null).GetAwaiter().GetResult();
+
+                // run plausibility checks on input
+                PlausibilityChecker.CheckJob(partReader.CacheJobToMemoryAsync().GetAwaiter().GetResult(), new CheckerConfig())
+                    .GetAwaiter().GetResult();
+                PlausibilityChecker.CheckJob(supportReader.CacheJobToMemoryAsync().GetAwaiter().GetResult(), new CheckerConfig())
+                    .GetAwaiter().GetResult();
 
                 // merge part with supports
                 var merger = new OVFStreamingMerger(partReader);
@@ -65,7 +69,7 @@ namespace UnitTests
         [TestMethod]
         public void TestMergeInstances()
         {
-            string sourceDir = @"../../../TestFiles/";
+            string sourceDir = new[] { "..", "..", "..", "TestFiles" }.Aggregate(Path.Combine);
             string partFile = "bunny";
             string supportFile = "bunny (solidsupport)";
             (float x, float y, float rot)[] positions = new (float, float, float)[]
@@ -78,13 +82,15 @@ namespace UnitTests
             using (OVFFileReader partReader = new OVFFileReader())
             using (OVFFileReader supportReader = new OVFFileReader())
             {
-                // run plausibility checks on input
-                PlausibilityCheckOVFFile.CheckJobFile(sourceDir + partFile + ".ovf", new CheckerConfig()).GetAwaiter().GetResult();
-                PlausibilityCheckOVFFile.CheckJobFile(sourceDir + supportFile + ".ovf", new CheckerConfig()).GetAwaiter().GetResult();
-
                 // load part and support ovf
-                partReader.OpenJobAsync(sourceDir + partFile + ".ovf", null).GetAwaiter().GetResult();
-                supportReader.OpenJobAsync(sourceDir + supportFile + ".ovf", null).GetAwaiter().GetResult();
+                partReader.OpenJobAsync(Path.Combine(sourceDir, partFile) + ".ovf", null).GetAwaiter().GetResult();
+                supportReader.OpenJobAsync(Path.Combine(sourceDir, supportFile) + ".ovf", null).GetAwaiter().GetResult();
+
+                // run plausibility checks on input
+                PlausibilityChecker.CheckJob(partReader.CacheJobToMemoryAsync().GetAwaiter().GetResult(), new CheckerConfig())
+                    .GetAwaiter().GetResult();
+                PlausibilityChecker.CheckJob(supportReader.CacheJobToMemoryAsync().GetAwaiter().GetResult(), new CheckerConfig())
+                    .GetAwaiter().GetResult();
 
                 // merge part with supports
                 var partSupportReader = new OVFStreamingMerger(partReader);
