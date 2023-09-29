@@ -23,9 +23,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using OpenVectorFormat.OVFReaderWriter;
+using OpenVectorFormat.Plausibility;
 using OpenVectorFormat.Streaming;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,9 +39,28 @@ namespace UnitTests
     public class TestOVFStreaming
     {
         [TestMethod]
-        public void Test()
+        public void TestMergePartConfig()
         {
             Console.WriteLine("Test");
+            string sourceDir = @"..\..\..\TestFiles\";
+            string partFile = "bunny";
+            string supportFile = "bunny (solidsupport)";
+            
+            using (OVFFileReader partReader = new OVFFileReader())
+            using (OVFFileReader supportReader = new OVFFileReader())
+            {
+                // run plausibility checks on input
+                PlausibilityCheckOVFFile.CheckJobFile(sourceDir + partFile + ".ovf", new CheckerConfig()).GetAwaiter().GetResult();
+                PlausibilityCheckOVFFile.CheckJobFile(sourceDir + supportFile + ".ovf", new CheckerConfig()).GetAwaiter().GetResult();
+                
+                // load part and support ovf
+                partReader.OpenJobAsync(sourceDir + partFile + ".ovf", null).GetAwaiter().GetResult();
+                supportReader.OpenJobAsync(sourceDir + supportFile + ".ovf", null).GetAwaiter().GetResult();
+                
+                // merge part with supports
+                //var merger = new OVFStreamingMerger(partReader);
+                //merger.AddFileReaderToMerge(new FileReaderToMerge() { fr = supportReader, markAsSupport = true });
+            }
         }
     }
 }
