@@ -42,7 +42,7 @@ namespace UnitTests
         public void TestMergePartConfig()
         {
             Console.WriteLine("Test");
-            string sourceDir = @"..\..\..\TestFiles\";
+            string sourceDir = @"../../../TestFiles/";
             string partFile = "bunny";
             string supportFile = "bunny (solidsupport)";
             
