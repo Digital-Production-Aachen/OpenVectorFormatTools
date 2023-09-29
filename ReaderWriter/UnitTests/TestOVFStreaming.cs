@@ -26,7 +26,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 using OpenVectorFormat.OVFReaderWriter;
 using OpenVectorFormat.Plausibility;
 using OpenVectorFormat.Streaming;
-
+using System;
 
 namespace UnitTests
 {
@@ -71,7 +71,7 @@ namespace UnitTests
             (float x, float y, float rot)[] positions = new (float, float, float)[]
             {
                 (100, 0, 0),
-                (200, 0, 0),
+                (200, 100, (float)Math.PI/2),
                 (300, 0, 0),
             };
 
