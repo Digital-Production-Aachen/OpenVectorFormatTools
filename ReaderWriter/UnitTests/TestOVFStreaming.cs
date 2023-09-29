@@ -37,7 +37,7 @@ namespace UnitTests
         [TestMethod]
         public void TestMergePartConfig()
         {
-            string sourceDir = @"..\..\..\TestFiles\";
+            string sourceDir = @"../../../TestFiles/";
             string partFile = "bunny";
             string supportFile = "bunny (solidsupport)";
 
@@ -65,7 +65,7 @@ namespace UnitTests
         [TestMethod]
         public void TestMergeInstances()
         {
-            string sourceDir = @"..\..\..\TestFiles\";
+            string sourceDir = @"../../../TestFiles/";
             string partFile = "bunny";
             string supportFile = "bunny (solidsupport)";
             (float x, float y, float rot)[] positions = new (float, float, float)[]
