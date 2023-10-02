@@ -23,12 +23,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using OpenVectorFormat;
 using OpenVectorFormat.OVFReaderWriter;
 using OpenVectorFormat.Plausibility;
 using OpenVectorFormat.Streaming;
 using System;
 using System.IO;
 using System.Linq;
+using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace UnitTests
 {
@@ -36,6 +39,9 @@ namespace UnitTests
     public class TestOVFStreaming
     {
 
+        /// <summary>
+        /// Test OVFStreamingMerger by merging one part and support and applying the Plausibilitychecker.
+        /// </summary>
         [TestMethod]
         public void TestMergePartConfig()
         {
@@ -66,6 +72,10 @@ namespace UnitTests
             }
         }
 
+        /// <summary>
+        /// Test OVFStreamingMerger by merging several instances of the same part together and
+        /// applying the Plausibilitychecker.
+        /// </summary>
         [TestMethod]
         public void TestMergeInstances()
         {
@@ -116,7 +126,41 @@ namespace UnitTests
                 // run plausibility checks on result
                 var job = jobMerger.CacheJobToMemoryAsync().GetAwaiter().GetResult();
                 PlausibilityChecker.CheckJob(job, new CheckerConfig()).GetAwaiter().GetResult();
+
+                // check layer heights
+                Assert.AreEqual(jobMerger.JobShell.NumWorkPlanes, partSupportReader.JobShell.NumWorkPlanes);
+
+                // check bounding boxes
+                for (int wpnr = 0; wpnr < jobMerger.JobShell.NumWorkPlanes; wpnr++)
+                {
+                    AxisAlignedBox2D aggregateAABB = null;
+                    var jobAABB = jobMerger.GetWorkPlaneAsync(wpnr).GetAwaiter().GetResult().Bounds2D();
+                    for (int i = 0; i < positions.Length; i++)
+                    {
+                        var pos = positions[i];
+                        var wp = partSupportReader.GetWorkPlaneAsync(wpnr).GetAwaiter().GetResult();
+                        var wpCopy = wp.Clone();
+                        wpCopy.Rotate(pos.rot);
+                        wpCopy.Translate(new Vector2(pos.x, pos.y));
+                        var aabb = wpCopy.Bounds2D();
+                        if (i == 0) aggregateAABB = aabb;
+                        else aggregateAABB.Contain(aabb);
+                    }
+                    //Console.WriteLine($"XMin: {aggregateAABB.XMin} {jobAABB.XMin}");
+                    //Console.WriteLine($"XMax: {aggregateAABB.XMax} {jobAABB.XMax}");
+                    //Console.WriteLine($"YMin: {aggregateAABB.YMin} {jobAABB.YMin}");
+                    //Console.WriteLine($"YMax: {aggregateAABB.YMax} {jobAABB.YMax}");
+                    Assert.IsTrue(ApproxEquals(aggregateAABB.XMin, jobAABB.XMin));
+                    Assert.IsTrue(ApproxEquals(aggregateAABB.XMax, jobAABB.XMax));
+                    Assert.IsTrue(ApproxEquals(aggregateAABB.YMin, jobAABB.YMin));
+                    Assert.IsTrue(ApproxEquals(aggregateAABB.YMax, jobAABB.YMax));
+                }
             }
+        }
+
+        private bool ApproxEquals(float value, float other, float tolerance = 1e-6f)
+        {
+            return Math.Abs(value - other) < tolerance;
         }
     }
 }
