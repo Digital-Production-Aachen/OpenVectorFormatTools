@@ -27,6 +27,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OpenVectorFormat.AbstractReaderWriter;
 using OpenVectorFormat.OVFReaderWriter;
+using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
@@ -105,6 +107,23 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             Assert.AreEqual(originalJobToCompareTo, readJob);
             testReader.Dispose();
         }
+
+        // DEBUGGING
+        //[TestMethod]
+        //public void TestWPMetaDataNull()
+        //{
+        //    var workPlane = new WorkPlane();
+        //    workPlane.MetaData = new WorkPlane.Types.WorkPlaneMetaData();
+        //    workPlane.MetaData.Bounds = null;
+        //    var jobShell = new Job();
+        //    jobShell.JobMetaData = new Job.Types.JobMetaData();
+        //    jobShell.JobMetaData.Bounds = null;
+        //    using (var writer = new OVFFileWriter())
+        //    {
+        //        writer.StartWritePartial(jobShell, Path.GetTempPath() + "TestWPMetaDataNull.ovf");
+        //        writer.AppendWorkPlaneAsync(workPlane);
+        //    }
+        //}
 
         private Job SetupTestJob()
         {
