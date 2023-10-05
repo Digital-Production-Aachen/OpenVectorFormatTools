@@ -56,6 +56,10 @@ namespace OpenVectorFormat.Streaming
         public float rotationInRad;
 
         /// <summary>
+        /// number of layers in this file reader
+        /// </summary>
+        public int NumLayers { get; internal set; }
+        /// <summary>
         /// number of layers this file reader needs to be shifted
         /// to reach the correct z-Height
         /// </summary>

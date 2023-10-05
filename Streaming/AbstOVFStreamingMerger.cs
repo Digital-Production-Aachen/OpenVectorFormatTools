@@ -26,17 +26,13 @@ using OpenVectorFormat.AbstractReaderWriter;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace OpenVectorFormat.Streaming
 {
     /// <summary>
-    /// Wraps a FileReader and applies parameters to the FileReader interface calls
-    /// using the internal parameterSetEngine. Can also merge other file readers and tag FileReaders as support.
-    /// Merging capabilities of the build processor shall be used for merging File Readers that contain vectors for one part
-    /// (e.g. external support files, multiple cli files to "tag" parameters).
-    /// To merge multiple parts into a build job, use 
     /// </summary>
     public abstract class AbstOVFStreamingMerger : FileReader
     {
@@ -45,83 +41,93 @@ namespace OpenVectorFormat.Streaming
         //File Readers to merge (including main File Reader) and if they are to be tagged as support
         protected List<FileReaderToMerge> fileReaders = new List<FileReaderToMerge>();
 
-#if false
         /// <summary>
-        /// Adds another file reader to merge while streaming layers.
-        /// Supports only merging of same layer thicknesses
+        /// Thickness of layers as determined from file readers. A value of -1 means thickness
+        /// is not known yet.
         /// </summary>
-        /// <param name="fileReaderToMerge"></param>
+        private float layerThickness = -1;
+
+        /// <summary>z height of the lowest layer</summary>
+        private float zMin = float.MaxValue;
+
+        /*
+        public AbstOVFStreamingMerger(FileReaderToMerge fileReaderToMerge)
+        {
+            AddFileReaderToMerge(fileReaderToMerge);
+        }
+        */
+
         public void AddFileReaderToMerge(FileReaderToMerge fileReaderToMerge)
         {
-            var processStrategy = mergedJobShell.PartsMap.FirstOrDefault().Value.ProcessStrategy;
-            var processStrategyToMerge = fileReaderToMerge.fr.JobShell?.PartsMap.FirstOrDefault().Value.ProcessStrategy;
-            if (processStrategy == null || processStrategyToMerge == null || processStrategyToMerge.LayerThicknessInMm != processStrategy.LayerThicknessInMm)
+            float layerThicknessToMerge = GetLayerThickness(fileReaderToMerge);
+            // if no file reader has been added, no restrictions
+            if (fileReaders.Count == 0)
             {
-                throw new NotSupportedException($"BuildProcessor only supports merging FileReader with same layer thickness");
-                //and does so because it is too hard to correctly identify how to merge when streaming if layers have different heights
-                //might be ok to do clean multiples, e.g. merging 20 µm and 40 µm
-                //better do that without streaming, like in OVFFileMerger
+                IntegrateFileReaderToMerge(fileReaderToMerge);
             }
+            // if all file readers so far had one layer
+            else if (layerThickness == -1)
+            {
+                // if new file reader also has one layer, require z pos to match
+                if (layerThicknessToMerge == -1)
+                {
+                    if (ApproxEquals(fileReaderToMerge.fr.GetWorkPlaneShell(0).ZPosInMm, zMin))
+                        IntegrateFileReaderToMerge(fileReaderToMerge);
+                    else throw new NotSupportedException($"Cannot merge file readers with a single layer " +
+                        $"at different z positions");
+                }
+                // else no restrictions
+                else IntegrateFileReaderToMerge(fileReaderToMerge);
+            }
+            // if layer thickness is known, make sure the new layer thickness matches
             else
             {
-                //determine min z and offsets
-                fileReaderToMerge.zMin = fileReaderToMerge.fr.GetWorkPlaneShell(0).ZPosInMm;
-                var zMin = fileReaders.Min(x => x.zMin);
-                foreach(var fileReader in fileReaders)
-                {
-                    fileReader.layerOffset = (int)Math.Round((fileReader.zMin - zMin) / processStrategy.LayerThicknessInMm);
-                }
-                mergedJobShell.NumWorkPlanes = fileReaders.Max(x => x.layerOffset + x.fr.JobShell.NumWorkPlanes);
-                fileReaders.Add(fileReaderToMerge);
+                if (layerThicknessToMerge == -1 || ApproxEquals(layerThicknessToMerge, layerThickness))
+                    IntegrateFileReaderToMerge(fileReaderToMerge);
+                else throw new NotSupportedException($"cannot merge file readers with different layer thicknesses: " +
+                    $"({layerThickness} mm vs. {layerThicknessToMerge} mm)");
             }
         }
-#endif
+
         /// <summary>
-        /// Adds another file reader to merge while streaming layers.
-        /// Supports merging of same layer thicknesses only.
+        /// Adds a new FileReaderToMerge (assuming it is valid!), and recalculates
+        /// layer offsets, min z height etc.
         /// </summary>
         /// <param name="fileReaderToMerge"></param>
-        public void AddFileReaderToMerge(FileReaderToMerge fileReaderToMerge)
+        private void IntegrateFileReaderToMerge(FileReaderToMerge fileReaderToMerge)
         {
-            // determine layer thickness
-            // -1 means no thickness is given (i.e. there is only one layer)
+            fileReaderToMerge.zMin = fileReaderToMerge.fr.GetWorkPlaneShell(0).ZPosInMm;
+            fileReaders.Add(fileReaderToMerge);
+            if (fileReaderToMerge.zMin < zMin)
+            {
+                zMin = fileReaderToMerge.zMin;
+                // new zMin invalidates layer offsets, so recalculate them
+                foreach (var fr in fileReaders)
+                {
+                    fr.layerOffset = layerThickness != -1 ? (int)Math.Round((fr.zMin - zMin) / layerThickness) : 0;
+                }
+            }
+            mergedJobShell.NumWorkPlanes = fileReaders.Max(x => x.layerOffset + x.fr.JobShell.NumWorkPlanes);
+            if (layerThickness == -1) layerThickness = GetLayerThickness(fileReaderToMerge);
+        }
 
+        private float GetLayerThickness(FileReaderToMerge fileReaderToMerge)
+        {
             // if a process strategy is provided, read layer thickness from there
-            float layerThicknessThis = mergedJobShell.PartsMap.FirstOrDefault().Value.ProcessStrategy?.LayerThicknessInMm ?? -1;
-            // else try calculating thickness as the difference of the first two layers
-            if (layerThicknessThis == -1 && mergedJobShell.NumWorkPlanes >= 2)
-                layerThicknessThis = GetWorkPlaneShell(1).ZPosInMm - GetWorkPlaneShell(0).ZPosInMm;
-
-            // same procedure for the file reader to merge
-            float layerThicknessToMerge = fileReaderToMerge.fr.JobShell?.PartsMap.FirstOrDefault().Value.ProcessStrategy?.LayerThicknessInMm ?? -1;
-            if (layerThicknessToMerge == -1 && fileReaderToMerge.fr.JobShell != null && fileReaderToMerge.fr.JobShell.NumWorkPlanes >= 2)
-                layerThicknessToMerge = fileReaderToMerge.fr.GetWorkPlaneShell(1).ZPosInMm - fileReaderToMerge.fr.GetWorkPlaneShell(0).ZPosInMm;
-
-            // check if layer thickness is compatible
-            if (layerThicknessThis == layerThicknessToMerge)
+            float? result = fileReaderToMerge.fr.JobShell?.PartsMap.FirstOrDefault().Value.ProcessStrategy?.LayerThicknessInMm;
+            if (result.HasValue) return result.Value;
+            // else try calculating thickness as the height difference between the first two layers
+            else if (fileReaderToMerge.fr.JobShell != null && fileReaderToMerge.fr.JobShell.NumWorkPlanes >= 2)
             {
-                if (layerThicknessThis == -1 && layerThicknessToMerge == -1)
-                {
-                    throw new NotImplementedException();
-                }
-                else
-                {
-                    // determine min z and offsets
-                    fileReaderToMerge.zMin = fileReaderToMerge.fr.GetWorkPlaneShell(0).ZPosInMm;
-                    var zMin = fileReaders.Min(x => x.zMin);
-                    foreach (var fileReader in fileReaders)
-                    {
-                        fileReader.layerOffset = (int)Math.Round((fileReader.zMin - zMin) / layerThicknessThis);
-                    }
-                    mergedJobShell.NumWorkPlanes = fileReaders.Max(x => x.layerOffset + x.fr.JobShell.NumWorkPlanes);
-                    fileReaders.Add(fileReaderToMerge);
-                }
+                return fileReaderToMerge.fr.GetWorkPlaneShell(1).ZPosInMm - fileReaderToMerge.fr.GetWorkPlaneShell(0).ZPosInMm;
             }
-            else 
-            {
-                throw new NotSupportedException($"BuildProcessor only supports merging FileReader with same layer thickness " +
-                    $"({layerThicknessThis} mm vs. {layerThicknessToMerge} mm)");
-            }
+            else return -1;
+        }
+
+        // TODO: move where?
+        private bool ApproxEquals(float value1, float value2, float tolerance = 1e-6f)
+        {
+            return Math.Abs(value1 - value2) <= tolerance;
         }
 
         public override CacheState CacheState => fileReaders[0].fr.CacheState;
@@ -157,28 +163,29 @@ namespace OpenVectorFormat.Streaming
 
         public override Task<WorkPlane> GetWorkPlaneAsync(int i_workPlane)
         {
-            var workPlane = new WorkPlane();
-            workPlane.MetaData = new WorkPlane.Types.WorkPlaneMetaData();
-            workPlane.WorkPlaneNumber = i_workPlane;
-            foreach (var fileReader in fileReaders)
+            var mergedWorkPlane = new WorkPlane();
+            mergedWorkPlane.MetaData = new WorkPlane.Types.WorkPlaneMetaData();
+            mergedWorkPlane.WorkPlaneNumber = i_workPlane;
+            for (int i = 0; i < fileReaders.Count; i++)
             {
-                var indexWithOffset = i_workPlane - fileReader.layerOffset;
-                var patchKeyOffset = workPlane.MetaData.PatchesMap.Any() ? workPlane.MetaData.PatchesMap.Keys.Max() + 1 : 0;
-                var contoursCount = workPlane.MetaData.Contours.Count;
-                if (indexWithOffset >= 0 && indexWithOffset < fileReader.fr.JobShell.NumWorkPlanes)
+                var frToMerge = fileReaders[i];
+                var indexWithOffset = i_workPlane - frToMerge.layerOffset;
+                var patchKeyOffset = mergedWorkPlane.MetaData.PatchesMap.Any() ? mergedWorkPlane.MetaData.PatchesMap.Keys.Max() + 1 : 0;
+                var contoursCount = mergedWorkPlane.MetaData.Contours.Count;
+                if (indexWithOffset >= 0 && indexWithOffset < frToMerge.fr.JobShell.NumWorkPlanes)
                 {
-                    var workPlaneToMerge = fileReader.fr.GetWorkPlaneAsync(indexWithOffset).Result;
+                    var workPlaneToMerge = frToMerge.fr.GetWorkPlaneAsync(indexWithOffset).Result;
 
-                    for(int i = 0; i < workPlaneToMerge.VectorBlocks.Count; i++)
+                    for(int j = 0; j < workPlaneToMerge.VectorBlocks.Count; j++)
                     {
                         
-                        var block = workPlaneToMerge.VectorBlocks[i];
-                        if (fileReader.translationX != 0 || fileReader.translationY != 0)
+                        var block = workPlaneToMerge.VectorBlocks[j];
+                        if (frToMerge.translationX != 0 || frToMerge.translationY != 0)
                         {
                             //create deep copies of the vector blocks coordinates
                             block = block.Clone();
-                            block.Rotate(fileReader.rotationInRad);
-                            block.Translate(new System.Numerics.Vector2(fileReader.translationX, fileReader.translationY));
+                            block.Rotate(frToMerge.rotationInRad);
+                            block.Translate(new System.Numerics.Vector2(frToMerge.translationX, frToMerge.translationY));
                         }
                         else
                         {
@@ -186,15 +193,18 @@ namespace OpenVectorFormat.Streaming
                             block = block.ShallowCopy();
                         }
 
-                        if (fileReader.markAsSupport)
+                        if (frToMerge.markAsSupport)
                         {
                             block.LpbfMetadata.StructureType = VectorBlock.Types.StructureType.Support;
                         }
 
-                        workPlane.VectorBlocks.Add(block);
-                        workPlane.NumBlocks++;
+                        mergedWorkPlane.VectorBlocks.Add(block);
+                        mergedWorkPlane.NumBlocks++;
 
-                        workPlane.ZPosInMm = workPlaneToMerge.ZPosInMm;
+                        // check if z pos matches
+                        if (i == 0) mergedWorkPlane.ZPosInMm = workPlaneToMerge.ZPosInMm;
+                        else if (!ApproxEquals(workPlaneToMerge.ZPosInMm, mergedWorkPlane.ZPosInMm))
+                            throw new Exception("z pos of work planes to merge does not match");
 
                         //check if patch is valid before applying index shift
                         if (workPlaneToMerge.MetaData?.PatchesMap != null && workPlaneToMerge.MetaData.PatchesMap.ContainsKey(block.MetaData.PatchKey))
@@ -220,9 +230,9 @@ namespace OpenVectorFormat.Streaming
                         }
 
                         //check if part key is valid before applying index shift
-                        if ((block.MetaData != null) && fileReader.fr?.JobShell?.PartsMap != null && fileReader.fr.JobShell.PartsMap.ContainsKey(block.MetaData.PartKey))
+                        if ((block.MetaData != null) && frToMerge.fr?.JobShell?.PartsMap != null && frToMerge.fr.JobShell.PartsMap.ContainsKey(block.MetaData.PartKey))
                         {
-                            block.MetaData.PartKey += fileReader.partKeyIndexShift;
+                            block.MetaData.PartKey += frToMerge.partKeyIndexShift;
                         }
                         else
                         {
@@ -238,24 +248,24 @@ namespace OpenVectorFormat.Streaming
                         foreach (var kvp in workPlaneToMerge.MetaData.PatchesMap)
                         {
                             var patch = kvp.Value;
-                            if (fileReader.translationX != 0 || fileReader.translationY != 0)
+                            if (frToMerge.translationX != 0 || frToMerge.translationY != 0)
                             {
                                 //create deep copy of the patch and translate it
                                 patch = patch.Clone();
                                 var tempBlock = new VectorBlock();
                                 tempBlock.LineSequence = patch.OuterContour;
-                                tempBlock.Rotate(fileReader.rotationInRad);
-                                tempBlock.Translate(new System.Numerics.Vector2(fileReader.translationX, fileReader.translationY));
+                                tempBlock.Rotate(frToMerge.rotationInRad);
+                                tempBlock.Translate(new System.Numerics.Vector2(frToMerge.translationX, frToMerge.translationY));
                             }
-                            workPlane.MetaData.PatchesMap.Add(kvp.Key + patchKeyOffset, patch);
+                            mergedWorkPlane.MetaData.PatchesMap.Add(kvp.Key + patchKeyOffset, patch);
                         }
                     }
 
                     if (workPlaneToMerge.MetaData?.Contours != null)
-                        workPlane.MetaData.Contours.Add(workPlaneToMerge.MetaData.Contours);
+                        mergedWorkPlane.MetaData.Contours.Add(workPlaneToMerge.MetaData.Contours);
                 }
             }
-            return Task.FromResult(workPlane);
+            return Task.FromResult(mergedWorkPlane);
         }
 
         /// <summary>
