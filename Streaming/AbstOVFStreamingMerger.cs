@@ -50,12 +50,10 @@ namespace OpenVectorFormat.Streaming
         /// <summary>z height of the lowest layer</summary>
         private float zMin = float.MaxValue;
 
-        /*
         public AbstOVFStreamingMerger(FileReaderToMerge fileReaderToMerge)
         {
             AddFileReaderToMerge(fileReaderToMerge);
         }
-        */
 
         public void AddFileReaderToMerge(FileReaderToMerge fileReaderToMerge)
         {
@@ -107,6 +105,7 @@ namespace OpenVectorFormat.Streaming
                     fr.layerOffset = layerThickness != -1 ? (int)Math.Round((fr.zMin - zMin) / layerThickness) : 0;
                 }
             }
+            if (mergedJobShell == null) mergedJobShell = fileReaderToMerge.fr.JobShell.Clone();
             mergedJobShell.NumWorkPlanes = fileReaders.Max(x => x.layerOffset + x.fr.JobShell.NumWorkPlanes);
             if (layerThickness == -1) layerThickness = GetLayerThickness(fileReaderToMerge);
         }
