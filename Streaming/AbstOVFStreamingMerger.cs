@@ -26,9 +26,8 @@ using OpenVectorFormat.AbstractReaderWriter;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
-using System.Text;
 using System.Threading.Tasks;
+using OVFDefinition;
 
 namespace OpenVectorFormat.Streaming
 {
@@ -69,7 +68,7 @@ namespace OpenVectorFormat.Streaming
                 // if new file reader also has one layer, require z pos to match
                 if (layerThicknessToMerge == -1)
                 {
-                    if (ApproxEquals(fileReaderToMerge.fr.GetWorkPlaneShell(0).ZPosInMm, zMin))
+                    if (OVFDefinition.Utils.ApproxEquals(fileReaderToMerge.fr.GetWorkPlaneShell(0).ZPosInMm, zMin))
                         IntegrateFileReaderToMerge(fileReaderToMerge);
                     else throw new NotSupportedException($"Cannot merge file readers with a single layer " +
                         $"at different z positions");
@@ -80,7 +79,7 @@ namespace OpenVectorFormat.Streaming
             // if layer thickness is known, make sure the new layer thickness matches
             else
             {
-                if (layerThicknessToMerge == -1 || ApproxEquals(layerThicknessToMerge, layerThickness))
+                if (layerThicknessToMerge == -1 || OVFDefinition.Utils.ApproxEquals(layerThicknessToMerge, layerThickness))
                     IntegrateFileReaderToMerge(fileReaderToMerge);
                 else throw new NotSupportedException($"cannot merge file readers with different layer thicknesses: " +
                     $"({layerThickness} mm vs. {layerThicknessToMerge} mm)");
@@ -121,12 +120,6 @@ namespace OpenVectorFormat.Streaming
                 return fileReaderToMerge.fr.GetWorkPlaneShell(1).ZPosInMm - fileReaderToMerge.fr.GetWorkPlaneShell(0).ZPosInMm;
             }
             else return -1;
-        }
-
-        // TODO: move where?
-        private bool ApproxEquals(float value1, float value2, float tolerance = 1e-6f)
-        {
-            return Math.Abs(value1 - value2) <= tolerance;
         }
 
         public override CacheState CacheState => fileReaders[0].fr.CacheState;
@@ -202,8 +195,8 @@ namespace OpenVectorFormat.Streaming
 
                         // check if z pos matches
                         if (i == 0) mergedWorkPlane.ZPosInMm = workPlaneToMerge.ZPosInMm;
-                        else if (!ApproxEquals(workPlaneToMerge.ZPosInMm, mergedWorkPlane.ZPosInMm))
-                            throw new InvalidOperationException("z pos of work planes to merge does not match");
+                        else if (!OVFDefinition.Utils.ApproxEquals(workPlaneToMerge.ZPosInMm, mergedWorkPlane.ZPosInMm))
+                            throw new StreamingMergerException("z pos of work planes to merge does not match");
 
                         //check if patch is valid before applying index shift
                         if (workPlaneToMerge.MetaData?.PatchesMap != null && workPlaneToMerge.MetaData.PatchesMap.ContainsKey(block.MetaData.PatchKey))
@@ -298,5 +291,10 @@ namespace OpenVectorFormat.Streaming
                 reader.fr.UnloadJobFromMemory();
             }
         }
+    }
+
+    public class StreamingMergerException : Exception
+    {
+        public StreamingMergerException(string message) : base(message) { }
     }
 }

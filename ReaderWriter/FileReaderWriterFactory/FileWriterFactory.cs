@@ -26,7 +26,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using OpenVectorFormat.AbstractReaderWriter;
 
 namespace OpenVectorFormat.FileReaderWriterFactory
@@ -58,6 +60,26 @@ namespace OpenVectorFormat.FileReaderWriterFactory
                 formats.AddRange(OVFReaderWriter.OVFFileWriter.SupportedFileFormats);
                 formats.AddRange(ASPFileReaderWriter.ASPFileWriter.SupportedFileFormats);
                 return formats;
+            }
+        }
+
+        /// <summary>
+        /// Utility for writing the contents of a file reader to disk.
+        /// </summary>
+        /// <param name="fileToWrite"></param>
+        /// <param name="targetFile"></param>
+        /// <returns></returns>
+        public static async Task StreamToFile(FileReader fileToWrite, string targetFile)
+        {
+            var fileInfo = new FileInfo(targetFile);
+            using (var writer = CreateNewWriter(fileInfo.Extension))
+            {
+                writer.StartWritePartial(fileToWrite.JobShell, targetFile, null);
+                for (int i = 0; i < fileToWrite.JobShell.NumWorkPlanes; i++)
+                {
+                    var wp = fileToWrite.GetWorkPlaneShell(i);
+                    await writer.AppendWorkPlaneAsync(wp);
+                }
             }
         }
     }
