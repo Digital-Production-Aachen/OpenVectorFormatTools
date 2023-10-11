@@ -22,7 +22,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using FluentAssertions;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OpenVectorFormat;
 using OpenVectorFormat.OVFReaderWriter;
 using OpenVectorFormat.Plausibility;
@@ -31,7 +32,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.CompilerServices;
+
 
 namespace UnitTests
 {
@@ -128,13 +129,14 @@ namespace UnitTests
                 PlausibilityChecker.CheckJob(job, new CheckerConfig()).GetAwaiter().GetResult();
 
                 // check layer heights
-                Assert.AreEqual(jobMerger.JobShell.NumWorkPlanes, partSupportReader.JobShell.NumWorkPlanes);
+                jobMerger.JobShell.NumWorkPlanes.Should().Be(partSupportReader.JobShell.NumWorkPlanes);
 
                 // check bounding boxes
                 for (int wpnr = 0; wpnr < jobMerger.JobShell.NumWorkPlanes; wpnr++)
                 {
-                    AxisAlignedBox2D aggregateAABB = null;
+                    // aabb of full job should equal aggregated aabb of all instances 
                     var jobAABB = jobMerger.GetWorkPlaneAsync(wpnr).GetAwaiter().GetResult().Bounds2D();
+                    AxisAlignedBox2D aggregateAABB = null;
                     for (int i = 0; i < positions.Length; i++)
                     {
                         var pos = positions[i];
@@ -146,21 +148,12 @@ namespace UnitTests
                         if (i == 0) aggregateAABB = aabb;
                         else aggregateAABB.Contain(aabb);
                     }
-                    //Console.WriteLine($"XMin: {aggregateAABB.XMin} {jobAABB.XMin}");
-                    //Console.WriteLine($"XMax: {aggregateAABB.XMax} {jobAABB.XMax}");
-                    //Console.WriteLine($"YMin: {aggregateAABB.YMin} {jobAABB.YMin}");
-                    //Console.WriteLine($"YMax: {aggregateAABB.YMax} {jobAABB.YMax}");
-                    Assert.IsTrue(ApproxEquals(aggregateAABB.XMin, jobAABB.XMin));
-                    Assert.IsTrue(ApproxEquals(aggregateAABB.XMax, jobAABB.XMax));
-                    Assert.IsTrue(ApproxEquals(aggregateAABB.YMin, jobAABB.YMin));
-                    Assert.IsTrue(ApproxEquals(aggregateAABB.YMax, jobAABB.YMax));
+                    jobAABB.XMin.Should().BeApproximately(aggregateAABB.XMin, 1e-6f);
+                    jobAABB.XMax.Should().BeApproximately(aggregateAABB.XMax, 1e-6f);
+                    jobAABB.YMin.Should().BeApproximately(aggregateAABB.YMin, 1e-6f);
+                    jobAABB.YMax.Should().BeApproximately(aggregateAABB.YMax, 1e-6f);
                 }
             }
-        }
-
-        private bool ApproxEquals(float value, float other, float tolerance = 1e-6f)
-        {
-            return Math.Abs(value - other) < tolerance;
         }
     }
 }

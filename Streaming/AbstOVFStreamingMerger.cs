@@ -203,7 +203,7 @@ namespace OpenVectorFormat.Streaming
                         // check if z pos matches
                         if (i == 0) mergedWorkPlane.ZPosInMm = workPlaneToMerge.ZPosInMm;
                         else if (!ApproxEquals(workPlaneToMerge.ZPosInMm, mergedWorkPlane.ZPosInMm))
-                            throw new Exception("z pos of work planes to merge does not match");
+                            throw new InvalidOperationException("z pos of work planes to merge does not match");
 
                         //check if patch is valid before applying index shift
                         if (workPlaneToMerge.MetaData?.PatchesMap != null && workPlaneToMerge.MetaData.PatchesMap.ContainsKey(block.MetaData.PatchKey))
