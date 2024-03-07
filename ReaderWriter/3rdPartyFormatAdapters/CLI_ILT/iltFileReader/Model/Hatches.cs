@@ -31,7 +31,7 @@ using System.Text;
 
 namespace OpenVectorFormat.ILTFileReader.Model
 {
-    class Hatches : VectorBlock, ILTFileReader.IHatches
+    public class Hatches : VectorBlock, ILTFileReader.IHatches
     {
         private bool isASCII = false;
         private float[] coordinates;

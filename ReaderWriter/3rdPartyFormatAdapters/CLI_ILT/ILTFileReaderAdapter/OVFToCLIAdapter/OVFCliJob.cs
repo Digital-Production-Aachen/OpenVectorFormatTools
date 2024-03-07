@@ -36,6 +36,7 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
             get
             {
                 var dateTime = job.JobMetaData != null ? DateTimeOffset.FromUnixTimeSeconds(job.JobMetaData.JobCreationTime) : DateTimeOffset.Now;
+                //if(dateTime.Year < 2000) dateTime = DateTimeOffset.Now;
                 int result = dateTime.Day * 10000 + dateTime.Month * 100 + (dateTime.Year - 2000);
                 return result;
             }
@@ -73,7 +74,12 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
             if (job.JobMetaData == null) job.JobMetaData = new Job.Types.JobMetaData();
             if (job.JobMetaData.Bounds == null) job.JobMetaData.Bounds = job.Bounds2D();
             var aabb = job.JobMetaData.Bounds;
-            return new Dimension(0, job.WorkPlanes.Last().ZPosInMm, aabb.XMin, aabb.XMax, aabb.YMin, aabb.YMax);
+            var zPos = 0.0f;
+            if (job.WorkPlanes.Count > 0)
+            {
+                zPos = job.WorkPlanes.Last().ZPosInMm;
+            }
+            return new Dimension(0, zPos, aabb.XMin, aabb.XMax, aabb.YMin, aabb.YMax);
         }
     }
 }

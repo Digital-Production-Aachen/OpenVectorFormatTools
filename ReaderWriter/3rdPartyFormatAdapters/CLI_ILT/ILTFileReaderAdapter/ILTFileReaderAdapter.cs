@@ -31,6 +31,8 @@ using System.Threading.Tasks;
 using OpenVectorFormat.ILTFileReader;
 using OpenVectorFormat.Utils;
 using System.IO;
+using System.Linq;
+using System.Globalization;
 
 namespace OpenVectorFormat.ILTFileReaderAdapter
 {
@@ -358,7 +360,8 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                 var newWorkPlane = CreateWorkPlane(workPlane, cliFile);
                 foreach (var block in workPlane.VectorBlocks)
                 {
-                    newWorkPlane.VectorBlocks.Add(TranslateBlockData(block, cliFile));
+                    var vb = TranslateBlockData(block, cliFile);
+                    newWorkPlane.VectorBlocks.Add(vb);
                 }
                 newWorkPlane.NumBlocks = workPlane.VectorBlocks.Count;
                 if (i % 100 == 0)
@@ -396,6 +399,15 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             block.MetaData = new VectorBlock.Types.VectorBlockMetaData();
             block.MetaData.PartKey = cliBlock.Id;
             block.LpbfMetadata.Reexposure = false;
+            if (cliBlock is OpenVectorFormat.ILTFileReader.Model.Hatches)
+            {
+                block.LpbfMetadata.PartArea = VectorBlock.Types.PartArea.Volume;
+            }
+            else
+            {
+                block.LpbfMetadata.PartArea = VectorBlock.Types.PartArea.Contour;
+            }
+
             return block;
         }
 
@@ -649,7 +661,18 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                 int year = (section.Header.Date % 100) + 2000;
                 int month = (section.Header.Date / 100) % 100;
                 int day = section.Header.Date % 100;
+
+                //TODO: 
+                if (year < 2000) year = 2000;
+                if (month <= 0) month = 1;
+                if (day <= 0) day = 1;
+                else if (day > 30) day = 15;
+
                 DateTime date = new DateTime(year, month, day);
+                //DateTime date = new DateTime();
+                //DateTime.TryParseExact(section.Header.Date.ToString(), "ddMMyy",
+                //          CultureInfo.InvariantCulture,
+                //          DateTimeStyles.None, out date);
                 metaData.JobCreationTime = new DateTimeOffset(date).ToUnixTimeSeconds();
             }
             metaData.Version = (ulong)section.Header.Version;

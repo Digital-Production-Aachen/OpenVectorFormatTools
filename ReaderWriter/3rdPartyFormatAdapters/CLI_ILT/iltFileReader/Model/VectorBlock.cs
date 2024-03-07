@@ -30,7 +30,7 @@ using System.Text;
 
 namespace OpenVectorFormat.ILTFileReader.Model
 {
-    abstract class VectorBlock : ILTFileReader.IVectorBlock
+    public abstract class VectorBlock : ILTFileReader.IVectorBlock
     {
         protected BinaryReader reader;
         

@@ -18,7 +18,7 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
         public override FileWriteOperation FileOperationInProgress => _fileOperationInProgress;
 
         private FileWriteOperation _fileOperationInProgress = FileWriteOperation.None;
-        public BinaryWriteStyle HatchesStyle { get; set; } = BinaryWriteStyle.SHORT;
+        public BinaryWriteStyle HatchesStyle { get; set; } = BinaryWriteStyle.LONG; //=> EOS: SHORT
         public BinaryWriteStyle PolylineStyle { get; set; } = BinaryWriteStyle.LONG;
         public BinaryWriteStyle LayerStyle { get; set; } = BinaryWriteStyle.LONG;
 
@@ -78,12 +78,13 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
         {
             this.jobShell = jobShell;
             this.progress = progress;
+
             using (var sW = new StreamWriter(filename, false))
             {
                 WriteHeader(sW, new OVFCliJob(jobShell) { Units = units });
             }
             binaryWriter = new BinaryWriter(new FileStream(filename, FileMode.Append, FileAccess.Write, FileShare.None));
-            cliAdapter = new CliFileAccess() { HatchesStyle = HatchesStyle, PolylineStyle = PolylineStyle, LayerStyle = LayerStyle, units = units };
+            cliAdapter = new CliFileAccess() { HatchesStyle = HatchesStyle, PolylineStyle = PolylineStyle, LayerStyle = LayerStyle, units = units};
         }
     }
 }

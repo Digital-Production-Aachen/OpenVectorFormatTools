@@ -471,6 +471,7 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                     bW.Write(hatchStartLong);
                     bW.Write(block.Id);
                     bW.Write(block.Coordinates.Length / 4);//ignore number in the layer interface for hatches and polylines
+                    var alternateXandY = true;
                     foreach (var coord in block.Coordinates)
                     {
                         if (!convertUnits)
@@ -479,8 +480,14 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                         }
                         else
                         {
-                            bW.Write(coord / units);
+                            if (alternateXandY)
+                                bW.Write(((coord) / units));
+                            else
+                                bW.Write(((coord) / units));
                         }
+
+
+                        alternateXandY = !alternateXandY;
                     }
                 }
                 else
@@ -488,6 +495,7 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                     bW.Write(hatchStartShort);
                     bW.Write(Convert.ToUInt16(block.Id));
                     bW.Write(Convert.ToUInt16(block.Coordinates.Length / 4));//ignore number in the layer interface for hatches and polylines
+                    var alternateXandY = true;
                     foreach (var coord in block.Coordinates)
                     {
                         if (!convertUnits)
@@ -496,8 +504,14 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                         }
                         else
                         {
-                            bW.Write(Convert.ToUInt16((coord / units)));
+                            if (alternateXandY) 
+                                bW.Write(Convert.ToUInt16(((coord) / units)));
+                            else 
+                                bW.Write(Convert.ToUInt16(((coord) / units)));
+
                         }
+
+                        alternateXandY = !alternateXandY;
                     }
                 }
             }
@@ -531,6 +545,7 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                     bW.Write(dir);
 
                     bW.Write(block.Coordinates.Length / 2);//ignore number in the layer interface// for hatches and polylines
+                    var alternateXandY = true;
                     foreach (var coord in block.Coordinates)
                     {
                         if (!convertUnits)
@@ -539,8 +554,14 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                         }
                         else
                         {
-                            bW.Write(coord / units);
+                            if (alternateXandY)
+                                bW.Write(((coord) / units));
+                            else
+                                bW.Write(((coord) / units));
                         }
+
+
+                        alternateXandY = !alternateXandY;
                     }
                 }
                 else
@@ -551,6 +572,7 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                     bW.Write(Convert.ToUInt16(dir));
 
                     bW.Write(Convert.ToUInt16((block.Coordinates.Length / 2)));//ignore number in the layer interface// for hatches and polylines
+                    var alternateXandY = true;
                     foreach (var coord in block.Coordinates)
                     {
                         if (!convertUnits)
@@ -559,9 +581,14 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                         }
                         else
                         {
-                            bW.Write(Convert.ToUInt16((coord / units)));
+                            if (alternateXandY)
+                                bW.Write(Convert.ToUInt16(((coord) / units)));
+                            else
+                                bW.Write(Convert.ToUInt16(((coord) / units)));
                         }
                     }
+
+                    alternateXandY = !alternateXandY;
                 }
             }
             else

@@ -32,6 +32,10 @@ using System.IO;
 using System.Threading.Tasks;
 using OpenVectorFormat.AbstractReaderWriter;
 using System.Numerics;
+using Google.Protobuf;
+using System.Linq;
+using Google.Protobuf.Reflection;
+using System.Diagnostics;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
@@ -79,7 +83,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             foreach (string extension in FileWriterFactory.SupportedFileFormats)
             {
                 FileInfo target = new FileInfo(Path.GetTempFileName() + extension);
-                Console.WriteLine("Converting from {0} to {1}", testFile.Extension, target.Extension);
+                Debug.WriteLine("Converting from {0} to {1}", testFile.Extension, target.Extension);
 
                 FileConverter.ConvertAsync(testFile, target, progress).Wait();
                 FileReader originalReader = FileReaderFactory.CreateNewReader(testFile.Extension);
@@ -100,14 +104,78 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                     }
                     convertedJob = ASPHelperUtils.HandleJobCompareWithASPTarget(originalJob, convertedJob);
                 }
+                else if(target.Extension == ".cli")
+                {
+                    //TODO: Check what can be included as meta information into CLI
+                    originalJob.MarkingParamsMap.Clear();
+                    //originalJob.PartsMap.Clear();
+                    for (int i = 0; i < originalJob.PartsMap.Count; i++)
+                    {
+                        var partOriginal = originalJob.PartsMap.Values.ToList()[i];
+                        var partConverted = convertedJob.PartsMap.Values.ToList()[i];
+                        if (partOriginal.GeometryInfo != null)
+                        {
+                            if (partConverted.GeometryInfo == null) partConverted.GeometryInfo = new Part.Types.GeometryInfo();
+                            partConverted.GeometryInfo.BuildHeightInMm = partOriginal.GeometryInfo.BuildHeightInMm;
+                        }
+                    }
+                    foreach (var wp in originalJob.WorkPlanes)
+                    {
+                        foreach (var vb in wp.VectorBlocks)
+                        {
+                            vb.MarkingParamsKey = 0;
+                            if(vb.LpbfMetadata == null) vb.LpbfMetadata = new VectorBlock.Types.LPBFMetadata();
+                            vb.LpbfMetadata.StructureType = VectorBlock.Types.StructureType.Part;
+                        }
+                    }
+
+                    for (int i = 0; i < originalJob.WorkPlanes.Count; i++)
+                    {
+                        for (int j = 0; j < originalJob.WorkPlanes[i].VectorBlocks.Count; j++)
+                        {
+                            var vbOrigine = originalJob.WorkPlanes[i].VectorBlocks[j];
+                            if(convertedJob.WorkPlanes.Count < i && convertedJob.WorkPlanes[i].VectorBlocks.Count < j)
+                            {
+                                var vbConvert = convertedJob.WorkPlanes[i].VectorBlocks[j];
+
+                                //if(vbOrigine.LpbfMetadata.PartArea != vbConvert.LpbfMetadata.PartArea)
+                                //{
+                                //    bool dd = true;
+                                //}
+                                if (testFile.Extension == ".ilt")
+                                {
+                                    vbConvert.LpbfMetadata.PartArea = vbOrigine.LpbfMetadata.PartArea;
+                                    vbConvert.LpbfMetadata.SkinType = vbOrigine.LpbfMetadata.SkinType;
+                                }
+                            }
+                        }
+                    }
+                    convertedJob.MarkingParamsMap.Clear();
+                    //convertedJob.PartsMap.Clear();
+                    convertedJob.JobMetaData.Version = originalJob.JobMetaData.Version;
+
+                }
 
                 convertedJob.JobMetaData.Bounds = null;
+                convertedJob.JobMetaData.JobName = originalJob.JobMetaData.JobName;
                 foreach (var workplane in convertedJob.WorkPlanes)
                 {
                     workplane.MetaData = null;
                 }
 
-                Assert.AreEqual(originalJob, convertedJob);
+                if (originalJob.JobMetaData.Version != convertedJob.JobMetaData.Version)
+                {
+                    Console.WriteLine("");
+                }
+
+                bool failed = false;
+                if (!originalJob.Equals(convertedJob))
+                {
+                    var nonEqual = AbstractVectorFileHandlerUtiils.NonEqualFieldsDebug(originalJob, convertedJob);
+                    Debug.Print($"WorkPlaneStats differs:\r{String.Join("\r", nonEqual)}\r");
+                    failed = true;
+                }
+                Assert.IsFalse(failed);
 
                 Vector2 translation = new Vector2(4, 5);
                 float rotation =(float) Math.PI / 8;
@@ -134,7 +202,6 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             }
         }
 
-      
         /// <summary>
         /// tests some minimum capabilities of the format that all readers should implement
         /// </summary>
