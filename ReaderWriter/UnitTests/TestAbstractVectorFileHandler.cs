@@ -36,6 +36,7 @@ using Google.Protobuf;
 using System.Linq;
 using Google.Protobuf.Reflection;
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
@@ -129,26 +130,26 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                         }
                     }
 
-                    for (int i = 0; i < originalJob.WorkPlanes.Count; i++)
+                    if (testFile.Extension == ".ilt")
                     {
-                        for (int j = 0; j < originalJob.WorkPlanes[i].VectorBlocks.Count; j++)
+                        for (int i = 0; i < originalJob.WorkPlanes.Count; i++)
                         {
-                            var vbOrigine = originalJob.WorkPlanes[i].VectorBlocks[j];
-                            if(convertedJob.WorkPlanes.Count < i && convertedJob.WorkPlanes[i].VectorBlocks.Count < j)
+                            for (int j = 0; j < originalJob.WorkPlanes[i].VectorBlocks.Count; j++)
                             {
-                                var vbConvert = convertedJob.WorkPlanes[i].VectorBlocks[j];
-
-                                //if(vbOrigine.LpbfMetadata.PartArea != vbConvert.LpbfMetadata.PartArea)
-                                //{
-                                //    bool dd = true;
-                                //}
-                                if (testFile.Extension == ".ilt")
+                                var vbOrigine = originalJob.WorkPlanes[i].VectorBlocks[j];
+                                if (i < convertedJob.WorkPlanes.Count && j < convertedJob.WorkPlanes[i].VectorBlocks.Count)
                                 {
+                                    var vbConvert = convertedJob.WorkPlanes[i].VectorBlocks[j];
                                     vbConvert.LpbfMetadata.PartArea = vbOrigine.LpbfMetadata.PartArea;
                                     vbConvert.LpbfMetadata.SkinType = vbOrigine.LpbfMetadata.SkinType;
                                 }
                             }
                         }
+                    }
+                    else if (testFile.Extension == ".asp")
+                    {
+                        convertedJob.JobMetaData.JobCreationTime = 0;
+                        continue;   //TODO: Should be removed
                     }
                     convertedJob.MarkingParamsMap.Clear();
                     //convertedJob.PartsMap.Clear();

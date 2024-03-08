@@ -663,10 +663,10 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                 int day = section.Header.Date % 100;
 
                 //TODO: 
-                if (year < 2000) year = 2000;
-                if (month <= 0) month = 1;
-                if (day <= 0) day = 1;
-                else if (day > 30) day = 15;
+                if (year < 2000) year = DateTime.Now.Year;
+                if (month <= 0) month = DateTime.Now.Month;
+                if (day <= 0) day = DateTime.Now.Day;
+                else if (day > 30) day = DateTime.Now.Day;
 
                 DateTime date = new DateTime(year, month, day);
                 //DateTime date = new DateTime();
