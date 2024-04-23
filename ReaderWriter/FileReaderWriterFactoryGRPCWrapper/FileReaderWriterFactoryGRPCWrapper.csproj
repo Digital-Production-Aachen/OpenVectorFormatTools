@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Grpc.AspNetCore" Version="2.55.0" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.62.0" />
         
     <!-- Explicitly include our proto file by adding this line: -->
     <Protobuf Include="../../ReaderWriter/AbstractReaderWriter/grpc_reader_writer_interface.proto" GrpcServices="Both" Link="Protos/grpc_reader_writer_interface.proto" ProtoRoot="../../" />

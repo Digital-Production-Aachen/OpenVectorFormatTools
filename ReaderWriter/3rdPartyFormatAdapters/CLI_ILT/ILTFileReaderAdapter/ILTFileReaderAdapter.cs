@@ -643,14 +643,21 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
         private Job.Types.JobMetaData TranslateMetaData(ICLIFile section)
         {
             Job.Types.JobMetaData metaData = new Job.Types.JobMetaData();
-            if (section.Header.Date != 0)
+            if (section.Header.Date > 0)
             {
                 //assuming that the date is after the year 2000, since there is no information about it
                 int year = (section.Header.Date % 100) + 2000;
                 int month = (section.Header.Date / 100) % 100;
                 int day = section.Header.Date % 100;
-                DateTime date = new DateTime(year, month, day);
-                metaData.JobCreationTime = new DateTimeOffset(date).ToUnixTimeSeconds();
+                try
+                {
+                    DateTime date = new DateTime(year, month, day);
+                    metaData.JobCreationTime = new DateTimeOffset(date).ToUnixTimeSeconds();
+                }
+                catch (System.ArgumentOutOfRangeException ex) 
+                { 
+                    // ignore invalid dates
+                };
             }
             metaData.Version = (ulong)section.Header.Version;
             return metaData;
