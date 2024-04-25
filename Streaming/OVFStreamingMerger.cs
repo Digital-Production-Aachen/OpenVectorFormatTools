@@ -54,11 +54,7 @@ namespace OpenVectorFormat.Streaming
         {}
 
 
-        public OVFStreamingMerger(FileReaderToMerge slicableMesh)
-        {
-            fileReaders.Add(slicableMesh);
-            mergedJobShell = slicableMesh.fr.JobShell.Clone();
-        }
+        public OVFStreamingMerger(FileReaderToMerge slicableMesh) : base(slicableMesh) { }
 
 
         /// <summary>

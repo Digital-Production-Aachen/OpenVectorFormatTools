@@ -63,11 +63,9 @@ namespace OpenVectorFormat.Streaming
         /// <param name="parameterSetEngine"></param>
         /// <param name="slicableMesh"></param>
         /// <param name="ovfPart">part meta data to overwrite into JobShell.partsMap and vectorBlocks.metaData.partKey</param>
-        public BuildProcessor(ParameterSetEngine parameterSetEngine, FileReaderToMerge slicableMesh, OpenVectorFormat.Part ovfPart)
+        public BuildProcessor(ParameterSetEngine parameterSetEngine, FileReaderToMerge slicableMesh, OpenVectorFormat.Part ovfPart) : base(slicableMesh)
         {
             _parameterSetEngine = parameterSetEngine;
-            fileReaders.Add(slicableMesh);
-            mergedJobShell = slicableMesh.fr.JobShell.Clone();
             mergedJobShell.PartsMap.Clear();
             mergedJobShell.PartsMap.Add(defaultPartKey, ovfPart);
             slicableMesh.partKeyIndexShift = defaultPartKey;
