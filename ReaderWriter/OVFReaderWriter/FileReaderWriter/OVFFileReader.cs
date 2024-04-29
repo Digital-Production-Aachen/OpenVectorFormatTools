@@ -27,6 +27,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 using OpenVectorFormat.AbstractReaderWriter;
 using OpenVectorFormat.Utils;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -84,7 +85,7 @@ namespace OpenVectorFormat.OVFReaderWriter
         public override CacheState CacheState => _cacheState;
 
         /// <inheritdoc/>
-        public override async Task OpenJobAsync(string filename, IFileReaderWriterProgress progress = null)
+        public override void OpenJob(string filename, IFileReaderWriterProgress progress = null)
         {
             if (_fileOperationInProgress != FileReadOperation.None)
             {
@@ -136,7 +137,7 @@ namespace OpenVectorFormat.OVFReaderWriter
                     var task = Task.Run(() =>
                     {
                         _readJobShell(jobLUTindex);
-                        if(this.progress != null) this.progress.IsFinished = false;
+                        if (this.progress != null) this.progress.IsFinished = false;
                         _workPlaneLUTs = new WorkPlaneLUT[_jobShell.NumWorkPlanes];
                         for (int i_plane = 0; i_plane < _jobShell.NumWorkPlanes; i_plane++)
                         {
@@ -148,7 +149,7 @@ namespace OpenVectorFormat.OVFReaderWriter
 
                     if (_fileOperationInProgress == FileReadOperation.CompleteRead)
                     {
-                        await CacheJobToMemoryAsync();
+                        CacheJobToMemory();
                         _cacheState = CacheState.CompleteJobCached;
                     }
                     else
@@ -208,7 +209,7 @@ namespace OpenVectorFormat.OVFReaderWriter
         }
 
         /// <inheritdoc/>
-        public override async Task<Job> CacheJobToMemoryAsync()
+        public override Job CacheJobToMemory()
         {
             if (_cacheState == CacheState.CompleteJobCached && _job != null)
             {
@@ -222,19 +223,7 @@ namespace OpenVectorFormat.OVFReaderWriter
 
                 _job = _jobShell.Clone();
                 _numberOfLayers = _job.NumWorkPlanes;
-                Task<WorkPlane>[] tasks = new Task<WorkPlane>[_numberOfLayers];
-                Parallel.For(0, _numberOfLayers, j =>
-                {
-                    var localScopedNumber = j;
-                    tasks[j] = GetWorkPlaneAsync(localScopedNumber);
-                });
-
-                await Task.WhenAll(tasks);
-
-                foreach (var taskedWorkplane in tasks)
-                {
-                    _job.WorkPlanes.Add(taskedWorkplane.Result);
-                }
+                _job.AddAllWorkPlanesParallel(GetWorkPlane);
 
                 _cacheState = CacheState.CompleteJobCached;
                 return _job;
@@ -242,7 +231,7 @@ namespace OpenVectorFormat.OVFReaderWriter
         }
 
         /// <inheritdoc/>
-        public override async Task<WorkPlane> GetWorkPlaneAsync(int i_workPlane)
+        public override WorkPlane GetWorkPlane(int i_workPlane)
         {
             if (_jobShell.NumWorkPlanes < i_workPlane)
             {
@@ -262,7 +251,7 @@ namespace OpenVectorFormat.OVFReaderWriter
 
                     for (int i_block = 0; i_block < wp.NumBlocks; i_block++)
                     {
-                        wp.VectorBlocks.Add(await GetVectorBlock(i_workPlane, i_block, stream));
+                        wp.VectorBlocks.Add(GetVectorBlock(i_workPlane, i_block, stream));
                     }
 
                     _numberOfCachedLayers++;
@@ -289,9 +278,7 @@ namespace OpenVectorFormat.OVFReaderWriter
 
             if (CacheState == CacheState.CompleteJobCached)
             {
-                WorkPlane wpShell = new WorkPlane();
-                ProtoUtils.CopyWithExclude(_job.WorkPlanes[i_workPlane], wpShell, new List<int> { WorkPlane.VectorBlocksFieldNumber });
-                return wpShell;
+                return _job.WorkPlanes[i_workPlane].CloneWithoutVectorData();
             }
             else
             {
@@ -311,7 +298,7 @@ namespace OpenVectorFormat.OVFReaderWriter
         private Stream CreateLocalStream(int i_workPlane)
         {
             long end;
-            if (i_workPlane+1 == _jobShell.NumWorkPlanes)
+            if (i_workPlane + 1 == _jobShell.NumWorkPlanes)
             {
                 end = _streamlength;
             }
@@ -331,11 +318,11 @@ namespace OpenVectorFormat.OVFReaderWriter
         }
 
         /// <inheritdoc/>
-        public override async Task<VectorBlock> GetVectorBlockAsync(int i_workPlane, int i_vectorblock)
+        public override VectorBlock GetVectorBlock(int i_workPlane, int i_vectorblock)
         {
-            return await GetVectorBlock(i_workPlane, i_vectorblock, null);
+            return GetVectorBlock(i_workPlane, i_vectorblock, null);
         }
-        private Task<VectorBlock> GetVectorBlock(int i_workPlane, int i_vectorblock, Stream stream)
+        private VectorBlock GetVectorBlock(int i_workPlane, int i_vectorblock, Stream stream)
         {
             if (_jobShell.NumWorkPlanes < i_workPlane)
             {
@@ -349,7 +336,7 @@ namespace OpenVectorFormat.OVFReaderWriter
 
             if (CacheState == CacheState.CompleteJobCached)
             {
-                return Task.FromResult(_job.WorkPlanes[i_workPlane].VectorBlocks[i_vectorblock]);
+                return _job.WorkPlanes[i_workPlane].VectorBlocks[i_vectorblock];
             }
             else
             {
@@ -361,10 +348,10 @@ namespace OpenVectorFormat.OVFReaderWriter
                 }
                 VectorBlock vb = new VectorBlock();
                 stream.Position = wpLut.VectorBlocksPositions[i_vectorblock] - GetStreamOffset(i_workPlane);
-                
+
                 vb = VectorBlock.Parser.ParseDelimitedFrom(stream);
-                if(closeStream) stream.Dispose();
-                return Task.FromResult(vb);
+                if (closeStream) stream.Dispose();
+                return vb;
             }
         }
 

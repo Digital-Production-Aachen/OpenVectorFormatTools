@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 using OpenVectorFormat;
+using System;
 using System.Threading.Tasks;
 
 namespace OpenVectorFormat.AbstractReaderWriter
@@ -34,13 +35,28 @@ namespace OpenVectorFormat.AbstractReaderWriter
         /// More vector blocks can be appended to the workPlane last appended.
         /// </summary>
         /// <param name="workPlane">WorkPlane to add.</param>
+        [Obsolete("Please use AppendWorkPlane")]
         Task AppendWorkPlaneAsync(WorkPlane workPlane);
+
+        /// <summary>
+        /// Writes the given workPlane to the job file.
+        /// More vector blocks can be appended to the workPlane last appended.
+        /// </summary>
+        /// <param name="workPlane">WorkPlane to add.</param>
+        void AppendWorkPlane(WorkPlane workPlane);
 
         /// <summary>
         /// Writes the VectorBlock to the workPlane last appended in the job.
         /// </summary>
         /// <param name="block">VectorBlock to write to file</param>
+        [Obsolete("Please use AppendVectorBlock")]
         Task AppendVectorBlockAsync(VectorBlock block);
+
+        /// <summary>
+        /// Writes the VectorBlock to the workPlane last appended in the job.
+        /// </summary>
+        /// <param name="block">VectorBlock to write to file</param>
+        void AppendVectorBlock(VectorBlock block);
 
         /// <summary>jobShell being written to. (just the shell without workPlanes).</summary>
         Job JobShell { get; }

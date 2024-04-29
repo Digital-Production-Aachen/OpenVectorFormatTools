@@ -23,7 +23,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading;
@@ -91,5 +93,23 @@ namespace OpenVectorFormat
         /// <param name="workPlane"></param>
         /// <returns></returns>
         public static int VectorCount(this Job job) => job.WorkPlanes.VectorCount();
+
+        /// <summary>
+        /// Adds all work planes from index 0 to job.NumWorkplanes to job.WorkPlanes in parallel
+        /// using the provided work plane getter function.
+        /// </summary>
+        /// <param name="job"></param>
+        /// <param name="GetWorkPlane"></param>
+        public static void AddAllWorkPlanesParallel(this Job job, Func<int, WorkPlane> GetWorkPlane)
+        {
+            ConcurrentBag<WorkPlane> wpBag = new ConcurrentBag<WorkPlane>();
+            Parallel.For(0, job.NumWorkPlanes, j =>
+            {
+                var wpNum = j;
+                wpBag.Add(GetWorkPlane(wpNum));
+            });
+
+            job.WorkPlanes.AddRange(wpBag.OrderBy(x => x.WorkPlaneNumber));
+        }
     }
 }

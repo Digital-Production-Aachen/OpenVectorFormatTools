@@ -70,7 +70,7 @@ namespace OVFReaderWriter
             }
         }
 
-        public async Task AppendWorkPlaneAsync(WorkPlane workPlane)
+        public void AppendWorkPlane(WorkPlane workPlane)
         {
             workPlane.WorkPlaneNumber = CompleteJob.NumWorkPlanes;
             CompleteJob.WorkPlanes.Add(workPlane);
@@ -78,7 +78,7 @@ namespace OVFReaderWriter
         }
 
         /// <inheritdoc/>
-        public async Task AppendVectorBlockAsync(VectorBlock block)
+        public void AppendVectorBlock(VectorBlock block)
         {
             if (CompleteJob == null)
             {
@@ -94,25 +94,25 @@ namespace OVFReaderWriter
         }
 
         /// <inheritdoc/>
-        public async Task<VectorBlock> GetVectorBlockAsync(int i_workPlane, int i_vectorblock)
+        public VectorBlock GetVectorBlock(int i_workPlane, int i_vectorblock)
         {
             if (CompleteJob == null)
             {
                 throw new InvalidOperationException("Initialize memory reader with 'OpenJob' before querying data!");
             }
 
-            return await Task.Run(() => CompleteJob.WorkPlanes[i_workPlane].VectorBlocks[i_vectorblock]);
+            return CompleteJob.WorkPlanes[i_workPlane].VectorBlocks[i_vectorblock];
         }
 
         /// <inheritdoc/>
-        public async Task<WorkPlane> GetWorkPlaneAsync(int i_workPlane)
+        public WorkPlane GetWorkPlane(int i_workPlane)
         {
             if (CompleteJob == null)
             {
                 throw new InvalidOperationException("Initialize memory reader with 'OpenJob' before querying data!");
             }
 
-            return await Task.Run(() => CompleteJob.WorkPlanes[i_workPlane]);
+            return CompleteJob.WorkPlanes[i_workPlane];
         }
 
         /// <inheritdoc/>
@@ -123,9 +123,29 @@ namespace OVFReaderWriter
                 throw new InvalidOperationException("Initialize memory reader with 'OpenJob' before querying data!");
             }
 
-            WorkPlane wpShell = new WorkPlane();
-            ProtoUtils.CopyWithExclude(CompleteJob.WorkPlanes[i_workPlane], wpShell, new List<int> { WorkPlane.VectorBlocksFieldNumber });
-            return wpShell;
+            return CompleteJob.WorkPlanes[i_workPlane].CloneWithoutVectorData();
+        }
+
+        public Task AppendWorkPlaneAsync(WorkPlane workPlane)
+        {
+            AppendWorkPlane(workPlane);
+            return Task.CompletedTask;
+        }
+
+        public Task AppendVectorBlockAsync(VectorBlock block)
+        {
+            AppendVectorBlock(block);
+            return Task.CompletedTask;
+        }
+
+        public Task<WorkPlane> GetWorkPlaneAsync(int i_workPlane)
+        {
+            return Task.FromResult(GetWorkPlane(i_workPlane));
+        }
+
+        public Task<VectorBlock> GetVectorBlockAsync(int i_workPlane, int i_vectorblock)
+        {
+            return Task.FromResult(GetVectorBlock(i_workPlane, i_vectorblock));
         }
     }
 }

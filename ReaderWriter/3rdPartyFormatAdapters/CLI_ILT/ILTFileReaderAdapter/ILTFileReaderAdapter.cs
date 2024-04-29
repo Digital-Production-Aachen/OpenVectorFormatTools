@@ -94,7 +94,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
 
         public override CacheState CacheState => _cacheState;
 
-        public override async Task OpenJobAsync(string filename, IFileReaderWriterProgress progress)
+        public override void OpenJob(string filename, IFileReaderWriterProgress progress)
         {
             this.progress = progress;
             this.filename = filename;
@@ -103,14 +103,11 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             ModelsectionMap = new Dictionary<IModelSection, int>();
             ModelsectionIdMap = new Dictionary<string, int>();
             job = new Job();
-            await Task.Run(() =>
-            {
-                OpenFile();
-            });
+            OpenFile();
             return;
         }
 
-        public async override Task<Job> CacheJobToMemoryAsync()
+        public override Job CacheJobToMemory()
         {
             CheckFile();
             if (!vectorDataLoaded)
@@ -128,7 +125,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             return job;
         }
 
-        public async override Task<WorkPlane> GetWorkPlaneAsync(int i_workPlane)
+        public override WorkPlane GetWorkPlane(int i_workPlane)
         {
             if (vectorDataLoaded)
             {
@@ -139,7 +136,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                 WorkPlane fullWorkPlane = job.WorkPlanes[i_workPlane].Clone();//copy the shell
                 for (int j = 0; j < fullWorkPlane.VectorBlocks.Count; j++)
                 {
-                    fullWorkPlane.VectorBlocks[j] = await GetVectorBlockAsync(i_workPlane, j);
+                    fullWorkPlane.VectorBlocks[j] = GetVectorBlock(i_workPlane, j);
                 }
                 return fullWorkPlane;//ownership passed
             }
@@ -153,9 +150,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             }
             if (CacheState == CacheState.CompleteJobCached)
             {
-                WorkPlane wpShell = new WorkPlane();
-                ProtoUtils.CopyWithExclude(job.WorkPlanes[i_workPlane], wpShell, new List<int> { WorkPlane.VectorBlocksFieldNumber });
-                return wpShell;
+                return job.WorkPlanes[i_workPlane].CloneWithoutVectorData();
             }
             else
             {
@@ -163,7 +158,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             }
         }
 
-        public async override Task<VectorBlock> GetVectorBlockAsync(int i_workPlane, int i_vectorblock)
+        public override VectorBlock GetVectorBlock(int i_workPlane, int i_vectorblock)
         {
             if (vectorDataLoaded)
             {

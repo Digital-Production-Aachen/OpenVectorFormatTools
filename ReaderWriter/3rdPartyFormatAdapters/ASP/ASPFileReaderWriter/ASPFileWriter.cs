@@ -62,26 +62,21 @@ namespace OpenVectorFormat.ASPFileReaderWriter
         public new static List<string> SupportedFileFormats { get; } = new List<string>() { ".asp" };
 
         /// <inheritdoc/>
-        public async override Task AppendWorkPlaneAsync(WorkPlane workPlane)
+        public override void AppendWorkPlane(WorkPlane workPlane)
         {
-
-            await Task.Run(() =>
+            for (uint i = 0; i < workPlane.Repeats + 1; i++)
             {
-                for (uint i = 0; i < workPlane.Repeats + 1; i++)
+                for (int i_vectorblock = 0; i_vectorblock < workPlane.VectorBlocks.Count; i_vectorblock++)
                 {
-                    for (int i_vectorblock = 0; i_vectorblock < workPlane.VectorBlocks.Count; i_vectorblock++)
-                    {
-                        _addVectorBlock(workPlane.VectorBlocks[i_vectorblock]);
-                    }
+                    _addVectorBlock(workPlane.VectorBlocks[i_vectorblock]);
                 }
-            });
-
+            }
         }
 
         /// <inheritdoc/>
-        public async override Task AppendVectorBlockAsync(VectorBlock block)
+        public override void AppendVectorBlock(VectorBlock block)
         {
-            await Task.Run(() => _addVectorBlock(block));
+            _addVectorBlock(block);
         }
 
         /// <inheritdoc/>
@@ -317,7 +312,7 @@ namespace OpenVectorFormat.ASPFileReaderWriter
         }
 
         /// <inheritdoc/>
-        public override async Task SimpleJobWriteAsync(Job job, string filename, IFileReaderWriterProgress progress)
+        public override void SimpleJobWrite(Job job, string filename, IFileReaderWriterProgress progress)
         {
             CheckConsistence(job.NumWorkPlanes, job.WorkPlanes.Count);
             for (int i = 0; i < job.NumWorkPlanes; i++)
@@ -331,7 +326,7 @@ namespace OpenVectorFormat.ASPFileReaderWriter
             this.progress = progress;
             foreach (WorkPlane wp in job.WorkPlanes)
             {
-                await AppendWorkPlaneAsync(wp);
+                AppendWorkPlane(wp);
             }
             _fs.Close();
             _fileOperationInProgress = FileWriteOperation.None;

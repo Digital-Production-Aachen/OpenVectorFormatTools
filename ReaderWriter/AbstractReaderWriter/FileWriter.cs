@@ -60,16 +60,42 @@ namespace OpenVectorFormat.AbstractReaderWriter
         /// <param name="job">job to write</param>
         /// <param name="filename">Path and name for savefile</param>
         /// <param name="progress">status update interface to be called</param>
-        public abstract Task SimpleJobWriteAsync(Job job, string filename, IFileReaderWriterProgress progress);
+        [Obsolete("Please use SimpleJobWrite")]
+        public virtual Task SimpleJobWriteAsync(Job job, string filename, IFileReaderWriterProgress progress)
+        {
+            SimpleJobWrite(job, filename, progress);
+            return Task.CompletedTask;
+        }
+
+        public abstract void SimpleJobWrite(Job job, string filename, IFileReaderWriterProgress progress);
 
         /// <summary>Disposes the FileWriter, finishing the partial write (if initiated).</summary>
         public abstract void Dispose();
 
         /// <inheritdoc/>
-        public abstract Task AppendWorkPlaneAsync(WorkPlane workPlane);
+        [Obsolete("Please use AppendWorkPlane")]
+        public Task AppendWorkPlaneAsync(WorkPlane workPlane)
+        {
+            AppendWorkPlane(workPlane);
+            return Task.CompletedTask;
+        }
 
         /// <inheritdoc/>
-        public abstract Task AppendVectorBlockAsync(VectorBlock block);
+        public abstract void AppendWorkPlane(WorkPlane workPlane);
+
+        /// <inheritdoc/>
+        [Obsolete("Please use AppendVectorBlock")]
+        public Task AppendVectorBlockAsync(VectorBlock block)
+        {
+            AppendVectorBlock(block);
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Writes the VectorBlock to the workPlane last appended in the job.
+        /// </summary>
+        /// <param name="block">VectorBlock to write to file</param>
+        public abstract void AppendVectorBlock(VectorBlock block);
 
         /// <summary>Indicates if a fileOperation is running, i.e. if a filestream is open.</summary>
         public abstract FileWriteOperation FileOperationInProgress { get; }

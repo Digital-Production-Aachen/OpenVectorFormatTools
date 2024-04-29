@@ -83,9 +83,9 @@ namespace OpenVectorFormat.Streaming
             fileReaderToMerge.partKeyIndexShift = defaultPartKey;
         }
 
-        public override async Task<WorkPlane> GetWorkPlaneAsync(int i_workPlane)
+        public override WorkPlane GetWorkPlane(int i_workPlane)
         {
-            var workPlane = await base.GetWorkPlaneAsync(i_workPlane);
+            var workPlane = base.GetWorkPlane(i_workPlane);
             _parameterSetEngine.ApplyParametersTo(workPlane);
             return workPlane;
         }

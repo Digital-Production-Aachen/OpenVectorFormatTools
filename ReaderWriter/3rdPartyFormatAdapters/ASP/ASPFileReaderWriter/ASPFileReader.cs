@@ -31,6 +31,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using OpenVectorFormat.AbstractReaderWriter;
 using OpenVectorFormat.Utils;
+using OpenVectorFormat;
 
 namespace OpenVectorFormat.ASPFileReaderWriter
 {
@@ -68,7 +69,7 @@ namespace OpenVectorFormat.ASPFileReaderWriter
         }
 
         /// <inheritdoc/>
-        public override async Task OpenJobAsync(string filename, IFileReaderWriterProgress progress)
+        public override void OpenJob(string filename, IFileReaderWriterProgress progress)
         {
             if (!SupportedFileFormats.Contains(Path.GetExtension(filename)))
             {
@@ -84,11 +85,11 @@ namespace OpenVectorFormat.ASPFileReaderWriter
 
             _filename = filename;
 
-            await Task.Run(() => { ParseASPFile(); });
+            ParseASPFile();
         }
 
         /// <inheritdoc/>
-        public async override Task<Job> CacheJobToMemoryAsync()
+        public override Job CacheJobToMemory()
         {
             if (_cacheState == CacheState.CompleteJobCached)
             {
@@ -96,7 +97,7 @@ namespace OpenVectorFormat.ASPFileReaderWriter
             }
             else if (File.Exists(_filename))
             {
-                await Task.Run(() => { ParseASPFile(); });
+                ParseASPFile();
                 return CompleteJob;
             }
             else
@@ -121,9 +122,7 @@ namespace OpenVectorFormat.ASPFileReaderWriter
 
             if (CacheState == CacheState.CompleteJobCached)
             {
-                WorkPlane wpShell = new WorkPlane();
-                ProtoUtils.CopyWithExclude(CompleteJob.WorkPlanes[i_workPlane], wpShell, new List<int> { WorkPlane.VectorBlocksFieldNumber });
-                return wpShell;
+                return CompleteJob.WorkPlanes[i_workPlane].CloneWithoutVectorData();
             }
             else
             {
@@ -132,35 +131,29 @@ namespace OpenVectorFormat.ASPFileReaderWriter
         }
 
         /// <inheritdoc/>
-        public async override Task<WorkPlane> GetWorkPlaneAsync(int i_workPlane)
+        public override WorkPlane GetWorkPlane(int i_workPlane)
         {
-            return await Task.Run(() =>
+            if (_cacheState == CacheState.CompleteJobCached)
             {
-                if (_cacheState == CacheState.CompleteJobCached)
-                {
-                    return CompleteJob.WorkPlanes[i_workPlane];
-                }
-                else
-                {
-                    throw new InvalidDataException("No data loaded yet! Call OpenJobAsync first!");
-                }
-            });
+                return CompleteJob.WorkPlanes[i_workPlane];
+            }
+            else
+            {
+                throw new InvalidDataException("No data loaded yet! Call OpenJobAsync first!");
+            }
         }
 
         /// <inheritdoc/>
-        public async override Task<VectorBlock> GetVectorBlockAsync(int i_workPlane, int i_vectorblock)
+        public override VectorBlock GetVectorBlock(int i_workPlane, int i_vectorblock)
         {
-            return await Task.Run(() =>
+            if (_cacheState == CacheState.CompleteJobCached)
             {
-                if (_cacheState == CacheState.CompleteJobCached)
-                {
-                    return CompleteJob.WorkPlanes[i_workPlane].VectorBlocks[i_vectorblock];
-                }
-                else
-                {
-                    throw new InvalidDataException("No data loaded yet! Call OpenJobAsync first!");
-                }
-            });
+                return CompleteJob.WorkPlanes[i_workPlane].VectorBlocks[i_vectorblock];
+            }
+            else
+            {
+                throw new InvalidDataException("No data loaded yet! Call OpenJobAsync first!");
+            }
         }
 
         /// <inheritdoc/>

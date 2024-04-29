@@ -95,18 +95,15 @@ namespace OpenVectorFormat.Streaming
         {
             fileReaderToMerge.zMin = fileReaderToMerge.fr.GetWorkPlaneShell(0).ZPosInMm;
             fileReaders.Add(fileReaderToMerge);
-            if (fileReaderToMerge.zMin < zMin)
-            {
-                zMin = fileReaderToMerge.zMin;
-                // new zMin invalidates layer offsets, so recalculate them
-                foreach (var fr in fileReaders)
-                {
-                    fr.layerOffset = layerThickness != -1 ? (int)Math.Round((fr.zMin - zMin) / layerThickness) : 0;
-                }
-            }
+            zMin = Math.Min(zMin, fileReaderToMerge.zMin);
             if (mergedJobShell == null) mergedJobShell = fileReaderToMerge.fr.JobShell.Clone();
             mergedJobShell.NumWorkPlanes = fileReaders.Max(x => x.layerOffset + x.fr.JobShell.NumWorkPlanes);
             if (layerThickness == -1) layerThickness = GetLayerThickness(fileReaderToMerge);
+
+            foreach (var fr in fileReaders)
+            {
+                fr.layerOffset = layerThickness != -1 ? (int)Math.Round((fr.zMin - zMin) / layerThickness) : 0;
+            }
         }
 
         private float GetLayerThickness(FileReaderToMerge fileReaderToMerge)
@@ -126,17 +123,14 @@ namespace OpenVectorFormat.Streaming
 
         public override Job JobShell => mergedJobShell;
 
-        public override async Task<Job> CacheJobToMemoryAsync()
+        public override Job CacheJobToMemory()
         {
             foreach(var reader in fileReaders)
             {
-                await reader.fr.CacheJobToMemoryAsync();
+                reader.fr.CacheJobToMemory();
             }
             var job = mergedJobShell.Clone();
-            for(int i = 0; i < job.NumWorkPlanes; i++)
-            {
-                job.WorkPlanes.Add(await GetWorkPlaneAsync(i));
-            }
+            job.AddAllWorkPlanesParallel(GetWorkPlane);
             return job;
         }
 
@@ -148,16 +142,17 @@ namespace OpenVectorFormat.Streaming
             }
         }
 
-        public override Task<VectorBlock> GetVectorBlockAsync(int i_workPlane, int i_vectorblock)
+        public override VectorBlock GetVectorBlock(int i_workPlane, int i_vectorblock)
         {
-            return Task.FromResult(GetWorkPlaneAsync(i_workPlane).Result.VectorBlocks[i_vectorblock]);
+            return GetWorkPlane(i_workPlane).VectorBlocks[i_vectorblock];
         }
 
-        public override Task<WorkPlane> GetWorkPlaneAsync(int i_workPlane)
+        public override WorkPlane GetWorkPlane(int i_workPlane)
         {
             var mergedWorkPlane = new WorkPlane();
             mergedWorkPlane.MetaData = new WorkPlane.Types.WorkPlaneMetaData();
             mergedWorkPlane.WorkPlaneNumber = i_workPlane;
+            bool zPosSet = false;
             for (int i = 0; i < fileReaders.Count; i++)
             {
                 var frToMerge = fileReaders[i];
@@ -166,9 +161,19 @@ namespace OpenVectorFormat.Streaming
                 var contoursCount = mergedWorkPlane.MetaData.Contours.Count;
                 if (indexWithOffset >= 0 && indexWithOffset < frToMerge.fr.JobShell.NumWorkPlanes)
                 {
-                    var workPlaneToMerge = frToMerge.fr.GetWorkPlaneAsync(indexWithOffset).Result;
+                    var workPlaneToMerge = frToMerge.fr.GetWorkPlane(indexWithOffset);
 
-                    for(int j = 0; j < workPlaneToMerge.VectorBlocks.Count; j++)
+                    if (!zPosSet)
+                    {
+                        mergedWorkPlane.ZPosInMm = workPlaneToMerge.ZPosInMm;
+                        zPosSet = true;
+                    } // check if z pos matches
+                    else if (!OVFDefinition.Utils.ApproxEquals(workPlaneToMerge.ZPosInMm, mergedWorkPlane.ZPosInMm))
+                    {
+                        throw new StreamingMergerException("z pos of work planes to merge does not match");
+                    }
+
+                    for (int j = 0; j < workPlaneToMerge.VectorBlocks.Count; j++)
                     {
                         
                         var block = workPlaneToMerge.VectorBlocks[j];
@@ -193,10 +198,6 @@ namespace OpenVectorFormat.Streaming
                         mergedWorkPlane.VectorBlocks.Add(block);
                         mergedWorkPlane.NumBlocks++;
 
-                        // check if z pos matches
-                        if (i == 0) mergedWorkPlane.ZPosInMm = workPlaneToMerge.ZPosInMm;
-                        else if (!OVFDefinition.Utils.ApproxEquals(workPlaneToMerge.ZPosInMm, mergedWorkPlane.ZPosInMm))
-                            throw new StreamingMergerException("z pos of work planes to merge does not match");
 
                         //check if patch is valid before applying index shift
                         if (workPlaneToMerge.MetaData?.PatchesMap != null && workPlaneToMerge.MetaData.PatchesMap.ContainsKey(block.MetaData.PatchKey))
@@ -257,7 +258,7 @@ namespace OpenVectorFormat.Streaming
                         mergedWorkPlane.MetaData.Contours.Add(workPlaneToMerge.MetaData.Contours);
                 }
             }
-            return Task.FromResult(mergedWorkPlane);
+            return mergedWorkPlane;
         }
 
         /// <summary>
@@ -268,20 +269,13 @@ namespace OpenVectorFormat.Streaming
 
         public override WorkPlane GetWorkPlaneShell(int i_workPlane)
         {
-            var wp = GetWorkPlaneAsync(i_workPlane);
-            var wpShell = new WorkPlane();
-            OpenVectorFormat.Utils.ProtoUtils.CopyWithExclude(wp.GetAwaiter().GetResult(), wpShell, new System.Collections.Generic.List<int> { WorkPlane.VectorBlocksFieldNumber });
-            return wpShell;
+            var wp = GetWorkPlane(i_workPlane);
+            return wp.CloneWithoutVectorData();
         }
 
-        public override Task OpenJobAsync(string filename, IFileReaderWriterProgress progress)
+        public override void OpenJob(string filename, IFileReaderWriterProgress progress)
         {
-            List<Task> tasks = new List<Task>();
-            foreach (var reader in fileReaders)
-            {
-                tasks.Add(reader.fr.OpenJobAsync(filename, progress));
-            }
-            return Task.WhenAll(tasks);
+            throw new NotSupportedException("Add file readers to merge and open their files individually using AddFileReaderToMerge");
         }
 
         public override void UnloadJobFromMemory()
