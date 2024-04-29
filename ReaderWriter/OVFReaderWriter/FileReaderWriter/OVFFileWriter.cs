@@ -101,14 +101,14 @@ namespace OpenVectorFormat.OVFReaderWriter
         }
 
         /// <inheritdoc/>
-        public async override Task AppendWorkPlaneAsync(WorkPlane workPlaneShell)
+        public override void AppendWorkPlane(WorkPlane workPlaneShell)
         {
             if (_fileOperationInProgress != FileWriteOperation.PartialWrite)
             {
                 throw new InvalidOperationException("Adding workPlanes is only possible after initializing a file opertaion with StartWriteAsync");
             }
             // finish the previous workPlane
-            await Task.Run(() => FinishWorkPlane());
+            FinishWorkPlane();
             // hold the workPlane in RAM until writing is done
             _currentWorkPlaneShell = workPlaneShell;
         }
@@ -117,7 +117,7 @@ namespace OpenVectorFormat.OVFReaderWriter
         {
             if (_currentWorkPlaneShell != null)
             {
-                if(_fs==null)
+                if(_fs == null)
                 {
                     return;
                 }
@@ -130,7 +130,7 @@ namespace OpenVectorFormat.OVFReaderWriter
                     long _workPlaneLUTIndex = _fs.Position;
 
                     byte[] byteToWrite = ConvertToByteArrayLittleEndian((long)0);
-                    _fs.Write(byteToWrite, 0, byteToWrite.Length);
+                    _fs.WriteAsync(byteToWrite, 0, byteToWrite.Length);
 
                     WorkPlaneLUT wpLUT = new WorkPlaneLUT();
 
@@ -146,9 +146,7 @@ namespace OpenVectorFormat.OVFReaderWriter
                     _currentWorkPlaneShell.MetaData.Bounds = _currentWorkPlaneShell.Bounds2D();
                     _jobShell.JobMetaData.Bounds.Contain(_currentWorkPlaneShell.MetaData.Bounds);
 
-                    var tempShell = new WorkPlane();
-                    ProtoUtils.CopyWithExclude(_currentWorkPlaneShell, tempShell, new List<int> { WorkPlane.VectorBlocksFieldNumber });
-
+                    var tempShell = _currentWorkPlaneShell.CloneWithoutVectorData();
                     wpLUT.WorkPlaneShellPosition = _fs.Position;
                     tempShell.WriteDelimitedTo(_fs);
 
@@ -166,7 +164,7 @@ namespace OpenVectorFormat.OVFReaderWriter
         }
 
         /// <inheritdoc/>
-        public async override Task AppendVectorBlockAsync(VectorBlock block)
+        public override void AppendVectorBlock(VectorBlock block)
         {
             if (_fileOperationInProgress != FileWriteOperation.PartialWrite)
             {
@@ -212,7 +210,7 @@ namespace OpenVectorFormat.OVFReaderWriter
         }
 
         /// <inheritdoc/>
-        public override async Task SimpleJobWriteAsync(Job job, string filename, IFileReaderWriterProgress progress = null)
+        public override void SimpleJobWrite(Job job, string filename, IFileReaderWriterProgress progress = null)
         {
             CheckConsistence(job.NumWorkPlanes, job.WorkPlanes.Count);
 
@@ -222,11 +220,10 @@ namespace OpenVectorFormat.OVFReaderWriter
             foreach (var workPlane in job.WorkPlanes)
             {
                 progress.Update("workPlane " + workPlane.WorkPlaneNumber + " added! ", (int)((double)workPlane.WorkPlaneNumber / (double)job.WorkPlanes.Count * 100));
-                await AppendWorkPlaneAsync(workPlane);
+                AppendWorkPlane(workPlane);
             }
             Dispose();
             progress.IsFinished = true;
-
         }
 
         private void CheckConsistence(int number1, int number2)

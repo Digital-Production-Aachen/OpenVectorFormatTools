@@ -34,6 +34,32 @@ namespace OpenVectorFormat
     public static class WorkPlaneExtensions
     {
         /// <summary>
+        /// Clones all data of the work plane without copying the vector blocks data.
+        /// Avoids unnecessary copies of data compared to calling clone and clone.VectorBlocks.Clear on the work plane.
+        /// </summary>
+        /// <param name="blockToClone"></param>
+        /// <returns></returns>
+        public static WorkPlane CloneWithoutVectorData(this WorkPlane wpToClone)
+        {
+            var clone = new WorkPlane();
+
+            clone.XPosInMm = wpToClone.XPosInMm;
+            clone.YPosInMm = wpToClone.YPosInMm;
+            clone.ZPosInMm = wpToClone.ZPosInMm;
+            clone.XRotInDeg = wpToClone.XRotInDeg;
+            clone.YRotInDeg = wpToClone.YRotInDeg;
+            clone.ZRotInDeg = wpToClone.ZRotInDeg;
+            clone.NumBlocks = wpToClone.NumBlocks;
+            clone.Repeats = wpToClone.Repeats;
+            clone.WorkPlaneNumber = wpToClone.WorkPlaneNumber;
+            clone.MachineType = wpToClone.MachineType;
+            clone.AdditionalAxisPositions.AddRange(wpToClone.AdditionalAxisPositions);
+            clone.MetaData = wpToClone.MetaData != null ? wpToClone.MetaData.Clone() : null;
+
+            return clone;
+        }
+
+        /// <summary>
         /// Translates all vector block coordinates of the work plane in the x/y plane.
         /// Uses SIMD hardware acceleration if available.
         /// </summary>
