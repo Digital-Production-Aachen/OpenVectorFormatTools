@@ -3,7 +3,7 @@
 
 This file is part of the OpenVectorFormatTools collection. This collection provides tools to facilitate the usage of the OpenVectorFormat.
 
-Copyright (C) 2023 Digital-Production-Aachen
+Copyright (C) 2024 Digital-Production-Aachen
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -33,6 +33,7 @@ using System.Threading;
 using OpenVectorFormat.AbstractReaderWriter;
 using System.Text.RegularExpressions;
 using OVFReaderWriter;
+using System.Threading.Tasks;
 
 namespace OpenVectorFormat.FileReaderWriterFactory
 {
@@ -86,28 +87,40 @@ namespace OpenVectorFormat.FileReaderWriterFactory
             }
         }
 
+        [Obsolete("Please use Convert")]
+        public static async Task ConvertAsync(FileInfo file, FileInfo targetFile, IFileReaderWriterProgress progress)
+        {
+            Convert(file, targetFile, progress);
+        }
+
         /// <summary>
         /// Convert a given vector file (a supported reader must be available) into the target format.
         /// </summary>
         /// <param name="file">a file to load in a supported format</param>
         /// <param name="targetFile">the target file. extension decides which writer will be used</param>
         /// <param name="progress">progress interface to call for updates</param>
-        public static async System.Threading.Tasks.Task ConvertAsync(FileInfo file, FileInfo targetFile, IFileReaderWriterProgress progress)
+        public static void Convert(FileInfo file, FileInfo targetFile, IFileReaderWriterProgress progress)
         {
             CheckExtensions(file.Extension, targetFile.Extension);
             using (var reader = FileReaderFactory.CreateNewReader(file.Extension))
             {
-                await reader.OpenJobAsync(file.FullName, progress);
+                reader.OpenJob(file.FullName, progress);
                 using (var writer = FileWriterFactory.CreateNewWriter(targetFile.Extension))
                 {
                     writer.StartWritePartial(reader.JobShell, targetFile.FullName, progress);
 
                     for (int i = 0; i < reader.JobShell.NumWorkPlanes; i++)
                     {
-                        await writer.AppendWorkPlaneAsync(await reader.GetWorkPlaneAsync(i));
+                        writer.AppendWorkPlane(reader.GetWorkPlane(i));
                     }
                 }
             }
+        }
+
+        [Obsolete("Please use ConvertAddParams")]
+        public async System.Threading.Tasks.Task ConvertAsyncAddParams(FileInfo file, FileInfo targetFile, IFileReaderWriterProgress progress)
+        {
+            ConvertAddParams(file, targetFile, progress);
         }
 
         /// <summary>
@@ -122,12 +135,12 @@ namespace OpenVectorFormat.FileReaderWriterFactory
         /// <param name="targetFile">the target file. extension decides which writer will be used</param>
         /// <param name="progress">progress interface to call for updates</param>
         /// <returns></returns>
-        public async System.Threading.Tasks.Task ConvertAsyncAddParams(FileInfo file, FileInfo targetFile, IFileReaderWriterProgress progress)
+        public void ConvertAddParams(FileInfo file, FileInfo targetFile, IFileReaderWriterProgress progress)
         {
             CheckExtensions(file.Extension, targetFile.Extension);
             using (var reader = FileReaderFactory.CreateNewReader(file.Extension))
             {
-                await reader.OpenJobAsync(file.FullName, progress);
+                reader.OpenJob(file.FullName, progress);
 
                 var extendedJobShell = GetExtendedJobShell(reader.JobShell);
 
@@ -135,10 +148,16 @@ namespace OpenVectorFormat.FileReaderWriterFactory
                 using (var writer = FileWriterFactory.CreateNewWriter(targetFile.Extension))
                 {
                     writer.StartWritePartial(extendedJobShell, targetFile.FullName, progress);
-                    await WriteToTarget(reader, writer);
+                    WriteToTarget(reader, writer);
                 }
                 #endregion
             }
+        }
+
+        [Obsolete("Please use ConvertAddParams")]
+        public Job ConvertAsyncAddParams(FileInfo file, IFileReaderWriterProgress progress)
+        {
+            return ConvertAddParams(file, progress);
         }
 
         /// <summary>
@@ -152,19 +171,19 @@ namespace OpenVectorFormat.FileReaderWriterFactory
         /// <param name="file">file to read from</param>
         /// <param name="progress">progress interface to call for updates</param>
         /// <returns></returns>
-        public Job ConvertAsyncAddParams(FileInfo file, IFileReaderWriterProgress progress)
+        public Job ConvertAddParams(FileInfo file, IFileReaderWriterProgress progress)
         {
             CheckExtensions(file.Extension, ".ovf");
             using (var reader = FileReaderFactory.CreateNewReader(file.Extension))
             {
-                reader.OpenJobAsync(file.FullName, progress).Wait();
+                reader.OpenJob(file.FullName, progress);
 
                 var extendedJobShell = GetExtendedJobShell(reader.JobShell);
                 extendedJobShell.NumWorkPlanes = 0;
 
                 var writer = new MemoryReaderWriter();
                 writer.InitializeReaderWriter(extendedJobShell);
-                WriteToTarget(reader, writer).Wait();
+                WriteToTarget(reader, writer);
                 return writer.CompleteJob;
             }
         }
@@ -229,11 +248,11 @@ namespace OpenVectorFormat.FileReaderWriterFactory
         /// </summary>
         /// <param name="reader"></param>
         /// <param name="writer"></param>
-        private async System.Threading.Tasks.Task WriteToTarget(IReader reader, IWriter writer)
+        private void WriteToTarget(IReader reader, IWriter writer)
         {
             for (int i = 0; i < reader.JobShell.NumWorkPlanes; i++)
             {
-                var workplane = await reader.GetWorkPlaneAsync(i);
+                var workplane = reader.GetWorkPlane(i);
                 foreach (var VB in workplane.VectorBlocks)
                 {
                     if (VB.LpbfMetadata == null) VB.LpbfMetadata = new VectorBlock.Types.LPBFMetadata();
@@ -281,7 +300,7 @@ namespace OpenVectorFormat.FileReaderWriterFactory
                     VectorBlockPostProcessor(VB);
                 }
                 WorkPlanePostProcessor(workplane);
-                await writer.AppendWorkPlaneAsync(workplane);
+                writer.AppendWorkPlane(workplane);
             }
         }
 

@@ -3,7 +3,7 @@
 
 This file is part of the OpenVectorFormatTools collection. This collection provides tools to facilitate the usage of the OpenVectorFormat.
 
-Copyright (C) 2023 Digital-Production-Aachen
+Copyright (C) 2024 Digital-Production-Aachen
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -84,11 +84,11 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
 
             // read file from disc directly directly
             FileReader originalReader = FileReaderFactory.CreateNewReader(testFile.Extension);
-            await originalReader.OpenJobAsync(testFile.FullName, new FileReaderWriterProgress());
+            originalReader.OpenJob(testFile.FullName, new FileReaderWriterProgress());
 
             // read file via grpc (simple)
             SimpleJobReadReply simpleReadReply = client.SimpleJobRead(new SimpleJobReadRequest { JobUri = testFile.FullName });
-            Assert.AreEqual(await originalReader.CacheJobToMemoryAsync(), simpleReadReply.Job);
+            Assert.AreEqual(originalReader.CacheJobToMemory(), simpleReadReply.Job);
 
             // read file vie grpc (partial) not ready yet
             using (var call = client.PartialRead())
@@ -124,7 +124,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                     await call.RequestStream.WriteAsync(getPlaneRequest);
                     await call.ResponseStream.MoveNext();
                     PartialReadReply getPlaneReply = call.ResponseStream.Current;
-                    Assert.AreEqual(await originalReader.GetWorkPlaneAsync(iWorkPlanes), getPlaneReply.WorkPlane);
+                    Assert.AreEqual(originalReader.GetWorkPlane(iWorkPlanes), getPlaneReply.WorkPlane);
                     Assert.AreEqual(getPlaneRequest, getPlaneReply.Request);
 
                     // additionally, get all vector blocks separetely
@@ -139,7 +139,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                         await call.RequestStream.WriteAsync(getBlockRequest);
                         await call.ResponseStream.MoveNext();
                         PartialReadReply getBlockReply = call.ResponseStream.Current;
-                        Assert.AreEqual(await originalReader.GetVectorBlockAsync(iWorkPlanes, iBlocks), getBlockReply.VectorBlock);
+                        Assert.AreEqual(originalReader.GetVectorBlock(iWorkPlanes, iBlocks), getBlockReply.VectorBlock);
                         Assert.AreEqual(getBlockRequest, getBlockReply.Request);
                     }
                 }
@@ -155,14 +155,14 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
 
                 Console.WriteLine("Converting from {0} to {1}", testFile.Extension, target.Extension);
 
-                SimpleJobWriteReply reply2 = client.SimpleJobWrite(new SimpleJobWriteRequest { JobUri = target.FullName, Job = await originalReader.CacheJobToMemoryAsync() });
+                SimpleJobWriteReply reply2 = client.SimpleJobWrite(new SimpleJobWriteRequest { JobUri = target.FullName, Job = originalReader.CacheJobToMemory() });
 
                 // read written file back directly
                 FileReader convertedReader = FileReaderFactory.CreateNewReader(target.Extension);
-                await convertedReader.OpenJobAsync(target.FullName, new FileReaderWriterProgress());
+                convertedReader.OpenJob(target.FullName, new FileReaderWriterProgress());
 
-                Job originalJob = await originalReader.CacheJobToMemoryAsync();
-                Job convertedJob = await convertedReader.CacheJobToMemoryAsync();
+                Job originalJob = originalReader.CacheJobToMemory();
+                Job convertedJob = convertedReader.CacheJobToMemory();
                 if (target.Extension == ".asp")
                 {
                     // ASP has no concept of workplanes, so only single-workplane jobs can be restored properly.

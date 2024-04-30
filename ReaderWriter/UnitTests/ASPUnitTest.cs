@@ -3,7 +3,7 @@
 
 This file is part of the OpenVectorFormatTools collection. This collection provides tools to facilitate the usage of the OpenVectorFormat.
 
-Copyright (C) 2023 Digital-Production-Aachen
+Copyright (C) 2024 Digital-Production-Aachen
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -40,7 +40,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
 
         [DynamicData("ASPFiles")]
         [TestMethod]
-        public async System.Threading.Tasks.Task ASPReadTestAsync(FileInfo fileName)
+        public void ASPReadTest(FileInfo fileName)
         {
             // Job job;
             using (ASPFileReader simpleReader = new ASPFileReader())
@@ -53,7 +53,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 Console.WriteLine(DateTime.Now.ToString());
                 */
 
-                await simpleReader.OpenJobAsync(fileName.FullName, progRead);
+                simpleReader.OpenJob(fileName.FullName, progRead);
 
                 /*
                 job = simpleReader.CompleteJob;

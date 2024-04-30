@@ -3,7 +3,7 @@
 
 This file is part of the OpenVectorFormatTools collection. This collection provides tools to facilitate the usage of the OpenVectorFormat.
 
-Copyright (C) 2023 Digital-Production-Aachen
+Copyright (C) 2024 Digital-Production-Aachen
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -45,25 +45,25 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
 
         [DynamicData("TestFiles")]
         [DataTestMethod]
-        public async System.Threading.Tasks.Task SimpleWriteAndRead(FileInfo testFile)
+        public void SimpleWriteAndRead(FileInfo testFile)
         {
             // Checks if simply reading a job, writing it with the SimpleWrite function, and reading it again corrupts the job.
             if (FileReaderFactory.SupportedFileFormats.Contains(testFile.Extension) && FileWriterFactory.SupportedFileFormats.Contains(testFile.Extension))
             {
                 IFileReaderWriterProgress progress = new FileReaderWriterProgress();
                 FileReader fileReader = FileReaderFactory.CreateNewReader(testFile.Extension);
-                await fileReader.OpenJobAsync(testFile.FullName, progress);
-                Job originalJob = await fileReader.CacheJobToMemoryAsync();
+                fileReader.OpenJob(testFile.FullName, progress);
+                Job originalJob = fileReader.CacheJobToMemory();
                 fileReader.Dispose();
                 Job originalJobToCompareTo = originalJob.Clone();
 
                 FileInfo target = new FileInfo(Path.GetTempFileName() + testFile.Extension);
                 FileWriter fileWriter = FileWriterFactory.CreateNewWriter(target.Extension);
-                await fileWriter.SimpleJobWriteAsync(originalJob, target.FullName, progress);
+                fileWriter.SimpleJobWrite(originalJob, target.FullName, progress);
 
                 FileReader fileReader2 = FileReaderFactory.CreateNewReader(testFile.Extension);
-                await fileReader2.OpenJobAsync(target.FullName, progress);
-                Job readJob = await fileReader2.CacheJobToMemoryAsync();
+                fileReader2.OpenJob(target.FullName, progress);
+                Job readJob = fileReader2.CacheJobToMemory();
                 Job orgJob = ASPHelperUtils.HandleJobCompareWithASPTarget(originalJobToCompareTo, readJob);
                 Assert.AreEqual(orgJob, readJob);
             }
@@ -81,14 +81,14 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 FileInfo target = new FileInfo(Path.GetTempFileName() + extension);
                 Console.WriteLine("Converting from {0} to {1}", testFile.Extension, target.Extension);
 
-                FileConverter.ConvertAsync(testFile, target, progress).Wait();
+                FileConverter.Convert(testFile, target, progress);
                 FileReader originalReader = FileReaderFactory.CreateNewReader(testFile.Extension);
                 FileReader convertedReader = FileReaderFactory.CreateNewReader(target.Extension);
-                await originalReader.OpenJobAsync(testFile.FullName, progress);
-                await convertedReader.OpenJobAsync(target.FullName, progress);
+                originalReader.OpenJob(testFile.FullName, progress);
+                convertedReader.OpenJob(target.FullName, progress);
 
-                Job originalJob = await originalReader.CacheJobToMemoryAsync();
-                Job convertedJob = await convertedReader.CacheJobToMemoryAsync();
+                Job originalJob = originalReader.CacheJobToMemory();
+                Job convertedJob = convertedReader.CacheJobToMemory();
 
                 if (target.Extension == ".asp")
                 {
@@ -141,18 +141,18 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         /// <param name="testFile"></param>
         [DynamicData("TestFiles")]
         [TestMethod]
-        public async System.Threading.Tasks.Task TestReadAsync(FileInfo testFile)
+        public void TestRead(FileInfo testFile)
         {
             IFileReaderWriterProgress progress = new FileReaderWriterProgress();
             using (FileReader reader = FileReaderFactory.CreateNewReader(testFile.Extension))
             {
-                await reader.OpenJobAsync(testFile.FullName, progress);
+                reader.OpenJob(testFile.FullName, progress);
                 Assert.IsTrue(reader.JobShell.NumWorkPlanes > 0); // job must have at least one workPlane
                 //Job-WorkPlanes are allowed to be empty, must be retrieved by getWorkPlane
                 Dictionary<Tuple<double, double, double, double, double, double>, long> workPlanePositions = new Dictionary<Tuple<double, double, double, double, double, double>, long>();
                 for (int i = 0; i < reader.JobShell.NumWorkPlanes; i++)
                 {
-                    var workPlane = await reader.GetWorkPlaneAsync(i);
+                    var workPlane = reader.GetWorkPlane(i);
                     Tuple<double, double, double, double, double, double> workPlanePos = new Tuple<double, double, double, double, double, double>(workPlane.XPosInMm, workPlane.XRotInDeg, workPlane.YPosInMm, workPlane.YRotInDeg, workPlane.ZPosInMm, workPlane.ZRotInDeg);
                     Assert.IsFalse(workPlanePositions.TryGetValue(workPlanePos, out long workPlaneNumber),
                         "coordinates " + workPlanePos.ToString() + "already used by workPlane " + workPlaneNumber + ". " +

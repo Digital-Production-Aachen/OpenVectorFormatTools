@@ -3,7 +3,7 @@
 
 This file is part of the OpenVectorFormatTools collection. This collection provides tools to facilitate the usage of the OpenVectorFormat.
 
-Copyright (C) 2023 Digital-Production-Aachen
+Copyright (C) 2024 Digital-Production-Aachen
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -62,10 +62,10 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
                 throw new RpcException(new Status(StatusCode.FailedPrecondition, "Reading failed: File " + filename + " does not exist."));
             }
             FileReader reader = FileReaderFactory.CreateNewReader(extension);
-            await reader.OpenJobAsync(filename, new FileReaderWriterProgress());
+            reader.OpenJob(filename, new FileReaderWriterProgress());
             SimpleJobReadReply ret = new SimpleJobReadReply();
             ret.InfoMessage = "File read from " + filename + "!";
-            ret.Job = await reader.CacheJobToMemoryAsync();
+            ret.Job = reader.CacheJobToMemory();
             reader.Dispose();
             return ret;
         }
@@ -106,7 +106,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
                         progress = new FileReaderWriterProgress();
                         try
                         {
-                            await reader.OpenJobAsync(jobURI, progress);
+                            reader.OpenJob(jobURI, progress);
                         }
                         catch (Exception ex)
                         {
@@ -167,7 +167,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
 
                         try
                         {
-                            outputMsg.WorkPlane = await reader.GetWorkPlaneAsync(inputMsg.PlaneIndex);
+                            outputMsg.WorkPlane = reader.GetWorkPlane(inputMsg.PlaneIndex);
                         }
                         catch (Exception ex)
                         {
@@ -187,7 +187,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
 
                         try
                         {
-                            outputMsg.VectorBlock = await reader.GetVectorBlockAsync(inputMsg.PlaneIndex, inputMsg.VectorBlockIndex);
+                            outputMsg.VectorBlock = reader.GetVectorBlock(inputMsg.PlaneIndex, inputMsg.VectorBlockIndex);
                         }
                         catch (Exception ex)
                         {

@@ -22,48 +22,25 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
-﻿using OpenVectorFormat.ILTFileReader;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenVectorFormat.ILTFileReader.Model
+namespace OVFDefinition
 {
-    class Layer:ILTFileReader.ILayer
+    public static class BuildProcessorStrategyExtensions
     {
-        private readonly bool isLong;
-
-        public Layer(long offsetInFile, float height, bool isLong) {
-            OffsetInFile = offsetInFile;
-            Height = height;
-            this.isLong = isLong;
-            this.VectorBlocks = new List<IVectorBlock>();
-        }
-
-        public Layer(float height)
+        /// <summary>
+        /// Calculate the theoretical build up rate of the given parameter set [mm³].
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public static double TheoreticalBuildUpRateInMM3perS(this OpenVectorFormat.BuildProcessorStrategy.Types.ParameterSet parameters)
         {
-            Height = height;
-            this.VectorBlocks = new List<IVectorBlock>();
+            var hatchDist = parameters?.ProcessStrategy?.HatchDistanceInMm ?? 0;
+            var exposureSpeed = parameters?.MarkingParams?.LaserSpeedInMmPerS ?? 0;
+            var layerThickness = parameters?.ProcessStrategy?.LayerThicknessInMm ?? 0;
+            return hatchDist * exposureSpeed * layerThickness;
         }
-
-        public long OffsetInFile
-        {
-            get;
-            set;
-        }
-
-        public float Height
-        {
-            get;
-            set;
-        }
-
-        public IList<ILTFileReader.IVectorBlock> VectorBlocks
-        {
-            get;
-            set;
-        }
-
-        public bool IsLong => isLong;
     }
 }
