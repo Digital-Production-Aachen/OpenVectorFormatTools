@@ -99,7 +99,7 @@ namespace OpenVectorFormat.OVFReaderWriter
                 foreach (var wp in workplanes.OrderBy(x => x.Key))
                 {
                     wp.Value.NumBlocks = wp.Value.VectorBlocks.Count;
-                    writer.AppendWorkPlaneAsync(wp.Value).GetAwaiter().GetResult();
+                    writer.AppendWorkPlane(wp.Value);
                 }
             }
         }

@@ -69,7 +69,7 @@ namespace OpenVectorFormat.FileReaderWriterFactory
         /// <param name="fileToWrite"></param>
         /// <param name="targetFile"></param>
         /// <returns></returns>
-        public static async Task StreamToFile(FileReader fileToWrite, string targetFile)
+        public static void StreamToFile(FileReader fileToWrite, string targetFile)
         {
             var fileInfo = new FileInfo(targetFile);
             using (var writer = CreateNewWriter(fileInfo.Extension))
@@ -78,7 +78,7 @@ namespace OpenVectorFormat.FileReaderWriterFactory
                 for (int i = 0; i < fileToWrite.JobShell.NumWorkPlanes; i++)
                 {
                     var wp = fileToWrite.GetWorkPlaneShell(i);
-                    await writer.AppendWorkPlaneAsync(wp);
+                    writer.AppendWorkPlane(wp);
                 }
             }
         }

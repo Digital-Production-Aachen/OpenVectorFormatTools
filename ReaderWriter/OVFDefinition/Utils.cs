@@ -28,7 +28,7 @@ using System.Text;
 
 namespace OVFDefinition
 {
-    public class Utils
+    public static class Utils
     {
         public static bool ApproxEquals(float value1, float value2, float tolerance = 1e-6f)
         {

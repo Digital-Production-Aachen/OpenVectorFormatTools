@@ -37,7 +37,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
     public class TestOVF
     {
         [TestMethod]
-        public async Task TestSimpleWriteSimpleReadAsync()
+        public void TestSimpleWriteSimpleReadAsync()
         {
             string test_filename = "SimpleWriteTest.ovf";
             Job job = SetupTestJob();
@@ -46,15 +46,15 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             using (FileWriter simpleWriter = new OVFFileWriter())
             {
                 IFileReaderWriterProgress progWrite = new FileReaderWriterProgressDummy();
-                await simpleWriter.SimpleJobWriteAsync(job, test_filename, progWrite);
+                simpleWriter.SimpleJobWrite(job, test_filename, progWrite);
             }
 
             // read test job from disk
             using (FileReader simpleReader = new OVFFileReader())
             {
                 IFileReaderWriterProgress progRead = new FileReaderWriterProgressDummy();
-                await simpleReader.OpenJobAsync(test_filename, progRead);
-                Job readJob = await simpleReader.CacheJobToMemoryAsync();
+                simpleReader.OpenJob(test_filename, progRead);
+                Job readJob = simpleReader.CacheJobToMemory();
 
                 readJob.JobMetaData = null;
                 foreach (var workplane in readJob.WorkPlanes)
@@ -82,10 +82,10 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 {
                     WorkPlane workPlaneShell = job.WorkPlanes[(int)i].Clone();
                     workPlaneShell.VectorBlocks.Clear();
-                    await testWriter.AppendWorkPlaneAsync(workPlaneShell);
+                    testWriter.AppendWorkPlane(workPlaneShell);
                     for (int j = 0; j < workPlaneShell.NumBlocks; j++)
                     {
-                        await testWriter.AppendVectorBlockAsync(job.WorkPlanes[i].VectorBlocks[j]);
+                        testWriter.AppendVectorBlock(job.WorkPlanes[i].VectorBlocks[j]);
                     }
                 }
             }
@@ -95,8 +95,8 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 AutomatedCachingThresholdBytes = 0 // forces partial reading
             };
             IFileReaderWriterProgress progRead = new FileReaderWriterProgressDummy();
-            await testReader.OpenJobAsync(test_filename, progRead);
-            Job readJob = await testReader.CacheJobToMemoryAsync();
+            testReader.OpenJob(test_filename, progRead);
+            Job readJob = testReader.CacheJobToMemory();
 
             readJob.JobMetaData = null;
             foreach (var workplane in readJob.WorkPlanes)
@@ -121,7 +121,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         //    using (var writer = new OVFFileWriter())
         //    {
         //        writer.StartWritePartial(jobShell, Path.GetTempPath() + "TestWPMetaDataNull.ovf");
-        //        writer.AppendWorkPlaneAsync(workPlane);
+        //        writer.AppendWorkPlane(workPlane);
         //    }
         //}
 

@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
-﻿using System;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using OpenVectorFormat.Plausibility;
@@ -32,6 +32,7 @@ namespace OpenVectorFormat.OVFReaderWriter
 {
     public static class PlausibilityCheckOVFFile
     {
+
         /// <summary>
         /// Perform a plausability check on an ovf file.
         /// </summary>
@@ -45,7 +46,7 @@ namespace OpenVectorFormat.OVFReaderWriter
             if (Path.GetExtension(filepath) != ".ovf") { throw new NotSupportedException("Unsupported file format. Only OpenVectorFormat files (*.ovf) are supported"); }
             OVFFileReader reader = new OVFFileReader();
 
-            await reader.OpenJobAsync(filepath, new FileReaderWriterProgressDummy());
+            reader.OpenJob(filepath, new FileReaderWriterProgressDummy());
 
             CheckerResult result = new CheckerResult();
 
@@ -70,7 +71,7 @@ namespace OpenVectorFormat.OVFReaderWriter
             {
                 for (int i = 0; i < jobShell.NumWorkPlanes; i++)
                 {
-                    WorkPlane wp = await reader.GetWorkPlaneAsync(i);
+                    WorkPlane wp = reader.GetWorkPlane(i);
                     result = UnifyResult(result, PlausibilityChecker.CheckNumberOfVectorBlocks(wp, config));
 
                     for (int j = 0; j < wp.VectorBlocks.Count; j++)
@@ -87,7 +88,7 @@ namespace OpenVectorFormat.OVFReaderWriter
 
                     for (int j = 0; j < wp.VectorBlocks.Count; j++)
                     {
-                        result = UnifyResult(result, PlausibilityChecker.CheckVectorBlock(await reader.GetVectorBlockAsync(i, j), config, jobShell, wp, j));
+                        result = UnifyResult(result, PlausibilityChecker.CheckVectorBlock(reader.GetVectorBlock(i, j), config, jobShell, wp, j));
                     }
                 }
             }

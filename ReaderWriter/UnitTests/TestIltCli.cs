@@ -56,7 +56,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             var targetFile = new FileInfo(Path.GetTempFileName() + ".ovf");
             var converter = SetupConverter();
 
-            converter.ConvertAsyncAddParams(fileName, targetFile, new FileReaderWriterFactory.FileReaderWriterProgress()).Wait();
+            converter.ConvertAddParams(fileName, targetFile, new FileReaderWriterFactory.FileReaderWriterProgress());
             CheckJob(targetFile);
         }
 
@@ -77,7 +77,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         {
             var converter = SetupConverter();
 
-            var job = converter.ConvertAsyncAddParams(fileName, new FileReaderWriterFactory.FileReaderWriterProgress());
+            var job = converter.ConvertAddParams(fileName, new FileReaderWriterFactory.FileReaderWriterProgress());
             CheckJob(job);
         }
 
@@ -85,8 +85,8 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         {
             using (var reader = FileReaderWriterFactory.FileReaderFactory.CreateNewReader(testFile.Extension))
             {
-                reader.OpenJobAsync(testFile.FullName, new FileReaderWriterFactory.FileReaderWriterProgress());
-                var job = reader.CacheJobToMemoryAsync().GetAwaiter().GetResult();
+                reader.OpenJob(testFile.FullName, new FileReaderWriterFactory.FileReaderWriterProgress());
+                var job = reader.CacheJobToMemory();
 
                 CheckJob(job);
             }

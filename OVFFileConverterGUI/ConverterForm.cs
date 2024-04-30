@@ -67,7 +67,7 @@ namespace OVFFileConverterGUI
             var result = fileDialog.ShowDialog();
             if (result == DialogResult.OK)
             {
-                path = String.Copy(fileDialog.FileName);
+                path = fileDialog.FileName;
             }
             else
             {
@@ -79,7 +79,7 @@ namespace OVFFileConverterGUI
             result = targetFileDialog.ShowDialog();
             if (result == DialogResult.OK)
             {
-                pathOut = String.Copy(targetFileDialog.FileName);
+                pathOut = targetFileDialog.FileName;
             }
             else
             {
@@ -87,7 +87,7 @@ namespace OVFFileConverterGUI
             }
             try
             {
-                await OpenVectorFormat.FileReaderWriterFactory.FileConverter.ConvertAsync(new System.IO.FileInfo(path), new System.IO.FileInfo(pathOut), this);
+                OpenVectorFormat.FileReaderWriterFactory.FileConverter.Convert(new System.IO.FileInfo(path), new System.IO.FileInfo(pathOut), this);
                 progressBar1.Value = 100;
             }
             catch(NotSupportedException ex)

@@ -47,6 +47,7 @@ namespace OpenVectorFormat.Streaming
         private int nextMarkingParamsIndex = 0;
         private OpenVectorFormat.Part partMetaData;
 
+        public IReadOnlyList<ParameterSet> ParameterSets => buildProcessorStrategy.ParameterSets;
         public string BuildProcessorStrategyID { get => buildProcessorStrategy.BuildProcessorStrategyId; set => buildProcessorStrategy.BuildProcessorStrategyId = value; }
         public string Name { get => buildProcessorStrategy.Name; set => buildProcessorStrategy.Name = value; }
         public string MaterialID { get => buildProcessorStrategy.MaterialId; set => buildProcessorStrategy.MaterialId = value; }

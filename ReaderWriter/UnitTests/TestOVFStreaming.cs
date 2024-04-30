@@ -54,13 +54,13 @@ namespace UnitTests
             using (OVFFileReader supportReader = new OVFFileReader())
             {
                 // load part and support ovf
-                partReader.OpenJobAsync(Path.Combine(sourceDir, partFile) + ".ovf", null).GetAwaiter().GetResult();
-                supportReader.OpenJobAsync(Path.Combine(sourceDir, supportFile) + ".ovf", null).GetAwaiter().GetResult();
+                partReader.OpenJob(Path.Combine(sourceDir, partFile) + ".ovf", null);
+                supportReader.OpenJob(Path.Combine(sourceDir, supportFile) + ".ovf", null);
 
                 // run plausibility checks on input
-                PlausibilityChecker.CheckJob(partReader.CacheJobToMemoryAsync().GetAwaiter().GetResult(), new CheckerConfig())
+                PlausibilityChecker.CheckJob(partReader.CacheJobToMemory(), new CheckerConfig())
                     .GetAwaiter().GetResult();
-                PlausibilityChecker.CheckJob(supportReader.CacheJobToMemoryAsync().GetAwaiter().GetResult(), new CheckerConfig())
+                PlausibilityChecker.CheckJob(supportReader.CacheJobToMemory(), new CheckerConfig())
                     .GetAwaiter().GetResult();
 
                 // merge part with supports
@@ -68,7 +68,7 @@ namespace UnitTests
                 merger.AddFileReaderToMerge(new FileReaderToMerge() { fr = supportReader, markAsSupport = true });
 
                 // run plausibility checks on result
-                var job = merger.CacheJobToMemoryAsync().GetAwaiter().GetResult();
+                var job = merger.CacheJobToMemory();
                 PlausibilityChecker.CheckJob(job, new CheckerConfig()).GetAwaiter().GetResult();
             }
         }
@@ -94,13 +94,13 @@ namespace UnitTests
             using (OVFFileReader supportReader = new OVFFileReader())
             {
                 // load part and support ovf
-                partReader.OpenJobAsync(Path.Combine(sourceDir, partFile) + ".ovf", null).GetAwaiter().GetResult();
-                supportReader.OpenJobAsync(Path.Combine(sourceDir, supportFile) + ".ovf", null).GetAwaiter().GetResult();
+                partReader.OpenJob(Path.Combine(sourceDir, partFile) + ".ovf", null);
+                supportReader.OpenJob(Path.Combine(sourceDir, supportFile) + ".ovf", null);
 
                 // run plausibility checks on input
-                PlausibilityChecker.CheckJob(partReader.CacheJobToMemoryAsync().GetAwaiter().GetResult(), new CheckerConfig())
+                PlausibilityChecker.CheckJob(partReader.CacheJobToMemory(), new CheckerConfig())
                     .GetAwaiter().GetResult();
-                PlausibilityChecker.CheckJob(supportReader.CacheJobToMemoryAsync().GetAwaiter().GetResult(), new CheckerConfig())
+                PlausibilityChecker.CheckJob(supportReader.CacheJobToMemory(), new CheckerConfig())
                     .GetAwaiter().GetResult();
 
                 // merge part with supports
@@ -125,7 +125,7 @@ namespace UnitTests
                 }
 
                 // run plausibility checks on result
-                var job = jobMerger.CacheJobToMemoryAsync().GetAwaiter().GetResult();
+                var job = jobMerger.CacheJobToMemory();
                 PlausibilityChecker.CheckJob(job, new CheckerConfig()).GetAwaiter().GetResult();
 
                 // check layer heights
@@ -135,12 +135,12 @@ namespace UnitTests
                 for (int wpnr = 0; wpnr < jobMerger.JobShell.NumWorkPlanes; wpnr++)
                 {
                     // aabb of full job should equal aggregated aabb of all instances 
-                    var jobAABB = jobMerger.GetWorkPlaneAsync(wpnr).GetAwaiter().GetResult().Bounds2D();
+                    var jobAABB = jobMerger.CacheJobToMemory().Bounds2D();
                     AxisAlignedBox2D aggregateAABB = null;
                     for (int i = 0; i < positions.Length; i++)
                     {
                         var pos = positions[i];
-                        var wp = partSupportReader.GetWorkPlaneAsync(wpnr).GetAwaiter().GetResult();
+                        var wp = partSupportReader.CacheJobToMemory();
                         var wpCopy = wp.Clone();
                         wpCopy.Rotate(pos.rot);
                         wpCopy.Translate(new Vector2(pos.x, pos.y));

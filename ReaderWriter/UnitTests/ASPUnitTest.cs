@@ -40,7 +40,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
 
         [DynamicData("ASPFiles")]
         [TestMethod]
-        public async System.Threading.Tasks.Task ASPReadTestAsync(FileInfo fileName)
+        public void ASPReadTest(FileInfo fileName)
         {
             // Job job;
             using (ASPFileReader simpleReader = new ASPFileReader())
@@ -53,7 +53,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 Console.WriteLine(DateTime.Now.ToString());
                 */
 
-                await simpleReader.OpenJobAsync(fileName.FullName, progRead);
+                simpleReader.OpenJob(fileName.FullName, progRead);
 
                 /*
                 job = simpleReader.CompleteJob;

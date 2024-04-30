@@ -62,7 +62,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
             FileReaderWriterProgress progress = new FileReaderWriterProgress();
             try
             {
-                await writer.SimpleJobWriteAsync(saveRequest.Job, saveRequest.JobUri, progress);
+                writer.SimpleJobWrite(saveRequest.Job, saveRequest.JobUri, progress);
             }
             catch (Exception ex)
             {
@@ -131,7 +131,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
 
                         try
                         {
-                            await writer.AppendWorkPlaneAsync(inputMsg.WorkPlane);
+                            writer.AppendWorkPlane(inputMsg.WorkPlane);
                         }
                         catch (Exception ex)
                         {
@@ -150,7 +150,7 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
 
                         try
                         {
-                            await writer.AppendVectorBlockAsync(inputMsg.VectorBlock);
+                            writer.AppendVectorBlock(inputMsg.VectorBlock);
                         }
                         catch (Exception ex)
                         {
