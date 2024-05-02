@@ -35,6 +35,12 @@
     <None Update="TestFiles\ASP_Simple_Test.asp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="TestFiles\bunny %28solidsupport%29.ovf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestFiles\bunny.ovf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestFiles\Elephant_ASCII.cli">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

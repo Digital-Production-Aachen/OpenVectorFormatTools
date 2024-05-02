@@ -99,7 +99,7 @@ namespace OpenVectorFormat.FileReaderWriterFactory
         /// <param name="file">a file to load in a supported format</param>
         /// <param name="targetFile">the target file. extension decides which writer will be used</param>
         /// <param name="progress">progress interface to call for updates</param>
-        public static void Convert(FileInfo file, FileInfo targetFile, IFileReaderWriterProgress progress)
+        public static void Convert(FileInfo file, FileInfo targetFile, IFileReaderWriterProgress progress = null)
         {
             CheckExtensions(file.Extension, targetFile.Extension);
             using (var reader = FileReaderFactory.CreateNewReader(file.Extension))
@@ -135,7 +135,7 @@ namespace OpenVectorFormat.FileReaderWriterFactory
         /// <param name="targetFile">the target file. extension decides which writer will be used</param>
         /// <param name="progress">progress interface to call for updates</param>
         /// <returns></returns>
-        public void ConvertAddParams(FileInfo file, FileInfo targetFile, IFileReaderWriterProgress progress)
+        public void ConvertAddParams(FileInfo file, FileInfo targetFile, IFileReaderWriterProgress progress = null)
         {
             CheckExtensions(file.Extension, targetFile.Extension);
             using (var reader = FileReaderFactory.CreateNewReader(file.Extension))
@@ -171,7 +171,7 @@ namespace OpenVectorFormat.FileReaderWriterFactory
         /// <param name="file">file to read from</param>
         /// <param name="progress">progress interface to call for updates</param>
         /// <returns></returns>
-        public Job ConvertAddParams(FileInfo file, IFileReaderWriterProgress progress)
+        public Job ConvertAddParams(FileInfo file, IFileReaderWriterProgress progress = null)
         {
             CheckExtensions(file.Extension, ".ovf");
             using (var reader = FileReaderFactory.CreateNewReader(file.Extension))

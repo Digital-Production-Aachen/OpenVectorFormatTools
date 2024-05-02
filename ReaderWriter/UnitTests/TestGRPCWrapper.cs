@@ -82,7 +82,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
 
             VectorFileHandler.VectorFileHandlerClient client = new VectorFileHandler.VectorFileHandlerClient(channel);
 
-            // read file from disc directly directly
+            // read file from disc directly
             FileReader originalReader = FileReaderFactory.CreateNewReader(testFile.Extension);
             originalReader.OpenJob(testFile.FullName, new FileReaderWriterProgress());
 
@@ -174,10 +174,14 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                     convertedJob = ASPHelperUtils.HandleJobCompareWithASPTarget(originalJob, convertedJob);
                 }
 
-                convertedJob.JobMetaData.Bounds = null;
-                foreach (var workplane in convertedJob.WorkPlanes)
+                if (target.Extension != testFile.Extension)
                 {
-                    workplane.MetaData = null;
+                    // all formats except ovf are unable to store meta data
+                    convertedJob.JobMetaData.Bounds = null;
+                    foreach (var workplane in convertedJob.WorkPlanes)
+                    {
+                        workplane.MetaData = null;
+                    }
                 }
 
                 Assert.AreEqual(originalJob, convertedJob);

@@ -51,7 +51,7 @@ namespace OpenVectorFormat.AbstractReaderWriter
         /// <param name="jobShell">OVF Job Object to write to file</param>
         /// <param name="filename">Path and name for savefile</param>
         /// <param name="progress">status update interface to be called</param>
-        public abstract void StartWritePartial(Job jobShell, string filename, IFileReaderWriterProgress progress);
+        public abstract void StartWritePartial(Job jobShell, string filename, IFileReaderWriterProgress progress = null);
 
         /// <summary>
         /// Writes a complete <see cref="Job"/>. Needs to contain all <see cref="WorkPlane"/>s and <see cref="VectorBlock"/>s already.
@@ -67,7 +67,7 @@ namespace OpenVectorFormat.AbstractReaderWriter
             return Task.CompletedTask;
         }
 
-        public abstract void SimpleJobWrite(Job job, string filename, IFileReaderWriterProgress progress);
+        public abstract void SimpleJobWrite(Job job, string filename, IFileReaderWriterProgress progress = null);
 
         /// <summary>Disposes the FileWriter, finishing the partial write (if initiated).</summary>
         public abstract void Dispose();

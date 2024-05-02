@@ -71,21 +71,20 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
 
         [DynamicData("TestFiles")]
         [DataTestMethod]
-        public async Task TestConvertAndCompareAsync(FileInfo testFile)
+        public void TestConvertAndCompare(FileInfo testFile)
         {
             Console.WriteLine("TestConvertAndCompare");
 
-            IFileReaderWriterProgress progress = new FileReaderWriterProgress();
             foreach (string extension in FileWriterFactory.SupportedFileFormats)
             {
                 FileInfo target = new FileInfo(Path.GetTempFileName() + extension);
                 Console.WriteLine("Converting from {0} to {1}", testFile.Extension, target.Extension);
 
-                FileConverter.Convert(testFile, target, progress);
+                FileConverter.Convert(testFile, target);
                 FileReader originalReader = FileReaderFactory.CreateNewReader(testFile.Extension);
                 FileReader convertedReader = FileReaderFactory.CreateNewReader(target.Extension);
-                originalReader.OpenJob(testFile.FullName, progress);
-                convertedReader.OpenJob(target.FullName, progress);
+                originalReader.OpenJob(testFile.FullName);
+                convertedReader.OpenJob(target.FullName);
 
                 Job originalJob = originalReader.CacheJobToMemory();
                 Job convertedJob = convertedReader.CacheJobToMemory();
@@ -101,10 +100,14 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                     convertedJob = ASPHelperUtils.HandleJobCompareWithASPTarget(originalJob, convertedJob);
                 }
 
-                convertedJob.JobMetaData.Bounds = null;
-                foreach (var workplane in convertedJob.WorkPlanes)
+                if (target.Extension != testFile.Extension)
                 {
-                    workplane.MetaData = null;
+                    // all formats except ovf are unable to store meta data
+                    convertedJob.JobMetaData.Bounds = null;
+                    foreach (var workplane in convertedJob.WorkPlanes)
+                    {
+                        workplane.MetaData = null;
+                    }
                 }
 
                 Assert.AreEqual(originalJob, convertedJob);
