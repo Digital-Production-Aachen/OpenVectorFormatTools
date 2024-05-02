@@ -312,7 +312,7 @@ namespace OpenVectorFormat.ASPFileReaderWriter
         }
 
         /// <inheritdoc/>
-        public override void SimpleJobWrite(Job job, string filename, IFileReaderWriterProgress progress)
+        public override void SimpleJobWrite(Job job, string filename, IFileReaderWriterProgress progress = null)
         {
             CheckConsistence(job.NumWorkPlanes, job.WorkPlanes.Count);
             for (int i = 0; i < job.NumWorkPlanes; i++)
@@ -333,7 +333,7 @@ namespace OpenVectorFormat.ASPFileReaderWriter
         }
 
         /// <inheritdoc/>
-        public override void StartWritePartial(Job jobShell, string filename, IFileReaderWriterProgress progress)
+        public override void StartWritePartial(Job jobShell, string filename, IFileReaderWriterProgress progress = null)
         {
             _jobShell = jobShell;
             _fileOperationInProgress = FileWriteOperation.PartialWrite;

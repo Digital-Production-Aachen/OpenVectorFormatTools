@@ -340,6 +340,132 @@ namespace OpenVectorFormat
             vectorBlock.MetaData.Bounds = vectorBlock.Bounds2D();
         }
 
+        /// <summary>
+        /// Computes and stores the vector blocks meta data (bounds and scan/jump distances).
+        /// </summary>
+        /// <param name="vectorBlock"></param>
+        public static VectorBlock.Types.VectorBlockMetaData ComputeAndStoreMetaData(this VectorBlock vectorBlock)
+        {
+            if (vectorBlock.MetaData == null) vectorBlock.MetaData = new VectorBlock.Types.VectorBlockMetaData();
+            ComputeDistances(vectorBlock);
+            vectorBlock.MetaData.Bounds = vectorBlock.Bounds2D();
+            return vectorBlock.MetaData;
+        }
+
+        private static void ComputeDistances(VectorBlock vectorBlock)
+        {
+            if (vectorBlock.VectorCount() < 1) 
+                return;
+
+            switch (vectorBlock.VectorDataCase)
+            {
+                case VectorBlock.VectorDataOneofCase.LineSequence:                    
+                    DistanceLineSeq2d(vectorBlock);                    
+                    break;
+                case VectorBlock.VectorDataOneofCase.LineSequence3D:
+                    DistanceLineSeq3d(vectorBlock, ignoreZ: false);
+                    break;
+                case VectorBlock.VectorDataOneofCase.LineSequenceParaAdapt:
+                    DistanceLineSeq3d(vectorBlock, ignoreZ: true);
+                    break;
+                case VectorBlock.VectorDataOneofCase.Hatches:
+                    DistanceHatches2d(vectorBlock);
+                    break;
+                case VectorBlock.VectorDataOneofCase.Hatches3D:
+                    DistanceHatches3d(vectorBlock, ignoreZ: false);
+                    break;
+                case VectorBlock.VectorDataOneofCase.HatchParaAdapt:
+                    DistanceHatches3d(vectorBlock, ignoreZ: true);
+                    break;
+                case VectorBlock.VectorDataOneofCase.Ellipses:                  
+                    throw new NotImplementedException("ToDo");
+                case VectorBlock.VectorDataOneofCase.Arcs:
+                case VectorBlock.VectorDataOneofCase.Arcs3D:
+                    throw new NotImplementedException("ToDo");
+                case VectorBlock.VectorDataOneofCase.PointSequence:
+                case VectorBlock.VectorDataOneofCase.PointSequence3D:
+                case VectorBlock.VectorDataOneofCase.ExposurePause:
+                case VectorBlock.VectorDataOneofCase.None:
+                    // no vector lengths
+                    break;
+                default:
+                    throw new NotImplementedException($"unknown VectorDataCase: {vectorBlock.VectorDataCase}");
+            }
+        }
+
+        private static void DistanceLineSeq2d(VectorBlock vectorBlock)
+        {           
+            var coordsSpan = vectorBlock.RawCoordinates().AsSpan();
+            var vecSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<float, Vector2>(coordsSpan);
+            double scanDistance = 0;
+            Vector2 curVec;
+            for (int i = 1; i < vecSpan.Length; i++)
+            {
+                curVec = vecSpan[i] - vecSpan[i - 1];
+                scanDistance += curVec.Length();
+            }
+            vectorBlock.MetaData.TotalJumpDistanceInMm = 0; // no jumps in a polyline
+            vectorBlock.MetaData.TotalScanDistanceInMm = scanDistance;
+        }
+
+        private static void DistanceLineSeq3d(VectorBlock vectorBlock, bool ignoreZ)
+        {
+            var coordsSpan = vectorBlock.RawCoordinates().AsSpan();
+            var vecSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<float, Vector3>(coordsSpan);
+            double scanDistance = 0;
+            Vector3 curVec;
+            for (int i = 1; i < vecSpan.Length; i++)
+            {
+                curVec = vecSpan[i] - vecSpan[i - 1];
+                if(ignoreZ) curVec.Z = 0;
+                scanDistance += curVec.Length();
+            }
+            vectorBlock.MetaData.TotalJumpDistanceInMm = 0; // no jumps in a polyline
+            vectorBlock.MetaData.TotalScanDistanceInMm = scanDistance;
+        }
+
+        private static void DistanceHatches2d(VectorBlock vectorBlock)
+        {
+            var coordsSpan = vectorBlock.RawCoordinates().AsSpan();
+            var vecSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<float, Vector2>(coordsSpan);
+            double jumpDistance = 0, scanDistance = 0;
+            Vector2 curVec;
+            for (int i = 1; i < vecSpan.Length - 1; i += 2)
+            {
+                curVec = vecSpan[i] - vecSpan[i - 1];
+                scanDistance += curVec.Length();
+                curVec = vecSpan[i + 1] - vecSpan[i];
+                jumpDistance += curVec.Length();
+            }
+            // do last vec without jump
+            curVec = vecSpan[vecSpan.Length - 1] - vecSpan[vecSpan.Length - 2];
+            scanDistance += curVec.Length();
+            vectorBlock.MetaData.TotalJumpDistanceInMm = jumpDistance;
+            vectorBlock.MetaData.TotalScanDistanceInMm = scanDistance;
+        }
+
+        private static void DistanceHatches3d(VectorBlock vectorBlock, bool ignoreZ)
+        {
+            var coordsSpan = vectorBlock.RawCoordinates().AsSpan();
+            var vecSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<float, Vector3>(coordsSpan);
+            double jumpDistance = 0, scanDistance = 0;
+            Vector3 curVec;
+            for (int i = 1; i < vecSpan.Length - 1; i += 2)
+            {
+                curVec = vecSpan[i] - vecSpan[i - 1];
+                if (ignoreZ) curVec.Z = 0;
+                scanDistance += curVec.Length();
+                curVec = vecSpan[i + 1] - vecSpan[i];
+                if (ignoreZ) curVec.Z = 0;
+                jumpDistance += curVec.Length();
+            }
+            // do last vec without jump
+            curVec = vecSpan[vecSpan.Length - 1] - vecSpan[vecSpan.Length - 2];
+            scanDistance += curVec.Length();
+            vectorBlock.MetaData.TotalJumpDistanceInMm = jumpDistance;
+            vectorBlock.MetaData.TotalScanDistanceInMm = scanDistance;
+        }
+
         public static void SetDisplayColor(this VectorBlock.Types.VectorBlockMetaData metaData, Color color)
         {
             metaData.DisplayColor = ColorConversions.ColorToInt(color);

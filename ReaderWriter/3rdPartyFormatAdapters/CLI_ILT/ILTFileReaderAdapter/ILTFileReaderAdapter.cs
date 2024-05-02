@@ -94,7 +94,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
 
         public override CacheState CacheState => _cacheState;
 
-        public override void OpenJob(string filename, IFileReaderWriterProgress progress)
+        public override void OpenJob(string filename, IFileReaderWriterProgress progress = null)
         {
             this.progress = progress;
             this.filename = filename;
@@ -290,7 +290,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
         /// <summary>
         /// Scans the ILT file and converts the structural data to a target
         /// </summary>
-        private void ConvertILTStructure(IFileReaderWriterProgress progress)
+        private void ConvertILTStructure(IFileReaderWriterProgress progress = null)
         {
             // ilt file is handled
             SetJobData(buildJob);
@@ -321,7 +321,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
 
                     if (i % 100 == 0)
                     {
-                        progress.Update(section.ModelsectionName + " layer " + i + @"/" + section.Geometry.Layers.Count,
+                        progress?.Update(section.ModelsectionName + " layer " + i + @"/" + section.Geometry.Layers.Count,
                             (int)((sectionProgress / buildJob.ModelSections.Count) * 100.0
                             + ((i / (double)section.Geometry.Layers.Count) * 100.0 / buildJob.ModelSections.Count)));
                     }
@@ -339,7 +339,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             job.NumWorkPlanes = job.WorkPlanes.Count;
         }
 
-        private void ConvertCLIStructure(IFileReaderWriterProgress progress)
+        private void ConvertCLIStructure(IFileReaderWriterProgress progress = null)
         {
             job.JobMetaData = TranslateMetaData(cliFile);
             job.JobMetaData.JobName = this.jobfilename;
@@ -358,7 +358,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                 newWorkPlane.NumBlocks = workPlane.VectorBlocks.Count;
                 if (i % 100 == 0)
                 {
-                    progress.Update("workPlane " + i + @"/" + cliFile.Geometry.Layers.Count,
+                    progress?.Update("workPlane " + i + @"/" + cliFile.Geometry.Layers.Count,
                         (int)((i / (double)cliFile.Geometry.Layers.Count) * 100.0));
                 }
             }

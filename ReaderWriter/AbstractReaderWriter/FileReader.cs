@@ -73,7 +73,7 @@ namespace OpenVectorFormat.AbstractReaderWriter
         /// </summary>
         /// <param name="filename">name of the file to open</param>
         /// <param name="progress">status update interface to be called</param>
-        public abstract void OpenJob(string filename, IFileReaderWriterProgress progress);
+        public abstract void OpenJob(string filename, IFileReaderWriterProgress progress = null);
 
         /// <summary>
         /// Retrieves the complete job with all workplane data.
