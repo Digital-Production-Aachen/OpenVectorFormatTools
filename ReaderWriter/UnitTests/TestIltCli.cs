@@ -67,14 +67,19 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         [TestMethod]
         public void TestWriteCliFile()
         {
-            string fileName = @"C:\Users\sebas\Downloads\buildJob.ovf";
+            string name = "Cantilever_new";
+            var ovfFile = new FileInfo(@"C:\Users\Domin\Desktop\sink\"+ name + ".ovf");
+            var cliFile = new FileInfo(@"C:\Users\Domin\Desktop\sink\" + name + ".cli");
+
+
             var reader = new OVFFileReader();
             var progress = new FileReaderWriterProgress();
-            reader.OpenJobAsync(fileName, progress).GetAwaiter().GetResult();
+            reader.OpenJobAsync(ovfFile.FullName, progress).GetAwaiter().GetResult();
             var job = reader.CacheJobToMemoryAsync().GetAwaiter().GetResult();
 
             CLIWriterAdapter cliWriter = new CLIWriterAdapter() { units = 1/200f };
-            cliWriter.SimpleJobWriteAsync(job, fileName + ".cli", progress).Wait();
+            cliWriter.SimpleJobWriteAsync(job, cliFile.FullName, progress).Wait();
+            FileReaderWriterFactory.FileConverter.ConvertAsync(ovfFile, cliFile, progress).GetAwaiter().GetResult();
         }
 
         [DynamicData("CliFiles")]

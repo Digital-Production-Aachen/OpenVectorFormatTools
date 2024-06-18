@@ -38,7 +38,7 @@ namespace ILTFileReader.OVFToCLIAdapter
 
         public Span<float> Coordinates => hatchBlock.Hatches.Points.AsSpan();
 
-        public int Id => hatchBlock.MetaData.PartKey;
+        public int Id => hatchBlock.MetaData == null ? 1 : hatchBlock.MetaData.PartKey;
 
         public int N => hatchBlock.Hatches.Points.Count / 2;
     }

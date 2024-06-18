@@ -61,6 +61,7 @@ namespace OpenVectorFormat.FileReaderWriterFactory
             get {
                 List<string> formats = new List<string>();
                 formats.AddRange(OVFReaderWriter.OVFFileWriter.SupportedFileFormats);
+                formats.AddRange(CLIWriterAdapter.SupportedFileFormats);
                 formats.AddRange(ASPFileReaderWriter.ASPFileWriter.SupportedFileFormats);
                 return formats;
             }

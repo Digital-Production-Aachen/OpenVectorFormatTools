@@ -18,9 +18,9 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
         public override FileWriteOperation FileOperationInProgress => _fileOperationInProgress;
 
         private FileWriteOperation _fileOperationInProgress = FileWriteOperation.None;
-        public BinaryWriteStyle HatchesStyle { get; set; } = BinaryWriteStyle.SHORT;
-        public BinaryWriteStyle PolylineStyle { get; set; } = BinaryWriteStyle.LONG;
-        public BinaryWriteStyle LayerStyle { get; set; } = BinaryWriteStyle.LONG;
+        public static BinaryWriteStyle HatchesStyle { get; set; } = BinaryWriteStyle.SHORT; //EOS => Short
+        public static BinaryWriteStyle PolylineStyle { get; set; } = BinaryWriteStyle.LONG;
+        public static BinaryWriteStyle LayerStyle { get; set; } = BinaryWriteStyle.LONG;
 
         public float units { get; set; } = 1;
 

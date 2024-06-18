@@ -73,7 +73,14 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
             if (job.JobMetaData == null) job.JobMetaData = new Job.Types.JobMetaData();
             if (job.JobMetaData.Bounds == null) job.JobMetaData.Bounds = job.Bounds2D();
             var aabb = job.JobMetaData.Bounds;
-            return new Dimension(0, job.WorkPlanes.Last().ZPosInMm, aabb.XMin, aabb.XMax, aabb.YMin, aabb.YMax);
+
+            var zPos = 0.0f;
+            if (job.WorkPlanes.Count > 0)
+            {
+                zPos = job.WorkPlanes.Last().ZPosInMm;
+            }
+
+            return new Dimension(0, zPos, aabb.XMin, aabb.XMax, aabb.YMin, aabb.YMax);
         }
     }
 }

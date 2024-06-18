@@ -38,7 +38,7 @@ namespace ILTFileReader.OVFToCLIAdapter
 
         public Span<float> Coordinates => polyBlock.LineSequence.Points.AsSpan();
 
-        public int Id => polyBlock.MetaData.PartKey;
+        public int Id => polyBlock.MetaData == null ? 1 : polyBlock.MetaData.PartKey;
 
         public int N => polyBlock.LineSequence.Points.Count / 2;
     }

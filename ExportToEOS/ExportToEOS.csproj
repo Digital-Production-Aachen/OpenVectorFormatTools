@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReaderWriter\3rdPartyFormatAdapters\CLI_ILT\ILTFileReaderAdapter\ILTFileReaderAdapter.csproj" />
+    <ProjectReference Include="..\ReaderWriter\FileReaderWriterFactory\FileReaderWriterFactory.csproj" />
+    <ProjectReference Include="..\ReaderWriter\OVFDefinition\OVFDefinition.csproj" />
+    <ProjectReference Include="..\ReaderWriter\OVFReaderWriter\OVFReaderWriter.csproj" />
+  </ItemGroup>
+
+</Project>

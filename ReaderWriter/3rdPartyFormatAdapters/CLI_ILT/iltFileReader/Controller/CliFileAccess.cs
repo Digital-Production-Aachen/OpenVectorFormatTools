@@ -496,7 +496,8 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                         }
                         else
                         {
-                            bW.Write(Convert.ToUInt16((coord / units)));
+                            var value = coord < 0 ? 0 : coord;
+                            bW.Write(Convert.ToUInt16((value / units)));
                         }
                     }
                 }
