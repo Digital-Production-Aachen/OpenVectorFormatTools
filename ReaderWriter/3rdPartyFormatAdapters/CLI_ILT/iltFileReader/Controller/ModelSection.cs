@@ -68,7 +68,8 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                     this.Type = PartArea.s2;
                     break;
                 default:
-                    throw new FormatException("I don't know the Type / PartArea");
+                    this.Type = PartArea.s2;
+                    break;
             }
 
             String vectorClass = Regex.Match(fileName, @"_(..?)_(..+)\.cli$").Groups[2].Value;
@@ -99,7 +100,8 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                     this.SubType = VectorClass.skin;
                     break;
                 default:
-                    throw new FormatException("I don't know the SubType / VectorClass");
+                    this.SubType = VectorClass.vs;
+                    break;
             }
 
         }

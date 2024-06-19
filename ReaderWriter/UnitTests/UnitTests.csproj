@@ -41,6 +41,9 @@
     <None Update="TestFiles\bunny.ovf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="TestFiles\cylinder.ilt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestFiles\Elephant_ASCII.cli">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
