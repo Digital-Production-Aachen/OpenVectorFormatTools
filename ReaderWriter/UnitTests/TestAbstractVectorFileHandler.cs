@@ -158,7 +158,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                     var workPlane = reader.GetWorkPlane(i);
                     Tuple<double, double, double, double, double, double> workPlanePos = new Tuple<double, double, double, double, double, double>(workPlane.XPosInMm, workPlane.XRotInDeg, workPlane.YPosInMm, workPlane.YRotInDeg, workPlane.ZPosInMm, workPlane.ZRotInDeg);
                     Assert.IsFalse(workPlanePositions.TryGetValue(workPlanePos, out long workPlaneNumber),
-                        "coordinates " + workPlanePos.ToString() + "already used by workPlane " + workPlaneNumber + ". " +
+                        "coordinates " + workPlanePos.ToString() + " already used by workPlane " + workPlaneNumber + ". " +
                         "WorkPlanes with same coordinates must be merged");
                     workPlanePositions.Add(workPlanePos, workPlane.WorkPlaneNumber);
                     TestWorkPlane(workPlane);
