@@ -128,7 +128,14 @@ namespace UnitTests
                 var job = jobMerger.CacheJobToMemory();
                 PlausibilityChecker.CheckJob(job, new CheckerConfig()).GetAwaiter().GetResult();
 
-                // check layer heights
+                // check sum of vector blocks
+
+
+                // check sum of parameter sets
+                int numMarkingParams = partSupportReader.JobShell.MarkingParamsMap.Count();
+                numMarkingParams.Should().Be(partSupportReader.JobShell.MarkingParamsMap.Count());
+
+                // check layer heights (TODO: include z-shifted instances)
                 jobMerger.JobShell.NumWorkPlanes.Should().Be(partSupportReader.JobShell.NumWorkPlanes);
 
                 // check bounding boxes

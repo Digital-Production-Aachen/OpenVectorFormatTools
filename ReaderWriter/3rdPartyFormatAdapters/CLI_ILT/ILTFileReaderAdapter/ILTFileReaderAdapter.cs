@@ -47,7 +47,6 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
         private IBuildJob buildJob;
         private ICLIFile cliFile;
         private Dictionary<IModelSection, int> ModelsectionMap;
-        private Dictionary<string, int> ModelsectionIdMap;
         //private Dictionary<VectorBlock, IVectorBlock> vectorBlockDictionary;
         private Job job;
         private int workPlaneNumber = 0;
@@ -101,7 +100,6 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             _fileLoadingFinished = false;
             _cacheState = CacheState.NotCached;
             ModelsectionMap = new Dictionary<IModelSection, int>();
-            ModelsectionIdMap = new Dictionary<string, int>();
             job = new Job();
             OpenFile();
             return;
@@ -295,11 +293,14 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             // ilt file is handled
             SetJobData(buildJob);
             double sectionProgress = 0;
+            int modelSectionID = 0;
             foreach (IModelSection section in buildJob.ModelSections)
             {
                 /*convert Modelsection to Part, ignore every "parts" in a Modelsection, since 
                 they don't provide any information*/
-                TranslateModelsectionToPart(section);
+                var part = TranslateModelsectionToPart(section);
+                section.ID = modelSectionID++;
+                job.PartsMap.Add(section.ID, part);
                 for (int i = 0; i < section.Geometry.Layers.Count; i++)
                 {
                     WorkPlane buildJobWorkPlane = null;
@@ -399,7 +400,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             VectorBlock block = new VectorBlock();
             block.LpbfMetadata = new VectorBlock.Types.LPBFMetadata();
             block.MetaData = new VectorBlock.Types.VectorBlockMetaData();
-            block.MetaData.PartKey = ModelsectionIdMap[modelSection.ModelsectionName];
+            block.MetaData.PartKey = modelSection.ID;
             //this information gets lost
             block.LpbfMetadata.Reexposure = false;
 
@@ -658,7 +659,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             return metaData;
         }
         //Generate Parts from unique ModelSections, no BuildStrategy available
-        private void TranslateModelsectionToPart(IModelSection modelSection)
+        private static Part TranslateModelsectionToPart(IModelSection modelSection)
         {
             if (modelSection.Parts.Count > 1)
             {
@@ -666,18 +667,12 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             }
             Part part = new Part();
             part.Material = new Part.Types.Material();
-            int partId = Int32.Parse(Regex.Match(modelSection.ModelsectionName, @"[0-9]+").Value);
             part.Name = modelSection.ModelsectionName;
             part.GeometryInfo = new Part.Types.GeometryInfo()
             {
                 BuildHeightInMm = modelSection.Geometry.Layers[modelSection.Geometry.Layers.Count - 1].Height
             };
-
-            if (!job.PartsMap.ContainsKey(partId))
-            {
-                job.PartsMap.Add(partId, part);
-                ModelsectionIdMap.Add(modelSection.ModelsectionName, partId);
-            }
+            return part;
         }
 
         private void TranslateCliPart(IPart cliPart)

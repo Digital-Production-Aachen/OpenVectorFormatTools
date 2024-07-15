@@ -62,6 +62,7 @@ namespace OpenVectorFormat.ILTFileReader
         {
             get;
         }
+        int ID { get; set; }
     }//end IModelSection
 
 }//end namespace OpenVectorFormat.ILTFileReader
