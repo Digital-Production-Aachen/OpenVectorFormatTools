@@ -375,6 +375,7 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                     currentLayer = new Layer(height);
                     layers.Add(currentLayer);
                 }
+                // TODO: add POWER, SPEED, FOCUS
             }
             return layers;
         }

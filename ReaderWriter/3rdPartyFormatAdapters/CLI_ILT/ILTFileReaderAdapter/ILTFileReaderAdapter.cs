@@ -303,11 +303,12 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                 job.PartsMap.Add(section.ID, part);
                 for (int i = 0; i < section.Geometry.Layers.Count; i++)
                 {
+                    // find or create a workplane that matches the current layer height
                     WorkPlane buildJobWorkPlane = null;
                     ILayer sectionWorkPlane = section.Geometry.Layers[i];
                     foreach (var workPlane in job.WorkPlanes)
                     {
-                        if (Math.Abs(workPlane.ZPosInMm - sectionWorkPlane.Height) < 0.00001)
+                        if (Math.Abs(workPlane.ZPosInMm - sectionWorkPlane.Height * section.Header.Units) < 0.00001)
                         {
                             buildJobWorkPlane = workPlane;
                             break;
@@ -317,7 +318,6 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                     {
                         buildJobWorkPlane = CreateWorkPlane(sectionWorkPlane, section);
                     }
-
                     AddVectorBlocksToWorkPlane(buildJobWorkPlane, sectionWorkPlane, section);
 
                     if (i % 100 == 0)
@@ -326,7 +326,6 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                             (int)((sectionProgress / buildJob.ModelSections.Count) * 100.0
                             + ((i / (double)section.Geometry.Layers.Count) * 100.0 / buildJob.ModelSections.Count)));
                     }
-
                 }
                 sectionProgress++;
             }

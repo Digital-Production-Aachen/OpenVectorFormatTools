@@ -53,9 +53,9 @@ namespace OpenVectorFormat.ILTFileReader.Controller
         private void ParseFileName()
         {
             string fileName = Path.GetFileName(this.cliFileName);
-            if (MatchMagics(fileName)) { Console.WriteLine("Magics"); return; }
-            if (Match3dXpert(fileName)) { Console.WriteLine("3dXpert"); return; }
-            if (MatchNetfabb(fileName)) { Console.WriteLine("Netfabb"); return; }
+            if (MatchMagics(fileName)) { /*Console.WriteLine("Magics");*/ return; }
+            if (Match3dXpert(fileName)) { /*Console.WriteLine("3dXpert");*/ return; }
+            if (MatchNetfabb(fileName)) { /*Console.WriteLine("Netfabb");*/ return; }
             throw new Exception($"could not match ilt filename: {fileName}");
         }
 

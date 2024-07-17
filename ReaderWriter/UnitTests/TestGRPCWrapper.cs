@@ -78,7 +78,13 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
             string ip = "127.0.0.1";
             uint port = 50051;
-            using GrpcChannel channel = GrpcChannel.ForAddress("http://" + ip + ":" + port.ToString());
+            using GrpcChannel channel = GrpcChannel.ForAddress("http://" + ip + ":" + port.ToString(),
+                new GrpcChannelOptions
+                    {
+                        MaxReceiveMessageSize = null,
+                        MaxSendMessageSize = null,
+                    }
+            );
 
             VectorFileHandler.VectorFileHandlerClient client = new VectorFileHandler.VectorFileHandlerClient(channel);
 
