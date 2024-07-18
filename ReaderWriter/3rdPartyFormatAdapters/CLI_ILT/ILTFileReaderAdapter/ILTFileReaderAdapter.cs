@@ -270,6 +270,12 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             buildJobWorkPlane.NumBlocks += sectionLayer.VectorBlocks.Count;
             foreach (IVectorBlock ILTvBlock in sectionLayer.VectorBlocks)
             {
+                if (ILTvBlock is IParameterChange)
+                {
+                    // TODO: handle parameters here (or not since modelsection should have priority anyway)
+                    continue;
+                }
+
                 var newBlock = TranslateBlockData(ILTvBlock, section);
                 //block might be split into hatches and polylines for fake hatches
                 var newBlocks = ReadCoordinates(ILTvBlock, newBlock, section.Header.Units);
@@ -347,13 +353,42 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             {
                 TranslateCliPart(part);
             }
+
+            MarkingParams currentMarkingParams = new MarkingParams();
+            int currentMarkingParamsKey = 0;
+            Dictionary<MarkingParams, int> cachedParams = new Dictionary<MarkingParams, int>();
             for (int i = 0; i < cliFile.Geometry.Layers.Count; i++)
             {
                 ILayer workPlane = cliFile.Geometry.Layers[i];
                 var newWorkPlane = CreateWorkPlane(workPlane, cliFile);
                 foreach (var block in workPlane.VectorBlocks)
                 {
-                    newWorkPlane.VectorBlocks.Add(TranslateBlockData(block, cliFile));
+                    // TODO: handle parameterset processing here
+                    if (block is IParameterChange paramChange)
+                    {
+                        switch (paramChange.Parameter)
+                        {
+                            case CLILaserParameter.SPEED:
+                                currentMarkingParams.LaserSpeedInMmPerS = (float)paramChange.Value; break;
+                            case CLILaserParameter.POWER:
+                                currentMarkingParams.LaserPowerInW = (float)paramChange.Value; break;
+                            case CLILaserParameter.FOCUS: // is this the correct one?
+                                currentMarkingParams.LaserFocusShiftInMm = (float)paramChange.Value; break;
+                        }
+                        continue;
+                    }
+                    // check if marking params already exists in map, if not, add them
+                    var newVectorBlock = TranslateBlockData(block, cliFile);
+                    if (!cachedParams.TryGetValue(currentMarkingParams, out int key));
+                    else
+                    {
+                        key = currentMarkingParamsKey++;
+                        job.MarkingParamsMap.Add(key, currentMarkingParams);
+                        cachedParams.Add(currentMarkingParams, key);
+                        currentMarkingParams = new MarkingParams(currentMarkingParams);
+                    }
+                    newVectorBlock.MarkingParamsKey = key;
+                    newWorkPlane.VectorBlocks.Add(newVectorBlock);
                 }
                 newWorkPlane.NumBlocks = workPlane.VectorBlocks.Count;
                 if (i % 100 == 0)
@@ -624,7 +659,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
         }
 
         //LaserIndex set to 1, since we only have 1 laser
-        private MarkingParams TranslateBuildParams(IModelSectionParams iltParams)
+        private static MarkingParams TranslateBuildParams(IModelSectionParams iltParams)
         {
             return new MarkingParams
             {
@@ -635,7 +670,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                 PointExposureTimeInUs = (float)iltParams.ExposureTime,
             };
         }
-        private Job.Types.JobMetaData TranslateMetaData(ICLIFile section)
+        private static Job.Types.JobMetaData TranslateMetaData(ICLIFile section)
         {
             Job.Types.JobMetaData metaData = new Job.Types.JobMetaData();
             if (section.Header.Date > 0)

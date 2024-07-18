@@ -32,6 +32,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using ILTFileReader.Model;
 
 namespace OpenVectorFormat.ILTFileReader.Controller
 {
@@ -375,7 +376,18 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                     currentLayer = new Layer(height);
                     layers.Add(currentLayer);
                 }
-                // TODO: add POWER, SPEED, FOCUS
+                if (line.StartsWith(@"$$POWER/"))
+                {
+                    currentLayer.VectorBlocks.Add(new ParameterChange(CLILaserParameter.POWER, double.Parse(line.Substring(8))));
+                }
+                if (line.StartsWith(@"$$SPEED/"))
+                {
+                    currentLayer.VectorBlocks.Add(new ParameterChange(CLILaserParameter.SPEED, double.Parse(line.Substring(8))));
+                }
+                if (line.StartsWith(@"$$FOCUS/"))
+                {
+                    currentLayer.VectorBlocks.Add(new ParameterChange(CLILaserParameter.FOCUS, double.Parse(line.Substring(8))));
+                }
             }
             return layers;
         }

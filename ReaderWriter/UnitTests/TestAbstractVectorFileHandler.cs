@@ -163,7 +163,8 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                         "WorkPlanes with same coordinates must be merged");
                     workPlanePositions.Add(workPlanePos, workPlane.WorkPlaneNumber);
                     
-                    // empty workplanes might be an indicator that data parsing failed.
+                    // Test workplane
+                    // Empty workplanes might be an indicator for failed data parsing.
                     if (workPlane.NumBlocks == 0) numEmptyWorkPlanes++;
                     if (!allowEmptyWorkPlanes) Assert.IsTrue(workPlane.NumBlocks > 0);
                     Assert.IsNotNull(workPlane.VectorBlocks);
