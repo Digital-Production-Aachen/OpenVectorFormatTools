@@ -378,15 +378,15 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                 }
                 if (line.StartsWith(@"$$POWER/"))
                 {
-                    currentLayer.VectorBlocks.Add(new ParameterChange(CLILaserParameter.POWER, double.Parse(line.Substring(8))));
+                    currentLayer.VectorBlocks.Add(new ParameterChange(CLILaserParameter.POWER, float.Parse(line.Substring(8))));
                 }
                 if (line.StartsWith(@"$$SPEED/"))
                 {
-                    currentLayer.VectorBlocks.Add(new ParameterChange(CLILaserParameter.SPEED, double.Parse(line.Substring(8))));
+                    currentLayer.VectorBlocks.Add(new ParameterChange(CLILaserParameter.SPEED, float.Parse(line.Substring(8))));
                 }
                 if (line.StartsWith(@"$$FOCUS/"))
                 {
-                    currentLayer.VectorBlocks.Add(new ParameterChange(CLILaserParameter.FOCUS, double.Parse(line.Substring(8))));
+                    currentLayer.VectorBlocks.Add(new ParameterChange(CLILaserParameter.FOCUS, float.Parse(line.Substring(8))));
                 }
             }
             return layers;
