@@ -38,6 +38,9 @@
     <None Update="TestFiles\ASP_Simple_Test.asp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="TestFiles\Box_support_solid.cli">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestFiles\bunny %28solidsupport%29.ovf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -55,6 +58,9 @@
     </None>
     <None Update="TestFiles\magics_Zylinder_Pyramid_TensileBar_with_supports.ilt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestFiles\marking_params_test.cli">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
     <None Update="TestFiles\netfabb.ilt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

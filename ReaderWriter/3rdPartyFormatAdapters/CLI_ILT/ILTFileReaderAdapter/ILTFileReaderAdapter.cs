@@ -29,6 +29,8 @@ using System.Diagnostics;
 using OpenVectorFormat.ILTFileReader;
 using OpenVectorFormat.Utils;
 using System.IO;
+using Google.Protobuf.Collections;
+using OVFDefinition;
 
 namespace OpenVectorFormat.ILTFileReaderAdapter
 {
@@ -279,6 +281,8 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             SetJobData(buildJob);
             double sectionProgress = 0;
             int modelSectionID = 0;
+            
+            var markingParamsMap = new MapField<int, MarkingParams>();
             foreach (IModelSection section in buildJob.ModelSections)
             {
                 /*convert Modelsection to Part, ignore every "parts" in a Modelsection, since 
@@ -286,14 +290,16 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                 var part = TranslateModelsectionToPart(section);
                 section.ID = modelSectionID++;
                 job.PartsMap.Add(section.ID, part);
+
+                var markingParamsManager = new MarkingParamsManager(TranslateBuildParams(section.Parameters));
                 for (int i = 0; i < section.Geometry.Layers.Count; i++)
                 {
                     // find or create a workplane that matches the current layer height
                     WorkPlane buildJobWorkPlane = null;
-                    ILayer sectionWorkPlane = section.Geometry.Layers[i];
+                    ILayer sectionLayer = section.Geometry.Layers[i];
                     foreach (var workPlane in job.WorkPlanes)
                     {
-                        if (Math.Abs(workPlane.ZPosInMm - sectionWorkPlane.Height * section.Header.Units) < 0.00001)
+                        if (Math.Abs(workPlane.ZPosInMm - sectionLayer.Height * section.Header.Units) < 0.00001)
                         {
                             buildJobWorkPlane = workPlane;
                             break;
@@ -301,10 +307,36 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                     }
                     if (buildJobWorkPlane == null)
                     {
-                        buildJobWorkPlane = CreateWorkPlane(sectionWorkPlane, section);
+                        buildJobWorkPlane = CreateWorkPlane(sectionLayer, section);
                     }
-                    AddVectorBlocksToWorkPlane(buildJobWorkPlane, sectionWorkPlane, section);
 
+                    Debug.Assert(Math.Abs(buildJobWorkPlane.ZPosInMm - sectionLayer.Height * section.Header.Units) < 0.00001);
+                    //buildJobWorkPlane.NumBlocks += sectionLayer.VectorBlocks.Count;
+                    foreach (IVectorBlock ILTvBlock in sectionLayer.VectorBlocks)
+                    {
+                        if (ILTvBlock is IParameterChange parameterChange)
+                        {
+                            markingParamsManager.Update(parameterChange);
+                            continue;
+                        }
+
+                        var newBlock = TranslateBlockData(ILTvBlock, section);
+                        buildJobWorkPlane.NumBlocks++;
+                        newBlock.MarkingParamsKey = markingParamsManager.GetKey();
+                        //block might be split into hatches and polylines for fake hatches
+                        var newBlocks = ReadCoordinates(ILTvBlock, newBlock, section.Header.Units);
+
+                        vectorDataLoaded = true;
+                        job.PartsMap.TryGetValue(newBlock.MetaData.PartKey, out Part part2);
+                        Debug.Assert(part2 != null);
+                        if (part2.GeometryInfo.BuildHeightInMm < buildJobWorkPlane.ZPosInMm)
+                        {
+                            part2.GeometryInfo.BuildHeightInMm = buildJobWorkPlane.ZPosInMm;
+                        }
+                        buildJobWorkPlane.VectorBlocks.Add(newBlocks);
+                    }
+
+                    // update progress
                     if (i % 100 == 0)
                     {
                         progress?.Update(section.ModelsectionName + " layer " + i + @"/" + section.Geometry.Layers.Count,
@@ -312,6 +344,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                             + ((i / (double)section.Geometry.Layers.Count) * 100.0 / buildJob.ModelSections.Count)));
                     }
                 }
+                markingParamsMap.MergeFromWithRemap(markingParamsManager.MarkingParamsMap, out _);
                 sectionProgress++;
             }
 
@@ -324,32 +357,6 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             job.NumWorkPlanes = job.WorkPlanes.Count;
         }
 
-        private void AddVectorBlocksToWorkPlane(WorkPlane buildJobWorkPlane, ILayer sectionLayer, IModelSection section)
-        {
-            Debug.Assert(Math.Abs(buildJobWorkPlane.ZPosInMm - sectionLayer.Height * section.Header.Units) < 0.00001);//check if same heigth
-            buildJobWorkPlane.NumBlocks += sectionLayer.VectorBlocks.Count;
-            foreach (IVectorBlock ILTvBlock in sectionLayer.VectorBlocks)
-            {
-                if (ILTvBlock is IParameterChange)
-                {
-                    // TODO: handle parameters here (or not since modelsection params should have priority anyway?)
-                    continue;
-                }
-
-                var newBlock = TranslateBlockData(ILTvBlock, section);
-                //block might be split into hatches and polylines for fake hatches
-                var newBlocks = ReadCoordinates(ILTvBlock, newBlock, section.Header.Units);
-
-                vectorDataLoaded = true;
-                job.PartsMap.TryGetValue(newBlock.MetaData.PartKey, out Part part);
-                Debug.Assert(part != null);
-                if (part.GeometryInfo.BuildHeightInMm < buildJobWorkPlane.ZPosInMm)
-                {
-                    part.GeometryInfo.BuildHeightInMm = buildJobWorkPlane.ZPosInMm;
-                }
-                buildJobWorkPlane.VectorBlocks.Add(newBlocks);
-            }
-        }
 
         private void ConvertCLIStructure(IFileReaderWriterProgress progress = null)
         {
@@ -360,50 +367,76 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                 job.PartsMap.Add(part.id, TranslateCliPart(part));
             }
 
-            MarkingParams currentMarkingParams = new MarkingParams();
-            int currentMarkingParamsKey = 0;
-            Dictionary<MarkingParams, int> cachedParams = new Dictionary<MarkingParams, int>();
+            var markingParamsManager = new MarkingParamsManager();
             for (int i = 0; i < cliFile.Geometry.Layers.Count; i++)
             {
                 ILayer workPlane = cliFile.Geometry.Layers[i];
                 var newWorkPlane = CreateWorkPlane(workPlane, cliFile);
                 foreach (var block in workPlane.VectorBlocks)
                 {
-                    // translate parameter change commands into ovf marking params
-                    if (block is IParameterChange paramChange)
-                    {
-                        switch (paramChange.Parameter)
-                        {
-                            case CLILaserParameter.SPEED:
-                                currentMarkingParams.LaserSpeedInMmPerS = paramChange.Value; break;
-                            case CLILaserParameter.POWER:
-                                currentMarkingParams.LaserPowerInW = paramChange.Value; break;
-                            case CLILaserParameter.FOCUS: // is this the correct one?
-                                currentMarkingParams.LaserFocusShiftInMm = paramChange.Value; break;
-                        }
-                        continue;
-                    }
-                    // check if marking params already exists in map, if not, add them
-                    var newVectorBlock = TranslateBlockData(block, cliFile);
-                    if (!cachedParams.TryGetValue(currentMarkingParams, out int key));
+                    if (block is IParameterChange paramChange) markingParamsManager.Update(paramChange);
                     else
                     {
-                        key = currentMarkingParamsKey++;
-                        job.MarkingParamsMap.Add(key, currentMarkingParams);
-                        cachedParams.Add(currentMarkingParams, key);
-                        currentMarkingParams = new MarkingParams(currentMarkingParams);
+                        var newVectorBlock = TranslateBlockData(block, cliFile);
+                        newVectorBlock.MarkingParamsKey = markingParamsManager.GetKey();
+                        newWorkPlane.VectorBlocks.Add(newVectorBlock);
+                        newWorkPlane.NumBlocks++;
                     }
-                    newVectorBlock.MarkingParamsKey = key;
-                    newWorkPlane.VectorBlocks.Add(newVectorBlock);
                 }
-                newWorkPlane.NumBlocks = workPlane.VectorBlocks.Count;
+                //newWorkPlane.NumBlocks = workPlane.VectorBlocks.Count;
                 if (i % 100 == 0)
                 {
                     progress?.Update("workPlane " + i + @"/" + cliFile.Geometry.Layers.Count,
                         (int)((i / (double)cliFile.Geometry.Layers.Count) * 100.0));
                 }
             }
+            job.MarkingParamsMap.MergeFromWithRemap(markingParamsManager.MarkingParamsMap, out _);
             job.NumWorkPlanes = job.WorkPlanes.Count;
+        }
+
+        private class MarkingParamsManager
+        {
+            public MapField<int, MarkingParams> MarkingParamsMap { get; }
+            private readonly Dictionary<MarkingParams, int> cachedParams = new Dictionary<MarkingParams, int>();
+            private MarkingParams currentMP = new MarkingParams();
+            private int nextMPKey = 0;
+
+            /// <summary>
+            /// Accumulate sequential parameter change commands into ovf marking param sets.
+            /// Each parameter set is assigned a unique key and added to the marking params map.
+            /// </summary>
+            /// <param name="markingParamsMap"></param>
+            public MarkingParamsManager(MarkingParams initialMarkingParams = null)
+            {
+                MarkingParamsMap = new MapField<int, MarkingParams>();
+                if (initialMarkingParams != null) currentMP = new MarkingParams(initialMarkingParams);
+            }
+
+            public void Update(IParameterChange paramChange)
+            {
+                switch (paramChange.Parameter)
+                {
+                    case CLILaserParameter.SPEED:
+                        currentMP.LaserSpeedInMmPerS = paramChange.Value; break;
+                    case CLILaserParameter.POWER:
+                        currentMP.LaserPowerInW = paramChange.Value; break;
+                    case CLILaserParameter.FOCUS: // is this the correct one?
+                        currentMP.LaserFocusShiftInMm = paramChange.Value; break;
+                }
+            }
+
+            public int GetKey()
+            {
+                if (!cachedParams.TryGetValue(currentMP, out int key));
+                else
+                {
+                    key = nextMPKey++;
+                    MarkingParamsMap.Add(key, currentMP);
+                    cachedParams.Add(currentMP, key);
+                    currentMP = new MarkingParams(currentMP);
+                }
+                return key;
+            }
         }
 
         /// <summary>
@@ -445,7 +478,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             block.LpbfMetadata.Reexposure = false;
 
             //SetJobData has to be called before using this
-            block.MarkingParamsKey = ModelsectionMap[modelSection];
+            //block.MarkingParamsKey = ModelsectionMap[modelSection];
             Debug.Assert(job.MarkingParamsMap.ContainsKey(block.MarkingParamsKey));
             /* vs=Volumen Schraffur, vk=Volumen Kontur, u steht fuer unten-> down,
              us=Downskin Schraffur, uk=Downskin Kontur, kv=Kontur Versatz, sx = single vector, support */

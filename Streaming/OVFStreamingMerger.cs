@@ -30,6 +30,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using OVFDefinition;
 
 namespace OpenVectorFormat.Streaming
 {
@@ -83,6 +84,11 @@ namespace OpenVectorFormat.Streaming
                 mergedJobShell.PartsMap.Add(part.Key + maxPartKey, instancePart);
             }
 
+            mergedJobShell.MarkingParamsMap.MergeFromWithRemap(
+                fileReaderToMerge.fr.JobShell.MarkingParamsMap, out var keyMapping);
+            fileReaderToMerge.paramKeyMapping = keyMapping;
+
+            /*
             foreach (var parameter in fileReaderToMerge.fr.JobShell.MarkingParamsMap)
             {
                 bool found = false;
@@ -101,7 +107,7 @@ namespace OpenVectorFormat.Streaming
                     fileReaderToMerge.paramKeyMapping.Add(parameter.Key, maxParamsKey);
                     mergedJobShell.MarkingParamsMap.Add(maxParamsKey, parameter.Value);
                 }
-            }
+            }*/
         }
 
         protected override void PostProcessVectorBlock(VectorBlock vectorBlock)

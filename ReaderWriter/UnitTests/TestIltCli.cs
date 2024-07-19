@@ -139,6 +139,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 ILayer layer = cliFile.Geometry.Layers[i];
                 foreach (IVectorBlock vBlock in layer.VectorBlocks)
                 {
+                    if (vBlock is IParameterChange) continue;
                     //check if Vectorblocks are not empty
                     Assert.AreNotEqual(0, vBlock.Coordinates.Length);
                     //Test if start and end coordinates match

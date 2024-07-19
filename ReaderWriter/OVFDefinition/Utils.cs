@@ -22,9 +22,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
-﻿using System;
+using Google.Protobuf.Collections;
+using OpenVectorFormat;
+using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 
 namespace OVFDefinition
 {
@@ -33,6 +35,31 @@ namespace OVFDefinition
         public static bool ApproxEquals(float value1, float value2, float tolerance = 1e-6f)
         {
             return Math.Abs(value1 - value2) <= tolerance;
+        }
+
+        public static void MergeFromWithRemap(this MapField<int, MarkingParams> map, MapField<int, MarkingParams> other, out Dictionary<int, int> keyMapping)
+        {
+            keyMapping = new Dictionary<int, int>();
+            int maxParamsKey = map.Any() ? map.Keys.Max() + 1 : 0;
+            foreach (var parameterToInsert in other)
+            {
+                bool found = false;
+                foreach (var mergedShellParam in map)
+                {
+                    if (mergedShellParam.Value.Equals(parameterToInsert.Value))
+                    {
+                        found = true;
+                        keyMapping.Add(parameterToInsert.Key, mergedShellParam.Key);
+                        break;
+                    }
+                }
+                if (!found)
+                {
+                    maxParamsKey++;
+                    keyMapping.Add(parameterToInsert.Key, maxParamsKey);
+                    map.Add(maxParamsKey, parameterToInsert.Value);
+                }
+            }
         }
     }
 }
