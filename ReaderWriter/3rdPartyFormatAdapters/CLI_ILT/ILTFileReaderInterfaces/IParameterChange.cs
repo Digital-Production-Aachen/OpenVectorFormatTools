@@ -22,7 +22,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
-﻿using System;
+using ILTFileReaderInterfaces;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -32,7 +33,7 @@ namespace OpenVectorFormat.ILTFileReader
 
     public enum CLILaserParameter { POWER, SPEED, FOCUS }
 
-    public interface IParameterChange : IVectorBlock
+    public interface IParameterChange : ILayerCommand
     {
         CLILaserParameter Parameter { get; }
         float Value { get; }

@@ -34,11 +34,12 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using ILTFileReaderInterfaces;
 
 
 
 namespace OpenVectorFormat.ILTFileReader {
-	public interface IVectorBlock  {
+	public interface IVectorBlock : ILayerCommand  {
         /// <summary>
         /// Raw coordiantes of points.
         /// </summary>

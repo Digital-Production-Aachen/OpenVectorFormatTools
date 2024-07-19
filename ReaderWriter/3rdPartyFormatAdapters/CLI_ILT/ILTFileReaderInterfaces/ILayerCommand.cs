@@ -22,34 +22,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
-﻿using OpenVectorFormat.ILTFileReader;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ILTFileReader.Model
+namespace ILTFileReaderInterfaces
 {
-    class ParameterChange : IParameterChange
+    public interface ILayerCommand
     {
-        private readonly CLILaserParameter parameter;
-        private readonly float value;
-
-        public ParameterChange(CLILaserParameter parameter, float value)
-        {
-            this.parameter = parameter;
-            this.value = value;
-        }
-
-        public CLILaserParameter Parameter => parameter;
-
-        public float Value => value;
-
-        /*
-        public float[] Coordinates => throw new NotSupportedException();
-
-        public int Id => throw new NotSupportedException();
-
-        public int N => throw new NotSupportedException();
-        */
     }
 }

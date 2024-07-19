@@ -22,9 +22,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
-﻿using OpenVectorFormat.ILTFileReader;
+using ILTFileReaderInterfaces;
+using OpenVectorFormat.ILTFileReader;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace OpenVectorFormat.ILTFileReader.Model
@@ -37,13 +39,13 @@ namespace OpenVectorFormat.ILTFileReader.Model
             OffsetInFile = offsetInFile;
             Height = height;
             this.isLong = isLong;
-            this.VectorBlocks = new List<IVectorBlock>();
+            this.LayerCommands = new List<ILayerCommand>();
         }
 
         public Layer(float height)
         {
             Height = height;
-            this.VectorBlocks = new List<IVectorBlock>();
+            this.LayerCommands = new List<ILayerCommand>();
         }
 
         public long OffsetInFile
@@ -58,12 +60,18 @@ namespace OpenVectorFormat.ILTFileReader.Model
             set;
         }
 
-        public IList<ILTFileReader.IVectorBlock> VectorBlocks
+        public IList<ILayerCommand> LayerCommands
         {
             get;
             set;
         }
 
+        public IList<ILTFileReader.IVectorBlock> VectorBlocks
+        {
+            get => LayerCommands.Where(x => x is IVectorBlock).Cast<IVectorBlock>().ToList();
+        }
+
         public bool IsLong => isLong;
+
     }
 }

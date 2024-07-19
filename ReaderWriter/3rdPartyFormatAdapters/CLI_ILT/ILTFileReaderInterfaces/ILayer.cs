@@ -38,6 +38,7 @@ using System.IO;
 
 
 using OpenVectorFormat.ILTFileReader;
+using ILTFileReaderInterfaces;
 namespace OpenVectorFormat.ILTFileReader
 {
     /// <summary>
@@ -46,13 +47,11 @@ namespace OpenVectorFormat.ILTFileReader
     /// </summary>
 	public interface ILayer  {
 
-		float Height{
-			get;
-		}
+		float Height { get; }
 
-		IList<IVectorBlock> VectorBlocks{
-			get;
-		}
+		IList<ILayerCommand> LayerCommands { get; }
+
+		IList<IVectorBlock> VectorBlocks { get; }
 	}//end ILayer
 
 }//end namespace OpenVectorFormat.ILTFileReader
