@@ -311,29 +311,29 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                     }
 
                     Debug.Assert(Math.Abs(buildJobWorkPlane.ZPosInMm - sectionLayer.Height * section.Header.Units) < 0.00001);
-                    //buildJobWorkPlane.NumBlocks += sectionLayer.VectorBlocks.Count;
-                    foreach (IVectorBlock ILTvBlock in sectionLayer.VectorBlocks)
+                    buildJobWorkPlane.NumBlocks += sectionLayer.VectorBlocks.Count;
+                    foreach (ILayerCommand layerCommand in sectionLayer.LayerCommands)
                     {
-                        if (ILTvBlock is IParameterChange parameterChange)
+                        if (layerCommand is IParameterChange parameterChange)
                         {
                             markingParamsManager.Update(parameterChange);
-                            continue;
                         }
-
-                        var newBlock = TranslateBlockData(ILTvBlock, section);
-                        buildJobWorkPlane.NumBlocks++;
-                        newBlock.MarkingParamsKey = markingParamsManager.GetKey();
-                        //block might be split into hatches and polylines for fake hatches
-                        var newBlocks = ReadCoordinates(ILTvBlock, newBlock, section.Header.Units);
-
-                        vectorDataLoaded = true;
-                        job.PartsMap.TryGetValue(newBlock.MetaData.PartKey, out Part part2);
-                        Debug.Assert(part2 != null);
-                        if (part2.GeometryInfo.BuildHeightInMm < buildJobWorkPlane.ZPosInMm)
+                        else if (layerCommand is IVectorBlock vectorBlock)
                         {
-                            part2.GeometryInfo.BuildHeightInMm = buildJobWorkPlane.ZPosInMm;
+                            var newBlock = TranslateBlockData(vectorBlock, section);
+                            newBlock.MarkingParamsKey = markingParamsManager.GetKeyForCurrentParams();
+                            //block might be split into hatches and polylines for fake hatches
+                            var newBlocks = ReadCoordinates(vectorBlock, newBlock, section.Header.Units);
+
+                            vectorDataLoaded = true;
+                            job.PartsMap.TryGetValue(newBlock.MetaData.PartKey, out Part part2);
+                            Debug.Assert(part2 != null);
+                            if (part2.GeometryInfo.BuildHeightInMm < buildJobWorkPlane.ZPosInMm)
+                            {
+                                part2.GeometryInfo.BuildHeightInMm = buildJobWorkPlane.ZPosInMm;
+                            }
+                            buildJobWorkPlane.VectorBlocks.Add(newBlocks);
                         }
-                        buildJobWorkPlane.VectorBlocks.Add(newBlocks);
                     }
 
                     // update progress
@@ -372,18 +372,17 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             {
                 ILayer workPlane = cliFile.Geometry.Layers[i];
                 var newWorkPlane = CreateWorkPlane(workPlane, cliFile);
-                foreach (var block in workPlane.VectorBlocks)
+                foreach (var command in workPlane.LayerCommands)
                 {
-                    if (block is IParameterChange paramChange) markingParamsManager.Update(paramChange);
-                    else
+                    if (command is IParameterChange paramChange) markingParamsManager.Update(paramChange);
+                    else if (command is IVectorBlock block)
                     {
                         var newVectorBlock = TranslateBlockData(block, cliFile);
-                        newVectorBlock.MarkingParamsKey = markingParamsManager.GetKey();
+                        newVectorBlock.MarkingParamsKey = markingParamsManager.GetKeyForCurrentParams();
                         newWorkPlane.VectorBlocks.Add(newVectorBlock);
-                        newWorkPlane.NumBlocks++;
                     }
                 }
-                //newWorkPlane.NumBlocks = workPlane.VectorBlocks.Count;
+                newWorkPlane.NumBlocks = workPlane.VectorBlocks.Count;
                 if (i % 100 == 0)
                 {
                     progress?.Update("workPlane " + i + @"/" + cliFile.Geometry.Layers.Count,
@@ -402,7 +401,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             private int nextMPKey = 0;
 
             /// <summary>
-            /// Accumulate sequential parameter change commands into ovf marking param sets.
+            /// Accumulate sequential parameter change commands into ovf MarkingParameters.
             /// Each parameter set is assigned a unique key and added to the marking params map.
             /// </summary>
             /// <param name="markingParamsMap"></param>
@@ -425,7 +424,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                 }
             }
 
-            public int GetKey()
+            public int GetKeyForCurrentParams()
             {
                 if (!cachedParams.TryGetValue(currentMP, out int key));
                 else

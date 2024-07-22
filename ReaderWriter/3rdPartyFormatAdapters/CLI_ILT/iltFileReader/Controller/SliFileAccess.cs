@@ -105,7 +105,7 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                 {
                     int id = this.bR.ReadInt32();//readHelper.readInt(this, ref index); //identifier to allow more than one model information in one file. id refers to the parameter id of command $$LABEL (HEADER-section). 
                     int n = this.bR.ReadInt32();//readHelper.readInt(this, ref index); //number of points 
-                    layers[layers.Count - 1].LayerCommands.Add(new Hatches(this.bR.BaseStream.Position, id, n, true, this.bR)); //using the last layer in the list, since the format gives: Layer, it's Vectors, next Layer
+                    layers[layers.Count - 1].AddLayerCommand(new Hatches(this.bR.BaseStream.Position, id, n, true, this.bR)); //using the last layer in the list, since the format gives: Layer, it's Vectors, next Layer
                     this.bR.BaseStream.Seek(this.bR.BaseStream.Position + n * 4 * 4, SeekOrigin.Begin);
                     //index += n * 4 * 4;
                 } // Liste mit Exceptions
@@ -131,7 +131,7 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                     ushort dir = this.bR.ReadUInt16();// readHelper.readUint16(this, ref index);
                     ushort n = this.bR.ReadUInt16(); //readHelper.readUint16(this, ref index); //number of points 
 
-                    layers[layers.Count - 1].LayerCommands.Add(new Polyline(this.bR.BaseStream.Position, id, (Direction)dir, n, false, this.bR)); //using the last layer in the list, since the format gives: Layer, it's Vectors, next Layer
+                    layers[layers.Count - 1].AddLayerCommand(new Polyline(this.bR.BaseStream.Position, id, (Direction)dir, n, false, this.bR)); //using the last layer in the list, since the format gives: Layer, it's Vectors, next Layer
                     this.bR.BaseStream.Seek(this.bR.BaseStream.Position + n * 2 * 2, SeekOrigin.Begin);
                     //index += n * 2 * 2;
                     //For all non Layer Commands there is the second parameter, giving the number of VectorBlocks following
@@ -147,7 +147,7 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                      */
                     int dir = this.bR.ReadInt32();//readHelper.readInt(this, ref index);
                     int n = this.bR.ReadInt32(); //readHelper.readInt(this, ref index); //number of points 
-                    layers[layers.Count - 1].LayerCommands.Add(new Polyline(this.bR.BaseStream.Position, id, (Direction)dir, n, true, this.bR)); //using the last layer in the list, since the format gives: Layer, it's Vectors, next Layer
+                    layers[layers.Count - 1].AddLayerCommand(new Polyline(this.bR.BaseStream.Position, id, (Direction)dir, n, true, this.bR)); //using the last layer in the list, since the format gives: Layer, it's Vectors, next Layer
                     this.bR.BaseStream.Seek(this.bR.BaseStream.Position + n * 2 * 4, SeekOrigin.Begin);
                     //index += n * 2 * 4; //for each vector value jump four bytes ahead
                     //For all non Layer Commands there is the second parameter, giving the number of VectorBlocks following
@@ -157,7 +157,7 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                 {
                     ushort id = this.bR.ReadUInt16();//readHelper.readUint16(this, ref index); //identifier to allow more than one model information in one file. id refers to the parameter id of command $$LABEL (HEADER-section). 
                     ushort n = this.bR.ReadUInt16();//readHelper.readUint16(this, ref index); //number of points 
-                    layers[layers.Count - 1].LayerCommands.Add(new Hatches(this.bR.BaseStream.Position, id, n, false, this.bR)); //using the last layer in the list, since the format gives: Layer, it's Vectors, next Layer
+                    layers[layers.Count - 1].AddLayerCommand(new Hatches(this.bR.BaseStream.Position, id, n, false, this.bR)); //using the last layer in the list, since the format gives: Layer, it's Vectors, next Layer
 
                     this.bR.BaseStream.Seek(this.bR.BaseStream.Position + n * 4 * 2, SeekOrigin.Begin);
                     //index += n * 4 * 2;

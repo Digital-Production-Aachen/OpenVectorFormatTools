@@ -30,13 +30,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //  Original author: Dirks
 ///////////////////////////////////////////////////////////
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.IO;
-using ILTFileReaderInterfaces;
-
-
 
 namespace OpenVectorFormat.ILTFileReader {
 	public interface IVectorBlock : ILayerCommand  {

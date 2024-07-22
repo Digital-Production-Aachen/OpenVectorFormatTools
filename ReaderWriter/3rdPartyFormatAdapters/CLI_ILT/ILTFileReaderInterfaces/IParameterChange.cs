@@ -22,11 +22,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
-using ILTFileReaderInterfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 
 namespace OpenVectorFormat.ILTFileReader
 {
