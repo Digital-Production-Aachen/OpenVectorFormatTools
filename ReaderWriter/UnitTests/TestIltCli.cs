@@ -32,6 +32,7 @@ using System.Collections.Generic;
 using OpenVectorFormat.ILTFileReader.Controller;
 using OpenVectorFormat.ILTFileReader;
 using OpenVectorFormat.Plausibility;
+using FluentAssertions;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
@@ -69,6 +70,34 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             converter.FallbackSupportContouringParams = new MarkingParams() { LaserSpeedInMmPerS = 600, LaserPowerInW = 250 };
             converter.FallbackSupportHatchingParams = new MarkingParams() { LaserSpeedInMmPerS = 1500, LaserPowerInW = 400 };
             return converter;
+        }
+
+        [DataTestMethod]
+        [DataRow("test_marking_params_ascii.cli", 3)]
+        //[DataRow("test_marking_params_bin.cli", 3)]
+        public void TestCLIMarkingParams(string fileName, int expectedMarkingParams)
+        {
+            string filePath = Path.Combine(dir.FullName, "marking_params", fileName);
+            using var reader = FileReaderWriterFactory.FileReaderFactory.CreateNewReader(".cli");
+            reader.OpenJob(filePath);
+            var job = reader.CacheJobToMemory();
+
+            CheckerConfig config = new CheckerConfig
+            {
+                CheckLineSequencesClosed = CheckAction.DONTCHECK,
+                CheckMarkingParamsKeys = CheckAction.CHECKERROR,
+                CheckPartKeys = CheckAction.CHECKERROR,
+                CheckPatchKeys = CheckAction.DONTCHECK,
+                CheckVectorBlocksNonEmpty = CheckAction.CHECKERROR,
+                CheckWorkPlanesNonEmpty = CheckAction.DONTCHECK,
+                ErrorHandling = ErrorHandlingMode.THROWEXCEPTION
+            };
+
+            CheckerResult checkResult = PlausibilityChecker.CheckJob(job, config).GetAwaiter().GetResult();
+            Assert.AreEqual(OverallResult.ALLSUCCEDED, checkResult.Result);
+            Assert.AreEqual(0, checkResult.Errors.Count);
+            Assert.AreEqual(0, checkResult.Warnings.Count);
+            job.MarkingParamsMap.Count.Should().Be(expectedMarkingParams);
         }
 
         [DynamicData("CliFiles")]
@@ -139,7 +168,6 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 ILayer layer = cliFile.Geometry.Layers[i];
                 foreach (IVectorBlock vBlock in layer.VectorBlocks)
                 {
-                    if (vBlock is IParameterChange) continue;
                     //check if Vectorblocks are not empty
                     Assert.AreNotEqual(0, vBlock.Coordinates.Length);
                     //Test if start and end coordinates match
@@ -153,6 +181,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 }
             }
         }
+
         public static List<object[]> IltFiles
         {
             get

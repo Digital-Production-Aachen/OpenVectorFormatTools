@@ -321,7 +321,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                         else if (layerCommand is IVectorBlock vectorBlock)
                         {
                             var newBlock = TranslateBlockData(vectorBlock, section);
-                            newBlock.MarkingParamsKey = markingParamsManager.GetKeyForCurrentParams();
+                            newBlock.MarkingParamsKey = markingParamsManager.InsertCurrentParams();
                             //block might be split into hatches and polylines for fake hatches
                             var newBlocks = ReadCoordinates(vectorBlock, newBlock, section.Header.Units);
 
@@ -344,7 +344,15 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                             + ((i / (double)section.Geometry.Layers.Count) * 100.0 / buildJob.ModelSections.Count)));
                     }
                 }
-                markingParamsMap.MergeFromWithRemap(markingParamsManager.MarkingParamsMap, out _);
+                markingParamsMap.MergeFromWithRemap(markingParamsManager.MarkingParamsMap, out var keyMapping);
+                // update all vector block marking param keys after merge
+                foreach (var workPlane in job.WorkPlanes)
+                {
+                    foreach (var vectorBlock in workPlane.VectorBlocks)
+                    {
+                        vectorBlock.MarkingParamsKey = keyMapping[vectorBlock.MarkingParamsKey];
+                    }
+                }
                 sectionProgress++;
             }
 
@@ -356,7 +364,6 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             }
             job.NumWorkPlanes = job.WorkPlanes.Count;
         }
-
 
         private void ConvertCLIStructure(IFileReaderWriterProgress progress = null)
         {
@@ -378,7 +385,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                     else if (command is IVectorBlock block)
                     {
                         var newVectorBlock = TranslateBlockData(block, cliFile);
-                        newVectorBlock.MarkingParamsKey = markingParamsManager.GetKeyForCurrentParams();
+                        newVectorBlock.MarkingParamsKey = markingParamsManager.InsertCurrentParams();
                         newWorkPlane.VectorBlocks.Add(newVectorBlock);
                     }
                 }
@@ -389,7 +396,8 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                         (int)((i / (double)cliFile.Geometry.Layers.Count) * 100.0));
                 }
             }
-            job.MarkingParamsMap.MergeFromWithRemap(markingParamsManager.MarkingParamsMap, out _);
+            foreach (int key in markingParamsManager.MarkingParamsMap.Keys)
+                job.MarkingParamsMap[key] = markingParamsManager.MarkingParamsMap[key];
             job.NumWorkPlanes = job.WorkPlanes.Count;
         }
 
@@ -397,7 +405,9 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
         {
             public MapField<int, MarkingParams> MarkingParamsMap { get; }
             private readonly Dictionary<MarkingParams, int> cachedParams = new Dictionary<MarkingParams, int>();
-            private MarkingParams currentMP = new MarkingParams();
+            
+            private MarkingParams currentMP = null;
+            private bool currentMPlocked = false;
             private int nextMPKey = 0;
 
             /// <summary>
@@ -409,30 +419,32 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             {
                 MarkingParamsMap = new MapField<int, MarkingParams>();
                 if (initialMarkingParams != null) currentMP = new MarkingParams(initialMarkingParams);
+                else currentMP = new MarkingParams();
             }
 
             public void Update(IParameterChange paramChange)
             {
+                if (currentMPlocked) { currentMP = new MarkingParams(currentMP); currentMPlocked = false; }
                 switch (paramChange.Parameter)
                 {
                     case CLILaserParameter.SPEED:
                         currentMP.LaserSpeedInMmPerS = paramChange.Value; break;
                     case CLILaserParameter.POWER:
                         currentMP.LaserPowerInW = paramChange.Value; break;
-                    case CLILaserParameter.FOCUS: // is this the correct one?
+                    case CLILaserParameter.FOCUS:
                         currentMP.LaserFocusShiftInMm = paramChange.Value; break;
                 }
             }
 
-            public int GetKeyForCurrentParams()
+            public int InsertCurrentParams()
             {
-                if (!cachedParams.TryGetValue(currentMP, out int key));
+                if (cachedParams.TryGetValue(currentMP, out int key));
                 else
                 {
                     key = nextMPKey++;
                     MarkingParamsMap.Add(key, currentMP);
                     cachedParams.Add(currentMP, key);
-                    currentMP = new MarkingParams(currentMP);
+                    currentMPlocked = true;
                 }
                 return key;
             }

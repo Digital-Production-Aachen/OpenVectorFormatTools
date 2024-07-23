@@ -59,8 +59,14 @@
     <None Update="TestFiles\magics_Zylinder_Pyramid_TensileBar_with_supports.ilt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="TestFiles\marking_params_test.cli">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    <None Update="TestFiles\marking_params\test_marking_params_ascii.cli">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestFiles\marking_params\test_marking_params_bin.cli">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestFiles\test_marking_params_ascii.cli">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="TestFiles\netfabb.ilt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
