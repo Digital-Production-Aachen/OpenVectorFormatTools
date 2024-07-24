@@ -292,6 +292,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                 job.PartsMap.Add(section.ID, part);
 
                 var markingParamsManager = new MarkingParamsManager(TranslateBuildParams(section.Parameters));
+                var addedVectorBlocks = new List<VectorBlock>();
                 for (int i = 0; i < section.Geometry.Layers.Count; i++)
                 {
                     // find or create a workplane that matches the current layer height
@@ -332,7 +333,8 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                             {
                                 part2.GeometryInfo.BuildHeightInMm = buildJobWorkPlane.ZPosInMm;
                             }
-                            buildJobWorkPlane.VectorBlocks.Add(newBlocks);
+                            buildJobWorkPlane.VectorBlocks.AddRange(newBlocks);
+                            addedVectorBlocks.AddRange(newBlocks);
                         }
                     }
 
@@ -345,14 +347,8 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                     }
                 }
                 markingParamsMap.MergeFromWithRemap(markingParamsManager.MarkingParamsMap, out var keyMapping);
-                // update all vector block marking param keys after merge
-                foreach (var workPlane in job.WorkPlanes)
-                {
-                    foreach (var vectorBlock in workPlane.VectorBlocks)
-                    {
-                        vectorBlock.MarkingParamsKey = keyMapping[vectorBlock.MarkingParamsKey];
-                    }
-                }
+                foreach (var vectorBlock in addedVectorBlocks) // update all vector block marking param keys after merge
+                    vectorBlock.MarkingParamsKey = keyMapping[vectorBlock.MarkingParamsKey];
                 sectionProgress++;
             }
 
