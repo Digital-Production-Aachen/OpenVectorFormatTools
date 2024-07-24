@@ -44,12 +44,12 @@ namespace OVFDefinition
             foreach (var parameterToInsert in other)
             {
                 bool found = false;
-                foreach (var mergedShellParam in map)
+                foreach (var existingParameter in map)
                 {
-                    if (mergedShellParam.Value.Equals(parameterToInsert.Value))
+                    if (existingParameter.Value.Equals(parameterToInsert.Value))
                     {
                         found = true;
-                        keyMapping.Add(parameterToInsert.Key, mergedShellParam.Key);
+                        keyMapping.Add(parameterToInsert.Key, existingParameter.Key);
                         break;
                     }
                 }

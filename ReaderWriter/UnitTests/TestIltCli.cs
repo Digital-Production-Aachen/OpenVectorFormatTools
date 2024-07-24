@@ -73,13 +73,13 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         }
 
         [DataTestMethod]
-        [DataRow("test_marking_params_ascii.cli", 3)]
-        //[DataRow("test_marking_params_bin.cli", 3)]
+        [DataRow("Box_support_solid_ascii_with_params.cli", 3)] // 
+        [DataRow("netfabb_ascii_with_params.ilt", 4)] // 1 "standard" parameter set, 3 in modified file
         public void TestCLIMarkingParams(string fileName, int expectedMarkingParams)
         {
-            string filePath = Path.Combine(dir.FullName, "marking_params", fileName);
-            using var reader = FileReaderWriterFactory.FileReaderFactory.CreateNewReader(".cli");
-            reader.OpenJob(filePath);
+            var fileInfo = new FileInfo(Path.Combine(dir.FullName, "marking_params", fileName));
+            using var reader = FileReaderWriterFactory.FileReaderFactory.CreateNewReader(fileInfo.Extension);
+            reader.OpenJob(fileInfo.FullName);
             var job = reader.CacheJobToMemory();
 
             CheckerConfig config = new CheckerConfig

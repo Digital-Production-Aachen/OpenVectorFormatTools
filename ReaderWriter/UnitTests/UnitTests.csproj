@@ -59,16 +59,25 @@
     <None Update="TestFiles\magics_Zylinder_Pyramid_TensileBar_with_supports.ilt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="TestFiles\marking_params\Box_support_solid_ascii_with_params.cli">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestFiles\marking_params\netfabb_ascii_with_params.ilt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestFiles\marking_params\test_marking_params_ascii.cli">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="TestFiles\marking_params\test_marking_params_bin.cli">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="TestFiles\netfabb_bin.ilt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestFiles\test_marking_params_ascii.cli">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="TestFiles\netfabb.ilt">
+    <None Update="TestFiles\netfabb_ascii.ilt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="TestFiles\parameter_check_v2.ilt">

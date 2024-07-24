@@ -282,7 +282,6 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             double sectionProgress = 0;
             int modelSectionID = 0;
             
-            var markingParamsMap = new MapField<int, MarkingParams>();
             foreach (IModelSection section in buildJob.ModelSections)
             {
                 /*convert Modelsection to Part, ignore every "parts" in a Modelsection, since 
@@ -291,6 +290,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                 section.ID = modelSectionID++;
                 job.PartsMap.Add(section.ID, part);
 
+                // initialize with marking param from ILT, but allow each CLI-file to override them 
                 var markingParamsManager = new MarkingParamsManager(TranslateBuildParams(section.Parameters));
                 var addedVectorBlocks = new List<VectorBlock>();
                 for (int i = 0; i < section.Geometry.Layers.Count; i++)
@@ -346,7 +346,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                             + ((i / (double)section.Geometry.Layers.Count) * 100.0 / buildJob.ModelSections.Count)));
                     }
                 }
-                markingParamsMap.MergeFromWithRemap(markingParamsManager.MarkingParamsMap, out var keyMapping);
+                job.MarkingParamsMap.MergeFromWithRemap(markingParamsManager.MarkingParamsMap, out var keyMapping);
                 foreach (var vectorBlock in addedVectorBlocks) // update all vector block marking param keys after merge
                     vectorBlock.MarkingParamsKey = keyMapping[vectorBlock.MarkingParamsKey];
                 sectionProgress++;
@@ -397,6 +397,13 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             job.NumWorkPlanes = job.WorkPlanes.Count;
         }
 
+        /// <summary>
+        /// Accumulate sequential parameter change commands into a map of ovf MarkingParams.
+        /// Each parameter set is assigned a unique key and added to the marking params map.
+        /// Each call to Update() changes the current parameter set. InsertCurrentParams()
+        /// records the current params (avoiding duplicate entries) and returns the key
+        /// for retreiving that parameter set from the map.
+        /// </summary>
         private class MarkingParamsManager
         {
             public MapField<int, MarkingParams> MarkingParamsMap { get; }
@@ -406,11 +413,6 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             private bool currentMPlocked = false;
             private int nextMPKey = 0;
 
-            /// <summary>
-            /// Accumulate sequential parameter change commands into ovf MarkingParameters.
-            /// Each parameter set is assigned a unique key and added to the marking params map.
-            /// </summary>
-            /// <param name="markingParamsMap"></param>
             public MarkingParamsManager(MarkingParams initialMarkingParams = null)
             {
                 MarkingParamsMap = new MapField<int, MarkingParams>();
@@ -456,7 +458,6 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             int i = 0;
             foreach (IModelSection section in buildJob.ModelSections)
             {
-                job.MarkingParamsMap.Add(i, TranslateBuildParams(section.Parameters));
                 ModelsectionMap.Add(section, i);
                 i++;
             }
@@ -484,9 +485,6 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             //this information gets lost
             block.LpbfMetadata.Reexposure = false;
 
-            //SetJobData has to be called before using this
-            //block.MarkingParamsKey = ModelsectionMap[modelSection];
-            Debug.Assert(job.MarkingParamsMap.ContainsKey(block.MarkingParamsKey));
             /* vs=Volumen Schraffur, vk=Volumen Kontur, u steht fuer unten-> down,
              us=Downskin Schraffur, uk=Downskin Kontur, kv=Kontur Versatz, sx = single vector, support */
             switch (modelSection.SubType)
