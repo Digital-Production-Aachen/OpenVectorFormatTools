@@ -30,15 +30,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //  Original author: Dirks
 ///////////////////////////////////////////////////////////
 
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.IO;
-
-
 
 namespace OpenVectorFormat.ILTFileReader {
-	public interface IVectorBlock  {
+	public interface IVectorBlock : ILayerCommand  {
         /// <summary>
         /// Raw coordiantes of points.
         /// </summary>

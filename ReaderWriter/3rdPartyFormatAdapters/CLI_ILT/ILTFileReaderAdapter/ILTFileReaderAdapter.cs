@@ -26,11 +26,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using OpenVectorFormat.ILTFileReader;
 using OpenVectorFormat.Utils;
 using System.IO;
+using Google.Protobuf.Collections;
+using OVFDefinition;
 
 namespace OpenVectorFormat.ILTFileReaderAdapter
 {
@@ -40,21 +40,24 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
     /// </summary>
     public class ILTFileReaderAdapter : FileReader
     {
+        /// <summary>
+        /// List of file format extensions supported by this file reader.
+        /// </summary>
+        public static new List<string> SupportedFileFormats => fileFormats;
+
         private bool _fileLoadingFinished;
         private bool vectorDataLoaded;
         private CacheState _cacheState = CacheState.NotCached; 
-        private IFileAccess fileHandler;
-        private IBuildJob buildJob;
-        private ICLIFile cliFile;
+        private readonly IFileAccess fileHandler;
+        private readonly IBuildJob buildJob;
+        private readonly ICLIFile cliFile;
         private Dictionary<IModelSection, int> ModelsectionMap;
-        private Dictionary<string, int> ModelsectionIdMap;
-        //private Dictionary<VectorBlock, IVectorBlock> vectorBlockDictionary;
         private Job job;
         private int workPlaneNumber = 0;
         private IFileReaderWriterProgress progress;
         private string filename;
         private string jobfilename;
-        private static List<string> fileFormats = new List<string>() { ".ilt", ".cli" };
+        private static readonly List<string> fileFormats = new List<string>() { ".ilt", ".cli" };
         /// <summary>
         /// minimum length of a jump between hatches to be considered a real hatch
         /// </summary>
@@ -62,10 +65,10 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
 
         public ILTFileReaderAdapter(IFileAccess fileAccess)
         {
-            this.fileHandler = fileAccess ?? throw new ArgumentNullException(nameof(fileAccess));
-            if (fileHandler is IBuildJob)
+            fileHandler = fileAccess ?? throw new ArgumentNullException(nameof(fileAccess));
+            if (fileHandler is IBuildJob buildJob)
             {
-                buildJob = (IBuildJob)fileHandler;
+                this.buildJob = buildJob;
             }
             else if (fileHandler is ICLIFile)
             {
@@ -101,7 +104,6 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             _fileLoadingFinished = false;
             _cacheState = CacheState.NotCached;
             ModelsectionMap = new Dictionary<IModelSection, int>();
-            ModelsectionIdMap = new Dictionary<string, int>();
             job = new Job();
             OpenFile();
             return;
@@ -172,10 +174,14 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
 
         #endregion // FileReader
 
-        /// <summary>
-        /// List of file format extensions supported by this file reader.
-        /// </summary>
-        public static new List<string> SupportedFileFormats => fileFormats;
+        public override void Dispose()
+        {
+            fileHandler?.CloseFile();
+            _cacheState = CacheState.NotCached;
+            job = null;
+        }
+        public override void CloseFile() { fileHandler?.CloseFile(); }
+
 
         private void CheckFile()
         {
@@ -187,7 +193,6 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             //derive model section number
             int i = 0;
             var section = buildJob.ModelSections[i];
-            //while(section.Geometry.WorkPlanes[i])
             while (index >= section.Geometry.Layers[workPlaneNumber].VectorBlocks.Count)
             {
                 index -= section.Geometry.Layers[workPlaneNumber].VectorBlocks.Count;
@@ -224,7 +229,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             CheckFile();
             if (vectorDataLoaded)
             {
-                //delete vactor data
+                //delete vector data
                 for (int i = 0; i < job.WorkPlanes.Count; i++)
                 {
                     for (int j = 0; j < job.WorkPlanes[i].VectorBlocks.Count; j++)
@@ -235,6 +240,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                 vectorDataLoaded = false;
             }
         }
+
         /// <summary>
         /// Translates an IWorkPlane from a cliFile to a FilReader WorkPlane
         /// </summary>
@@ -266,27 +272,6 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             return currentWorkPlane;
         }
 
-        private void AddVectorBlocksToWorkPlane(WorkPlane buildJobWorkPlane, ILayer sectionLayer, IModelSection section)
-        {
-            Debug.Assert(Math.Abs(buildJobWorkPlane.ZPosInMm - sectionLayer.Height * section.Header.Units) < 0.00001);//check if same heigth
-            buildJobWorkPlane.NumBlocks += sectionLayer.VectorBlocks.Count;
-            foreach (IVectorBlock ILTvBlock in sectionLayer.VectorBlocks)
-            {
-                var newBlock = TranslateBlockData(ILTvBlock, section);
-                //block might be split into hatches and polylines for fake hatches
-                var newBlocks = ReadCoordinates(ILTvBlock, newBlock, section.Header.Units);
-
-                vectorDataLoaded = true;
-                job.PartsMap.TryGetValue(newBlock.MetaData.PartKey, out Part part);
-                Debug.Assert(part != null);
-                if (part.GeometryInfo.BuildHeightInMm < buildJobWorkPlane.ZPosInMm)
-                {
-                    part.GeometryInfo.BuildHeightInMm = buildJobWorkPlane.ZPosInMm;
-                }
-                buildJobWorkPlane.VectorBlocks.Add(newBlocks);
-            }
-        }
-
         /// <summary>
         /// Scans the ILT file and converts the structural data to a target
         /// </summary>
@@ -295,18 +280,27 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             // ilt file is handled
             SetJobData(buildJob);
             double sectionProgress = 0;
+            int modelSectionID = 0;
+            
             foreach (IModelSection section in buildJob.ModelSections)
             {
                 /*convert Modelsection to Part, ignore every "parts" in a Modelsection, since 
                 they don't provide any information*/
-                TranslateModelsectionToPart(section);
+                var part = TranslateModelsectionToPart(section);
+                section.ID = modelSectionID++;
+                job.PartsMap.Add(section.ID, part);
+
+                // initialize with marking param from ILT, but allow each CLI-file to override them 
+                var markingParamsManager = new MarkingParamsManager(TranslateBuildParams(section.Parameters));
+                var addedVectorBlocks = new List<VectorBlock>();
                 for (int i = 0; i < section.Geometry.Layers.Count; i++)
                 {
+                    // find or create a workplane that matches the current layer height
                     WorkPlane buildJobWorkPlane = null;
-                    ILayer sectionWorkPlane = section.Geometry.Layers[i];
+                    ILayer sectionLayer = section.Geometry.Layers[i];
                     foreach (var workPlane in job.WorkPlanes)
                     {
-                        if (Math.Abs(workPlane.ZPosInMm - sectionWorkPlane.Height) < 0.00001)
+                        if (Math.Abs(workPlane.ZPosInMm - sectionLayer.Height * section.Header.Units) < 0.00001)
                         {
                             buildJobWorkPlane = workPlane;
                             break;
@@ -314,19 +308,47 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                     }
                     if (buildJobWorkPlane == null)
                     {
-                        buildJobWorkPlane = CreateWorkPlane(sectionWorkPlane, section);
+                        buildJobWorkPlane = CreateWorkPlane(sectionLayer, section);
                     }
 
-                    AddVectorBlocksToWorkPlane(buildJobWorkPlane, sectionWorkPlane, section);
+                    Debug.Assert(Math.Abs(buildJobWorkPlane.ZPosInMm - sectionLayer.Height * section.Header.Units) < 0.00001);
+                    buildJobWorkPlane.NumBlocks += sectionLayer.VectorBlocks.Count;
+                    foreach (ILayerCommand layerCommand in sectionLayer.LayerCommands)
+                    {
+                        if (layerCommand is IParameterChange parameterChange)
+                        {
+                            markingParamsManager.Update(parameterChange);
+                        }
+                        else if (layerCommand is IVectorBlock vectorBlock)
+                        {
+                            var newBlock = TranslateBlockData(vectorBlock, section);
+                            newBlock.MarkingParamsKey = markingParamsManager.InsertCurrentParams();
+                            //block might be split into hatches and polylines for fake hatches
+                            var newBlocks = ReadCoordinates(vectorBlock, newBlock, section.Header.Units);
 
+                            vectorDataLoaded = true;
+                            job.PartsMap.TryGetValue(newBlock.MetaData.PartKey, out Part part2);
+                            Debug.Assert(part2 != null);
+                            if (part2.GeometryInfo.BuildHeightInMm < buildJobWorkPlane.ZPosInMm)
+                            {
+                                part2.GeometryInfo.BuildHeightInMm = buildJobWorkPlane.ZPosInMm;
+                            }
+                            buildJobWorkPlane.VectorBlocks.AddRange(newBlocks);
+                            addedVectorBlocks.AddRange(newBlocks);
+                        }
+                    }
+
+                    // update progress
                     if (i % 100 == 0)
                     {
                         progress?.Update(section.ModelsectionName + " layer " + i + @"/" + section.Geometry.Layers.Count,
                             (int)((sectionProgress / buildJob.ModelSections.Count) * 100.0
                             + ((i / (double)section.Geometry.Layers.Count) * 100.0 / buildJob.ModelSections.Count)));
                     }
-
                 }
+                job.MarkingParamsMap.MergeFromWithRemap(markingParamsManager.MarkingParamsMap, out var keyMapping);
+                foreach (var vectorBlock in addedVectorBlocks) // update all vector block marking param keys after merge
+                    vectorBlock.MarkingParamsKey = keyMapping[vectorBlock.MarkingParamsKey];
                 sectionProgress++;
             }
 
@@ -342,18 +364,26 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
         private void ConvertCLIStructure(IFileReaderWriterProgress progress = null)
         {
             job.JobMetaData = TranslateMetaData(cliFile);
-            job.JobMetaData.JobName = this.jobfilename;
+            job.JobMetaData.JobName = jobfilename;
             foreach (IPart part in cliFile.Parts)
             {
-                TranslateCliPart(part);
+                job.PartsMap.Add(part.id, TranslateCliPart(part));
             }
+
+            var markingParamsManager = new MarkingParamsManager();
             for (int i = 0; i < cliFile.Geometry.Layers.Count; i++)
             {
                 ILayer workPlane = cliFile.Geometry.Layers[i];
                 var newWorkPlane = CreateWorkPlane(workPlane, cliFile);
-                foreach (var block in workPlane.VectorBlocks)
+                foreach (var command in workPlane.LayerCommands)
                 {
-                    newWorkPlane.VectorBlocks.Add(TranslateBlockData(block, cliFile));
+                    if (command is IParameterChange paramChange) markingParamsManager.Update(paramChange);
+                    else if (command is IVectorBlock block)
+                    {
+                        var newVectorBlock = TranslateBlockData(block, cliFile);
+                        newVectorBlock.MarkingParamsKey = markingParamsManager.InsertCurrentParams();
+                        newWorkPlane.VectorBlocks.Add(newVectorBlock);
+                    }
                 }
                 newWorkPlane.NumBlocks = workPlane.VectorBlocks.Count;
                 if (i % 100 == 0)
@@ -362,7 +392,60 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                         (int)((i / (double)cliFile.Geometry.Layers.Count) * 100.0));
                 }
             }
+            foreach (int key in markingParamsManager.MarkingParamsMap.Keys)
+                job.MarkingParamsMap[key] = markingParamsManager.MarkingParamsMap[key];
             job.NumWorkPlanes = job.WorkPlanes.Count;
+        }
+
+        /// <summary>
+        /// Accumulate sequential parameter change commands into a map of ovf MarkingParams.
+        /// Each parameter set is assigned a unique key and added to the marking params map.
+        /// Each call to Update() changes the current parameter set. InsertCurrentParams()
+        /// records the current params (avoiding duplicate entries) and returns the key
+        /// for retreiving that parameter set from the map.
+        /// </summary>
+        private class MarkingParamsManager
+        {
+            public MapField<int, MarkingParams> MarkingParamsMap { get; }
+            private readonly Dictionary<MarkingParams, int> cachedParams = new Dictionary<MarkingParams, int>();
+            
+            private MarkingParams currentMP = null;
+            private bool currentMPlocked = false;
+            private int nextMPKey = 0;
+
+            public MarkingParamsManager(MarkingParams initialMarkingParams = null)
+            {
+                MarkingParamsMap = new MapField<int, MarkingParams>();
+                if (initialMarkingParams != null) currentMP = new MarkingParams(initialMarkingParams);
+                else currentMP = new MarkingParams();
+            }
+
+            public void Update(IParameterChange paramChange)
+            {
+                if (currentMPlocked) { currentMP = new MarkingParams(currentMP); currentMPlocked = false; }
+                switch (paramChange.Parameter)
+                {
+                    case CLILaserParameter.SPEED:
+                        currentMP.LaserSpeedInMmPerS = paramChange.Value; break;
+                    case CLILaserParameter.POWER:
+                        currentMP.LaserPowerInW = paramChange.Value; break;
+                    case CLILaserParameter.FOCUS:
+                        currentMP.LaserFocusShiftInMm = paramChange.Value; break;
+                }
+            }
+
+            public int InsertCurrentParams()
+            {
+                if (cachedParams.TryGetValue(currentMP, out int key));
+                else
+                {
+                    key = nextMPKey++;
+                    MarkingParamsMap.Add(key, currentMP);
+                    cachedParams.Add(currentMP, key);
+                    currentMPlocked = true;
+                }
+                return key;
+            }
         }
 
         /// <summary>
@@ -375,7 +458,6 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             int i = 0;
             foreach (IModelSection section in buildJob.ModelSections)
             {
-                job.MarkingParamsMap.Add(i, TranslateBuildParams(section.Parameters));
                 ModelsectionMap.Add(section, i);
                 i++;
             }
@@ -399,13 +481,10 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             VectorBlock block = new VectorBlock();
             block.LpbfMetadata = new VectorBlock.Types.LPBFMetadata();
             block.MetaData = new VectorBlock.Types.VectorBlockMetaData();
-            block.MetaData.PartKey = ModelsectionIdMap[modelSection.ModelsectionName];
+            block.MetaData.PartKey = modelSection.ID;
             //this information gets lost
             block.LpbfMetadata.Reexposure = false;
 
-            //SetJobData has to be called before using this
-            block.MarkingParamsKey = ModelsectionMap[modelSection];
-            Debug.Assert(job.MarkingParamsMap.ContainsKey(block.MarkingParamsKey));
             /* vs=Volumen Schraffur, vk=Volumen Kontur, u steht fuer unten-> down,
              us=Downskin Schraffur, uk=Downskin Kontur, kv=Kontur Versatz, sx = single vector, support */
             switch (modelSection.SubType)
@@ -624,7 +703,7 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
         }
 
         //LaserIndex set to 1, since we only have 1 laser
-        private MarkingParams TranslateBuildParams(IModelSectionParams iltParams)
+        private static MarkingParams TranslateBuildParams(IModelSectionParams iltParams)
         {
             return new MarkingParams
             {
@@ -635,7 +714,8 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
                 PointExposureTimeInUs = (float)iltParams.ExposureTime,
             };
         }
-        private Job.Types.JobMetaData TranslateMetaData(ICLIFile section)
+
+        private static Job.Types.JobMetaData TranslateMetaData(ICLIFile section)
         {
             Job.Types.JobMetaData metaData = new Job.Types.JobMetaData();
             if (section.Header.Date > 0)
@@ -657,44 +737,30 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
             metaData.Version = (ulong)section.Header.Version;
             return metaData;
         }
+
         //Generate Parts from unique ModelSections, no BuildStrategy available
-        private void TranslateModelsectionToPart(IModelSection modelSection)
+        private static Part TranslateModelsectionToPart(IModelSection modelSection)
         {
             if (modelSection.Parts.Count > 1)
             {
-                Debug.WriteLine("You are now loosing Part information, since there is more than 1 part in a ModelSection");
+                Debug.WriteLine("You are now losing Part information, since there is more than 1 part in a ModelSection");
             }
             Part part = new Part();
             part.Material = new Part.Types.Material();
-            int partId = Int32.Parse(Regex.Match(modelSection.ModelsectionName, @"[0-9]+").Value);
             part.Name = modelSection.ModelsectionName;
             part.GeometryInfo = new Part.Types.GeometryInfo()
             {
                 BuildHeightInMm = modelSection.Geometry.Layers[modelSection.Geometry.Layers.Count - 1].Height
             };
-
-            if (!job.PartsMap.ContainsKey(partId))
-            {
-                job.PartsMap.Add(partId, part);
-                ModelsectionIdMap.Add(modelSection.ModelsectionName, partId);
-            }
+            return part;
         }
 
-        private void TranslateCliPart(IPart cliPart)
+        private static Part TranslateCliPart(IPart cliPart)
         {
             Part part = new Part();
             part.Material = new Part.Types.Material();
             part.Name = cliPart.name;
-            job.PartsMap.Add(cliPart.id, part);
+            return part;
         }
-
-
-        public override void Dispose()
-        {
-            fileHandler?.CloseFile();
-            _cacheState = CacheState.NotCached;
-            job = null;
-        }
-        public override void CloseFile() { fileHandler?.CloseFile(); }
     }
 }

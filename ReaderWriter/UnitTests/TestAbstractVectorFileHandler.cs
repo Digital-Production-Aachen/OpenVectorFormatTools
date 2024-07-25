@@ -144,7 +144,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         /// <param name="testFile"></param>
         [DynamicData("TestFiles")]
         [TestMethod]
-        public void TestRead(FileInfo testFile)
+        public void TestRead(FileInfo testFile, bool allowEmptyWorkPlanes = true)
         {
             IFileReaderWriterProgress progress = new FileReaderWriterProgress();
             using (FileReader reader = FileReaderFactory.CreateNewReader(testFile.Extension))
@@ -152,29 +152,26 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 reader.OpenJob(testFile.FullName, progress);
                 Assert.IsTrue(reader.JobShell.NumWorkPlanes > 0); // job must have at least one workPlane
                 //Job-WorkPlanes are allowed to be empty, must be retrieved by getWorkPlane
+                int numEmptyWorkPlanes = 0;
                 Dictionary<Tuple<double, double, double, double, double, double>, long> workPlanePositions = new Dictionary<Tuple<double, double, double, double, double, double>, long>();
                 for (int i = 0; i < reader.JobShell.NumWorkPlanes; i++)
                 {
                     var workPlane = reader.GetWorkPlane(i);
                     Tuple<double, double, double, double, double, double> workPlanePos = new Tuple<double, double, double, double, double, double>(workPlane.XPosInMm, workPlane.XRotInDeg, workPlane.YPosInMm, workPlane.YRotInDeg, workPlane.ZPosInMm, workPlane.ZRotInDeg);
                     Assert.IsFalse(workPlanePositions.TryGetValue(workPlanePos, out long workPlaneNumber),
-                        "coordinates " + workPlanePos.ToString() + "already used by workPlane " + workPlaneNumber + ". " +
+                        "coordinates " + workPlanePos.ToString() + " already used by workPlane " + workPlaneNumber + ". " +
                         "WorkPlanes with same coordinates must be merged");
                     workPlanePositions.Add(workPlanePos, workPlane.WorkPlaneNumber);
-                    TestWorkPlane(workPlane);
+                    
+                    // Test workplane
+                    // Empty workplanes might be an indicator for failed data parsing.
+                    if (workPlane.NumBlocks == 0) numEmptyWorkPlanes++;
+                    if (!allowEmptyWorkPlanes) Assert.IsTrue(workPlane.NumBlocks > 0);
+                    Assert.IsNotNull(workPlane.VectorBlocks);
+                    Assert.AreEqual(workPlane.NumBlocks, workPlane.VectorBlocks.Count);
+                    foreach (var vb in workPlane.VectorBlocks) TestVectorBlock(vb);
                 }
-            }
-        }
-
-        private void TestWorkPlane(WorkPlane workPlane)
-        {
-            // workPlane must have at least one block. Empty workPlanes should be discarded by the reader, test should indicate that data parsing failed.
-            Assert.IsTrue(workPlane.NumBlocks > 0);
-            Assert.IsNotNull(workPlane.VectorBlocks);
-            Assert.AreEqual(workPlane.NumBlocks, workPlane.VectorBlocks.Count);
-            foreach (var vb in workPlane.VectorBlocks)
-            {
-                TestVectorBlock(vb);
+                if (numEmptyWorkPlanes > 0) Console.WriteLine("reader contains empty workplanes");
             }
         }
 

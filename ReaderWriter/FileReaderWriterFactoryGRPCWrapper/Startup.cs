@@ -33,7 +33,11 @@ namespace OpenVectorFormat.FileHandlerFactoryGRPCWrapper
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddGrpc();
+            services.AddGrpc(options =>
+            {
+                options.MaxSendMessageSize = null;
+                options.MaxReceiveMessageSize = null;
+            });
             services.AddSingleton(new GRPCWrapperFunctionsImplementation());
         }
 

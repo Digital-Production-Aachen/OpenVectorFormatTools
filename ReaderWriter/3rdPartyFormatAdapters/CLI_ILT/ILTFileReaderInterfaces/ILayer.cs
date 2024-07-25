@@ -30,14 +30,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 //  Original author: Dirks
 ///////////////////////////////////////////////////////////
 
-using System;
+
 using System.Collections.Generic;
-using System.Text;
-using System.IO;
 
-
-
-using OpenVectorFormat.ILTFileReader;
 namespace OpenVectorFormat.ILTFileReader
 {
     /// <summary>
@@ -46,13 +41,13 @@ namespace OpenVectorFormat.ILTFileReader
     /// </summary>
 	public interface ILayer  {
 
-		float Height{
-			get;
-		}
+		float Height { get; }
 
-		IList<IVectorBlock> VectorBlocks{
-			get;
-		}
+		IList<ILayerCommand> LayerCommands { get; }
+
+		IList<IVectorBlock> VectorBlocks { get; }
+
+		void AddLayerCommand(ILayerCommand command);
 	}//end ILayer
 
 }//end namespace OpenVectorFormat.ILTFileReader

@@ -28,6 +28,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -37,6 +38,7 @@ namespace OpenVectorFormat.ILTFileReader.Controller
     class ModelSection : CliFileAccess, IModelSection
     {
         private string cliFileName;
+        public int ID { get; set; }
 
 
         public ModelSection(string cliFileName, IModelSectionParams mParams)
@@ -51,57 +53,143 @@ namespace OpenVectorFormat.ILTFileReader.Controller
         private void ParseFileName()
         {
             string fileName = Path.GetFileName(this.cliFileName);
-            ModelsectionName = Regex.Match(fileName, @"([a-z]+_[0-9]+)_.+_.+\.cli$").Groups[1].Value;
-            String partArea = Regex.Match(fileName, @"_(..?)_(..+)\.cli$").Groups[1].Value;
-            switch (partArea)
+            if (MatchMagics(fileName)) { /*Console.WriteLine("Magics");*/ return; }
+            if (Match3dXpert(fileName)) { /*Console.WriteLine("3dXpert");*/ return; }
+            if (MatchNetfabb(fileName)) { /*Console.WriteLine("Netfabb");*/ return; }
+            throw new Exception($"could not match ilt filename: {fileName}");
+        }
+
+        private bool MatchMagics(string fileName)
+        {
+            var result = Regex.Match(fileName, @"(?<name>([\w-[_]]+)_\d+)_(?<part_area>..?)_(?<vector_class>..+)\.cli$");
+            if (!result.Success) return false;
+            ModelsectionName = result.Groups["name"].Value;
+            switch (result.Groups["part_area"].Value)
             {
                 case "st":
-                    this.Type = PartArea.st;
+                    Type = PartArea.st;
                     break;
                 case "k":
-                    this.Type = PartArea.k;
+                    Type = PartArea.k;
                     break;
                 case "s1":
-                    this.Type = PartArea.s1;
+                    Type = PartArea.s1;
                     break;
                 case "s2":
-                    this.Type = PartArea.s2;
+                    Type = PartArea.s2;
                     break;
                 default:
-                    throw new FormatException("I don't know the Type / PartArea");
+                    Type = PartArea.s2;
+                    break;
             }
-
-            String vectorClass = Regex.Match(fileName, @"_(..?)_(..+)\.cli$").Groups[2].Value;
-            switch (vectorClass)
+            switch (result.Groups["vector_class"].Value)
             {
                 case "vs":
-                    this.SubType = VectorClass.vs;
+                    SubType = VectorClass.vs;
                     break;
                 case "vk":
-                    this.SubType = VectorClass.vk;
+                    SubType = VectorClass.vk;
                     break;
                 case "us":
-                    this.SubType = VectorClass.us;
+                    SubType = VectorClass.us;
                     break;
                 case "uk":
-                    this.SubType = VectorClass.uk;
+                    SubType = VectorClass.uk;
                     break;
                 case "kv":
-                    this.SubType = VectorClass.kv;
+                    SubType = VectorClass.kv;
                     break;
                 case "sx":
-                    this.SubType = VectorClass.sx;
+                    SubType = VectorClass.sx;
                     break;
                 case "kvu":
-                    this.SubType = VectorClass.kvu;
+                    SubType = VectorClass.kvu;
                     break;
                 case "skin":
-                    this.SubType = VectorClass.skin;
+                    SubType = VectorClass.skin;
                     break;
                 default:
-                    throw new FormatException("I don't know the SubType / VectorClass");
+                    SubType = VectorClass.vs;
+                    break;
             }
+            return true;
+        }
 
+        private bool Match3dXpert(string fileName)
+        {
+            var result = Regex.Match(fileName, @"(?<name>([\w-[_]]+)_\d+)_(?<build_style>[\w-[_]]+)_.\S+_(?<contour>\w*)(?<type>[a-z]{2})\.cli");
+            if (!result.Success) return false;
+            ModelsectionName = result.Groups["name"].Value;
+            switch (result.Groups["contour"].Value)
+            {
+                case "":    // assumption: no c means hatches (?)
+                    Type = PartArea.k;
+                    switch (result.Groups["type"].Value)
+                    {
+                        // dn->Downskin
+                        // up->Upskin
+                        // md->Middle area(Infill)
+                        case "up":
+                            SubType = VectorClass.vs;   // this should be upskin instead
+                            break;
+                        case "md":
+                            SubType = VectorClass.vs;
+                            break;
+                        case "dn":
+                            SubType = VectorClass.us;
+                            break;
+                    }
+                    break;
+                // c1, c2, c3 -> Contour 1 to 3
+                case "c1":
+                case "c2":
+                case "c3":
+                default:
+                    Type = PartArea.s2;
+                    switch (result.Groups["type"].Value)
+                    {
+                        case "up":
+                            SubType = VectorClass.vk;   // this should be upskin instead
+                            break;
+                        case "md":
+                            SubType = VectorClass.vk;
+                            break;
+                        case "dn":
+                            SubType = VectorClass.uk;
+                            break;
+                    }
+                    break;
+            }
+            return true;
+        }
+
+        private bool MatchNetfabb(string fileName)
+        {
+            var result = Regex.Match(fileName, @"(?<name>\S+)\s*(?<support>\(\S+\))?\s*(?<filling>\(\S+\))?\.cli$");
+            if (!result.Success) return false;
+            ModelsectionName = result.Groups["name"].Value;
+            if (result.Groups["filling"].Value == "(filling)")
+            {
+                SubType = VectorClass.vs;
+            }
+            else
+            {
+                SubType = VectorClass.vk;
+            }
+            switch (result.Groups["support"].Value)
+            {
+                case "(support)":
+                    Type = PartArea.st;
+                    SubType = VectorClass.sx;
+                    break;
+                case "(solidsupport)":
+                    Type = PartArea.st;
+                    break;
+                default:
+                    Type = PartArea.s2;
+                    break;
+            }
+            return true;
         }
 
 
