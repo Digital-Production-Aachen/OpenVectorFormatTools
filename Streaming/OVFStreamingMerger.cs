@@ -87,27 +87,6 @@ namespace OpenVectorFormat.Streaming
             mergedJobShell.MarkingParamsMap.MergeFromWithRemap(
                 fileReaderToMerge.fr.JobShell.MarkingParamsMap, out var keyMapping);
             fileReaderToMerge.paramKeyMapping = keyMapping;
-
-            /*
-            foreach (var parameter in fileReaderToMerge.fr.JobShell.MarkingParamsMap)
-            {
-                bool found = false;
-                foreach(var mergedShellParam in mergedJobShell.MarkingParamsMap)
-                {
-                    if (mergedShellParam.Value.Equals(parameter.Value))
-                    {
-                        found = true;
-                        fileReaderToMerge.paramKeyMapping.Add(parameter.Key, mergedShellParam.Key);
-                        break;
-                    }
-                }
-                if (!found)
-                {
-                    maxParamsKey++;
-                    fileReaderToMerge.paramKeyMapping.Add(parameter.Key, maxParamsKey);
-                    mergedJobShell.MarkingParamsMap.Add(maxParamsKey, parameter.Value);
-                }
-            }*/
         }
 
         protected override void PostProcessVectorBlock(VectorBlock vectorBlock)
