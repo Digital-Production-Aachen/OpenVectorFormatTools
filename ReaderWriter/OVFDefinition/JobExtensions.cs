@@ -102,14 +102,15 @@ namespace OpenVectorFormat
         /// <param name="GetWorkPlane"></param>
         public static void AddAllWorkPlanesParallel(this Job job, Func<int, WorkPlane> GetWorkPlane)
         {
-            ConcurrentBag<WorkPlane> wpBag = new ConcurrentBag<WorkPlane>();
-            Parallel.For(0, job.NumWorkPlanes, j =>
+            job.WorkPlanes.Clear();
+            job.WorkPlanes.Capacity = job.NumWorkPlanes;
+            // proto repeated does not allow null
+            var dummy = new WorkPlane();
+            while (job.WorkPlanes.Count < job.NumWorkPlanes) { job.WorkPlanes.Add(dummy); }
+            Parallel.For(0, job.NumWorkPlanes, wpNum =>
             {
-                var wpNum = j;
-                wpBag.Add(GetWorkPlane(wpNum));
+                job.WorkPlanes[wpNum] = GetWorkPlane(wpNum);
             });
-
-            job.WorkPlanes.AddRange(wpBag.OrderBy(x => x.WorkPlaneNumber));
         }
     }
 }
