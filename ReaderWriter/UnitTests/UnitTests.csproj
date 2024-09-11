@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\GCodeReaderWriter\GCodeReaderWriter.csproj" />
     <ProjectReference Include="..\..\Streaming\Streaming.csproj" />
     <ProjectReference Include="..\3rdPartyFormatAdapters\ASP\ASPFileReaderWriter\ASPFileReaderWriter.csproj" />
     <ProjectReference Include="..\3rdPartyFormatAdapters\CLI_ILT\ILTFileReaderAdapter\ILTFileReaderAdapter.csproj" />
