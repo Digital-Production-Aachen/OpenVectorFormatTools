@@ -16,7 +16,7 @@ namespace MyApp // Note: actual namespace depends on the project name.
 
         static void Main(string[] args)
         {
-            dir = new DirectoryInfo(@"C:\Users\Domin\Desktop\source\EOS\");
+            dir = new DirectoryInfo(@"C:\Users\Domin\Desktop\source\ACAM24\OVFs\");
             outputDir = new DirectoryInfo(@"C:\Users\Domin\Desktop\sink\");
 
             foreach (var file in dir.GetFiles())
@@ -25,118 +25,10 @@ namespace MyApp // Note: actual namespace depends on the project name.
                 {
                     string name = Path.GetFileNameWithoutExtension(file.FullName);
 
-                    //Hatch and Contour
-                    RUN_LLL(file, name);
-                    RUN_SLL(file, name);
-                    RUN_LSL(file, name);
-                    RUN_SSL(file, name);
-                    RUN_LLS(file, name);
-                    RUN_SLS(file, name);
-                    RUN_LSS(file, name);
-                    RUN_SSS(file, name);
-
-                    RUN_PolylineToHatch(file, name, false, false, false);
                     RUN_PolylineToHatch(file, name, true, false, false);
-                    RUN_PolylineToHatch(file, name, false, true, false);
-                    RUN_PolylineToHatch(file, name, true, true, false);
-                    RUN_PolylineToHatch(file, name, false, false, true);
-                    RUN_PolylineToHatch(file, name, true, false, true);
-                    RUN_PolylineToHatch(file, name, false, true, true);
-                    RUN_PolylineToHatch(file, name, true, true, true);
                 }
             }
         }
-        //Contour and Hatch
-        private static void RUN_LLL(FileInfo file, string name)
-        {
-            CLIWriterAdapter.HatchesStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.LONG;
-            CLIWriterAdapter.PolylineStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.LONG;
-            CLIWriterAdapter.LayerStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.LONG;
-
-            var outputFile = new FileInfo(dir.FullName + name + "_LLL.ovf");
-            WriteOVF(file, outputFile, true, true);
-            WriteCLI(outputFile, outputDir, name + "_LLL");
-            outputFile.Delete();
-        }
-        private static void RUN_SLL(FileInfo file, string name)
-        {
-            CLIWriterAdapter.HatchesStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.SHORT;
-            CLIWriterAdapter.PolylineStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.LONG;
-            CLIWriterAdapter.LayerStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.LONG;
-
-            var outputFile = new FileInfo(dir.FullName + name + "_SLL.ovf");
-            WriteOVF(file, outputFile, true, true);
-            WriteCLI(outputFile, outputDir, name + "_SLL");
-            outputFile.Delete();
-        }
-        private static void RUN_LSL(FileInfo file, string name)
-        {
-            CLIWriterAdapter.HatchesStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.LONG;
-            CLIWriterAdapter.PolylineStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.SHORT;
-            CLIWriterAdapter.LayerStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.LONG;
-
-            var outputFile = new FileInfo(dir.FullName + name + "_LSL.ovf");
-            WriteOVF(file, outputFile, true, true);
-            WriteCLI(outputFile, outputDir, name + "_LSL");
-            outputFile.Delete();
-        }
-        private static void RUN_SSL(FileInfo file, string name)
-        {
-            CLIWriterAdapter.HatchesStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.SHORT;
-            CLIWriterAdapter.PolylineStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.SHORT;
-            CLIWriterAdapter.LayerStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.LONG;
-
-            var outputFile = new FileInfo(dir.FullName + name + "_SSL.ovf");
-            WriteOVF(file, outputFile, true, true);
-            WriteCLI(outputFile, outputDir, name + "_SSL");
-            outputFile.Delete();
-        }
-        private static void RUN_LLS(FileInfo file, string name)
-        {
-            CLIWriterAdapter.HatchesStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.LONG;
-            CLIWriterAdapter.PolylineStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.LONG;
-            CLIWriterAdapter.LayerStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.SHORT;
-
-            var outputFile = new FileInfo(dir.FullName + name + "_LLS.ovf");
-            WriteOVF(file, outputFile, true, true);
-            WriteCLI(outputFile, outputDir, name + "_LLS");
-            outputFile.Delete();
-        }
-        private static void RUN_SLS(FileInfo file, string name)
-        {
-            CLIWriterAdapter.HatchesStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.SHORT;
-            CLIWriterAdapter.PolylineStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.LONG;
-            CLIWriterAdapter.LayerStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.SHORT;
-
-            var outputFile = new FileInfo(dir.FullName + name + "_SLS.ovf");
-            WriteOVF(file, outputFile, true, true);
-            WriteCLI(outputFile, outputDir, name + "_SLS");
-            outputFile.Delete();
-        }
-        private static void RUN_LSS(FileInfo file, string name)
-        {
-            CLIWriterAdapter.HatchesStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.LONG;
-            CLIWriterAdapter.PolylineStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.SHORT;
-            CLIWriterAdapter.LayerStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.SHORT;
-
-            var outputFile = new FileInfo(dir.FullName + name + "_LSS.ovf");
-            WriteOVF(file, outputFile, true, true);
-            WriteCLI(outputFile, outputDir, name + "_LSS");
-            outputFile.Delete();
-        }
-        private static void RUN_SSS(FileInfo file, string name)
-        {
-            CLIWriterAdapter.HatchesStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.SHORT;
-            CLIWriterAdapter.PolylineStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.SHORT;
-            CLIWriterAdapter.LayerStyle = OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.SHORT;
-
-            var outputFile = new FileInfo(dir.FullName + name + "_SSS.ovf");
-            WriteOVF(file, outputFile, true, true);
-            WriteCLI(outputFile, outputDir, name + "_SSS");
-            outputFile.Delete();
-        }
-
-
         private static void RUN_PolylineToHatch(FileInfo file, string name, bool HatchesStyle, bool PolylineStyle, bool LayerStyle)
         {
             CLIWriterAdapter.HatchesStyle = HatchesStyle ? OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.SHORT : OpenVectorFormat.ILTFileReader.Controller.CliFileAccess.BinaryWriteStyle.LONG;
@@ -222,14 +114,46 @@ namespace MyApp // Note: actual namespace depends on the project name.
 
 
             WriteCLI(outputFile, outputDir, name + endOfName);
+            SplitOVF(file, outputFile);
             outputFile.Delete();
 
 
         }
+        private static void SplitOVF(FileInfo origin, FileInfo outputFile)
+
+        {
+
+            var name = Path.GetFileNameWithoutExtension(outputFile.FullName);
+
+            var contour1 = new FileInfo(outputFile.DirectoryName + @"/" + name + "_contour1.ovf");
+            //var contour2 = new FileInfo(outputFile.DirectoryName + @"/" + name + "_contour2.ovf");
+            //var tracingContours = new FileInfo(outputFile.DirectoryName + @"/" + name + "_tracngContrours.ovf");
+
+            var hatch = new FileInfo(outputFile.DirectoryName + @"/" + name + "_hatch.ovf");
+
+            //WriteOVF(origin, contour2, true, false, false);
+            WriteOVF(origin, contour1, true, true, false);
+            //WriteOVF(origin, tracingContours, false, true, false, true);
+
+            WriteOVF(origin, hatch, false, false, true);
 
 
 
-        private static void WriteOVF(FileInfo origin, FileInfo target, bool contour, bool hatches)
+            WriteCLI(contour1, outputDir, name + "_contour1");
+            //WriteCLI(contour2, outputDir, name + "_contour2");
+            //WriteCLI(tracingContours, outputDir, name + "_tracngContrours");
+
+            WriteCLI(hatch, outputDir, name + "_hatch");
+
+            contour1.Delete();
+            //contour2.Delete();
+
+            hatch.Delete();
+
+        }
+
+
+        private static void WriteOVF(FileInfo origin, FileInfo target, bool contour1, bool contour2, bool hatches, bool continiusContours = false)
         {
             var reader = new OVFFileReader();
             var progress = new FileReaderWriterProgress();
@@ -246,6 +170,7 @@ namespace MyApp // Note: actual namespace depends on the project name.
                     var slice = reader.GetWorkPlaneAsync(i).GetAwaiter().GetResult();
                     var workPlane = new WorkPlane();
                     workPlane.MetaData = slice.MetaData;
+                    int contourCounter = 0;
 
                     foreach (var vectorBlock in slice.VectorBlocks.ToList())
                     {
@@ -254,9 +179,11 @@ namespace MyApp // Note: actual namespace depends on the project name.
                         if (metaData.StructureType == StructureType.Part)
                         {
 
-                            if (contour && vectorBlock.VectorDataCase == VectorBlock.VectorDataOneofCase.LineSequence)
+                            if ((contour1 || contour2) && vectorBlock.VectorDataCase == VectorBlock.VectorDataOneofCase.LineSequence)
                             {
-                                workPlane.VectorBlocks.Add(vectorBlock);
+                                if(contourCounter %2 == 0 && contour1) workPlane.VectorBlocks.Add(vectorBlock);
+                                if(contourCounter % 2 == 1 && contour2) workPlane.VectorBlocks.Add(vectorBlock);
+                                if(contour1 && contour2) contourCounter++;
                             }
                             if (hatches && vectorBlock.VectorDataCase == VectorBlock.VectorDataOneofCase.Hatches)
                             {
@@ -273,6 +200,92 @@ namespace MyApp // Note: actual namespace depends on the project name.
                     workPlane.NumBlocks = workPlane.VectorBlocks.Count;
                     workPlane.ZPosInMm = slice.ZPosInMm;
                     writer.AppendWorkPlaneAsync(workPlane).GetAwaiter().GetResult();
+                }
+            }
+
+
+            if (continiusContours)
+            {
+                //Writer
+                using (var writer = new OVFFileWriter())
+                {
+                    writer.StartWritePartial(job, target.FullName, progress);
+
+                    for (int i = 0; i < job.NumWorkPlanes; i++)
+                    {
+                        var slice = reader.GetWorkPlaneAsync(i).GetAwaiter().GetResult();
+                        var workPlane = new WorkPlane();
+                        workPlane.MetaData = slice.MetaData;
+                        int contourCounter = 0;
+
+                        foreach (var vectorBlock in slice.VectorBlocks.ToList())
+                        {
+                            var metaData = vectorBlock.LpbfMetadata;
+
+                            if (metaData.StructureType == StructureType.Part)
+                            {
+
+                                if ((contour1 || contour2) && vectorBlock.VectorDataCase == VectorBlock.VectorDataOneofCase.LineSequence)
+                                {
+                                    workPlane.VectorBlocks.Add(vectorBlock);
+                                }
+
+                            }
+                            else
+                            {
+                                throw new Exception();
+                            }
+                        }
+
+                        workPlane.NumBlocks = workPlane.VectorBlocks.Count;
+                        workPlane.ZPosInMm = slice.ZPosInMm;
+                        writer.AppendWorkPlaneAsync(workPlane).GetAwaiter().GetResult();
+                    }
+                }
+            }
+            else
+            {
+                //Writer
+                using (var writer = new OVFFileWriter())
+                {
+                    writer.StartWritePartial(job, target.FullName, progress);
+
+                    for (int i = 0; i < job.NumWorkPlanes; i++)
+                    {
+                        var slice = reader.GetWorkPlaneAsync(i).GetAwaiter().GetResult();
+                        var workPlane = new WorkPlane();
+                        workPlane.MetaData = slice.MetaData;
+                        int contourCounter = 0;
+
+                        foreach (var vectorBlock in slice.VectorBlocks.ToList())
+                        {
+                            var metaData = vectorBlock.LpbfMetadata;
+
+                            if (metaData.StructureType == StructureType.Part)
+                            {
+
+                                if ((contour1 || contour2) && vectorBlock.VectorDataCase == VectorBlock.VectorDataOneofCase.LineSequence)
+                                {
+                                    if (contourCounter % 2 == 0 && contour1) workPlane.VectorBlocks.Add(vectorBlock);
+                                    if (contourCounter % 2 == 1 && contour2) workPlane.VectorBlocks.Add(vectorBlock);
+                                    contourCounter++;
+                                }
+                                if (hatches && vectorBlock.VectorDataCase == VectorBlock.VectorDataOneofCase.Hatches)
+                                {
+                                    workPlane.VectorBlocks.Add(vectorBlock);
+                                }
+
+                            }
+                            else
+                            {
+                                throw new Exception();
+                            }
+                        }
+
+                        workPlane.NumBlocks = workPlane.VectorBlocks.Count;
+                        workPlane.ZPosInMm = slice.ZPosInMm;
+                        writer.AppendWorkPlaneAsync(workPlane).GetAwaiter().GetResult();
+                    }
                 }
             }
         }
