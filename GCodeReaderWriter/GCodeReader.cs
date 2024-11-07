@@ -152,6 +152,23 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         private void ParseGCodeFile()
         {
+            Dictionary<int, MarkingParams> _markingParamsMap = new Dictionary<int, MarkingParams>
+            {
+                // {LaserSpeedInMmPerSec, LinearInterpolationCommand.feedRate where isOperation = true}
+                // {JumpSpeedInMmPerSec, LinearInterpolationCommand.feedRate where isOperation = false}
+                // {FurtherMarkingParams, Acceleration}
+                // {FurtherMarkingParams, ToolParams}
+                // {FurtherMarkingParams, RemainingParameters}
+                // {FurtherMarkingParams, RecordedParameters}
+            };
+        
+            Dictionary<Type, Func<VectorBlock.VectorDataOneofCase>> vectorDataMap = new Dictionary<Type, Func<VectorBlock.VectorDataOneofCase>>
+            {   
+                //{typeof(LinearInterpolationCmd), () => new LinearInterpolationCmd()},
+                //{typeof(CircularInterpolationCmd), () => new CircularInterpolationCmd()},
+                //{typeof(PauseCommand), () => new PauseCommand()},
+                //{typeof(MiscCommand), () => new MiscCommand()}
+            };
             _workPlane = new WorkPlane
             {
                 WorkPlaneNumber = 0,
@@ -167,84 +184,53 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 MarkingParamsKey = 0
             };
 
-            GCodeCommandList commandList = new GCodeCommandList();
-            commandList.Parse(File.ReadAllText(_filename));
-            Queue<GCodeCommand> commandQueue = new Queue<GCodeCommand>(commandList);
-            List<GCodeCommand> commandBuffer = new List<GCodeCommand>();
+            string[] commandLines = File.ReadAllLines(_filename);
 
-            while (commandQueue.Count > 0)
+            GCodeState gCodeState = new GCodeState(commandLines[0]);
+            foreach (string commandLine in commandLines.Skip(1))
             {
-                GCodeCommand cmd = commandQueue.Dequeue();
-                
-                if (cmd is MovementCommand moveCmd)
+                if (gCodeState.Update(commandLine))
                 {
-                    float? zHeight = moveCmd.zHeight;
-                    if (zHeight != _workPlane.ZPosInMm)
-                    {
-                        CompleteJob.WorkPlanes.Add(_workPlane);
-                        _workPlane = new WorkPlane
-                        {
-                            ZPosInMm = (float)zHeight
-                        };
-                        CompleteJob.NumWorkPlanes = 1;
-                        _workPlane.Repeats = 0;
-                    }
-                }
-                
-                GCodeCommand lastCmd = commandBuffer.Last(); // ersetzen mit Vergleich zu _currentVectorBlock
-                if (cmd.GetType() == lastCmd.GetType())
-                {
-                    switch (cmd)
-                    {
-                    case LinearInterpolationCmd linearCmd:
-                        if(lastCmd is LinearInterpolationCmd lastLinearCmd) // Cast lastCmd safely
-                        { 
-                            if (linearCmd.feedRate == lastLinearCmd.feedRate && linearCmd.isOperation == lastLinearCmd.isOperation)
-                            {
-                                _currentVectorBlock.LineSequence.Points.Add(linearCmd.position.Y);
-                                _currentVectorBlock.LineSequence.Points.Add(linearCmd.position.X);
-                            }
-                        }
-                        break;
-                    case CircularInterpolationCmd circularCmd:
-                        if (lastCmd is CircularInterpolationCmd lastCircularCmd)
-                        {
-                            if(circularCmd.feedRate == lastCircularCmd.feedRate && circularCmd.angle == lastCircularCmd.angle)
-                            {
-                                _currentVectorBlock.Arcs.Centers.Add(circularCmd.position.X + circularCmd.centerRel.X);
-                                _currentVectorBlock.Arcs.Centers.Add(circularCmd.position.Y + circularCmd.centerRel.Y);
-                            }
-                        }
-                        break;
-                    default:
-                        break;
-                    }
-
-                    commandBuffer.Add(cmd);
-                }
-                else
-                {
-                    switch (lastCmd)
+                    switch (gCodeState.gCodeCommand)
                     {
                         case LinearInterpolationCmd linearCmd:
-                            _currentMarkingParams.;
-                            _currentVectorBlock.LineSequence.Points.Add(linearCmd.position.Y);
-                            _currentVectorBlock.LineSequence.Points.Add(linearCmd.position.X);
                             break;
 
                         case CircularInterpolationCmd circularCmd:
-                            _currentVectorBlock.Arcs.Angle = circularCmd.angle;
-                            _currentVectorBlock.Arcs.StartDx = circularCmd.position.X; // nur einmal, dann checken, ob letztes Kommando auch Arc ist, das hieran anschließt
-                            _currentVectorBlock.Arcs.StartDy = circularCmd.position.Y;
-                            _currentVectorBlock.Arcs.Centers.Add(circularCmd.position.X + circularCmd.centerRel.X);
-                            _currentVectorBlock.Arcs.Centers.Add(circularCmd.position.Y + circularCmd.centerRel.Y);
+                            break;
 
+                        case PauseCommand pauseCmd:
+                            break;
+
+                        case MiscCommand miscCommand:
                             break;
                     }
-                    NewVectorBlock();
-                    //commandBuffer.Clear();
                 }
+                else
+                {
+                    switch (gCodeState.gCodeCommand)
+                    {
+                        case LinearInterpolationCmd linearCmd:
+                            _currentVectorBlock.LineSequence.Points.Add((float)linearCmd.xPosition);
+                            _currentVectorBlock.LineSequence.Points.Add((float)linearCmd.yPosition);
+                            break;
 
+                        case CircularInterpolationCmd circularCmd:
+                            _currentVectorBlock.Arcs.Centers.Add((float)circularCmd.xCenterRel);
+                            _currentVectorBlock.Arcs.Centers.Add((float)circularCmd.yCenterRel);
+                            break;
+
+                        case PauseCommand pauseCmd:
+                            _currentVectorBlock.ExposurePause.PauseInUs = (ulong)pauseCmd.duration*1000;
+                            break;
+
+                        case MiscCommand miscCommand:
+                            //_currentMarkingParams._unknownFields
+                            break;
+                    }
+                    
+                }
+                
             }
             _cacheState = CacheState.CompleteJobCached;
 

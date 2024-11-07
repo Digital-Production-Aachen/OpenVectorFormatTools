@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using OpenVectorFormat.Utils;
@@ -58,33 +59,183 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
     }
 
-    /*
-    public struct GCodeParameter
-    {
-        char parameter;
-        double value;
-    }
-    */
     class ToolParams
     {
         int toolNumber;
     }
 
-    internal class GCodeCommand
+    public enum GCodeType
     {
-        /*
-        private Dictionary<int, VectorBlock.VectorDataOneofCase> _gCodeTranslations = new Dictionary<int, VectorBlock.VectorDataOneofCase>
-        {
-            {1, VectorBlock.VectorDataOneofCase.LineSequence},
-        };
+        LinearInterpolation,
+        CircularInterpolation,
+        Pause,
+        ToolManipulation,
+        Monitoring,
+        ProgramLogics,
+        BlockEnd,
+        ProgramEnd,
+        Misc
+    }
+
+    internal class GCodeState
+    {
+        // This class contains a gcode command
+        // When a new object of this class is created, the gcode command is parsed from the input string
+        // If an object of gcodestate already exists, the new instance compares the gcode command with the existing one
+        // If the command is similar, the new command is filled with the missing parameters, which already exist in the old command
+        // The command is then added to the existing vectorblock
+        // If the existing command is dissimilar this can be noted through a new vectorblock and/or marikingParam set
+
+        /* Potentially not needed
+        public readonly VectorBlock.VectorDataOneofCase ovfVectordataType;
+        public GCodeType gCodeType;
+
+        // Movement parameters
+        public readonly Vector3 position;
+        public readonly float feedRate;
+        public readonly float acceleration;
+
+        // Linear movement parameters
+        public readonly bool isOperation;
+
+        //Circular movement parameters
+        public readonly Vector3 centerRel;
+        public readonly float angle;
+
+        // Pause patameters
+        public readonly float pauseDuration;
+        public readonly bool isManualPause;
         */
-        public readonly GCode gCode;
-        private static int parameterType;
 
-        //public readonly GCodeCommand LayerChange = new GCodeCommand(PrepCode.T, 7);
-
-        public GCodeCommand()
+        //Hier Klassen der GCodes behalten und dem GCodeCommand eine entsprechenede Klasse zuweisen. Hier
+        private readonly Dictionary<int, Type> _gCodeTranslations = new Dictionary<int, Type>
         {
+            {0, typeof(LinearInterpolationCmd)},
+            {1, typeof(LinearInterpolationCmd)},
+            {2, typeof(CircularInterpolationCmd)},
+            {3, typeof(CircularInterpolationCmd)},
+            {4, typeof(PauseCommand)},
+        };
+
+        private Dictionary<int, GCodeType> _mCodeTranslations = new Dictionary<int, GCodeType>();
+
+        private Dictionary<int, GCodeType> _tCodeTranslations = new Dictionary<int, GCodeType>();
+
+        internal GCodeCommand gCodeCommand;
+
+        public GCodeState(string serializedCmdLine)
+        {
+            this.gCodeCommand = ParseToGCodeCommand(serializedCmdLine);
+        }
+
+        public GCodeCommand ParseToGCodeCommand(string serializedCmdLine)
+        {
+            string commandString = serializedCmdLine.Split(';')[0].Trim();
+            string[] commandArr = commandString.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            char commandChar = char.ToUpper(commandArr[0][0]);
+            if (!Enum.TryParse(commandChar.ToString(), out PrepCode prepCode))
+                throw new ArgumentException($"Invalid preparatory function code: {commandChar} in line '{serializedCmdLine}'");
+
+            string commandNumber = commandArr[0].Substring(1);
+            if (!int.TryParse(commandNumber, out int codeNumber))
+                throw new ArgumentException($"Invalid number format: {commandNumber} in line '{serializedCmdLine}'");
+
+            Dictionary<char, float> commandParams = new Dictionary<char, float>();
+
+            foreach (var commandParam in commandArr.Skip(1))
+            {
+                if (float.TryParse(commandParam.Substring(1), out float paramValue))
+                {
+                    commandParams[commandParam[0]] = paramValue;
+                }
+                else if (commandParam.Length == 1)
+                {
+                    commandParams[commandParam[0]] = 0;
+                }
+                else
+                {
+                    throw new ArgumentException($"Invalid command parameter format: {commandParam} in line '{serializedCmdLine}'. Command parameters must be of format <char><float>");
+                }
+            }
+
+            if (_gCodeTranslations.TryGetValue(codeNumber, out Type gCodeClassType))
+            {
+                return Activator.CreateInstance(gCodeClassType, commandParams) as GCodeCommand;
+            }
+
+            return Activator.CreateInstance(typeof(MiscCommand), commandParams) as GCodeCommand;
+        }
+
+        public bool[] Update(string serializedCmdLine)
+        {
+            GCodeCommand previousGCodeCommand = this.gCodeCommand;
+            GCodeCommand currentGCodeCommand = ParseToGCodeCommand(serializedCmdLine);
+
+            bool markingParamsChanged = false;
+            bool vectorBlockChanged = false;
+            //bool newVectorBlock = false;
+            //bool newMarkingParams = false;
+            // Check if the new command is similar to the existing one
+            // If it is, fill the new command with the missing parameters and return the GCodeCommand
+            // If it is not, also return the command. Then create a new vectorblock and/or markingParam set
+            // Do this in reader
+            //Compare properties with existing markingparams. Create new markingparams, if necessary
+            //Need to define what params are markingparams first
+            if (previousGCodeCommand.GetType() == currentGCodeCommand.GetType())
+            {
+                foreach (var property in previousGCodeCommand.GetType().GetProperties())
+                {
+                    var previousValue = property.GetValue(previousGCodeCommand);
+                    var currentValue = property.GetValue(currentGCodeCommand);
+                    if (property.Name == "xPosition" || property.Name == "yPosition")
+                    {
+                        if (currentValue == null && previousValue != null)
+                        {
+                            property.SetValue(currentGCodeCommand, previousValue);
+                        }
+                        continue;
+                    }
+
+                    if (!Equals(previousValue, currentValue))
+                    {
+                        markingParamsChanged = true;
+                        vectorBlockChanged = true;
+
+                        if (currentValue == null && previousValue != null)
+                        {
+                            property.SetValue(currentGCodeCommand, previousValue);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                vectorBlockChanged = true;
+            }
+
+            this.gCodeCommand = currentGCodeCommand;
+
+            return [markingParamsChanged, vectorBlockChanged];
+        }
+    }
+
+    public class GCodeCommand
+    {
+        public readonly GCode gCode;
+
+        private protected Dictionary<char, float> miscParams;
+        private protected List<char> recordedParams;
+        protected static Dictionary<char, Action<float>> parameterMap;
+
+        public GCodeCommand(GCode gCode, Dictionary<char, float> commandParams = null)
+        {
+            this.gCode = gCode;
+        }
+
+        public GCodeCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null)
+        {
+            this.gCode = new GCode(prepCode, codeNumber);
         }
 
         public GCodeCommand(GCode gCode)
@@ -97,9 +248,23 @@ namespace OpenVectorFormat.GCodeReaderWriter
             this.gCode = new GCode(prepCode, codeNumber);
         }
 
-        public GCodeCommand(int codeNumber)
+        protected static void InitParameterMap() 
         {
-            this.gCode = new GCode(PrepCode.G, codeNumber);
+        }
+
+        protected void ParseParams(Dictionary<char, float> commandParams)
+        {
+            foreach (var commandParam in commandParams)
+            {
+                if (parameterMap.ContainsKey(commandParam.Key))
+                {
+                    parameterMap[commandParam.Key](commandParam.Value);
+                    recordedParams.Add(commandParam.Key);
+                    commandParams.Remove(commandParam.Key);
+                }
+            }
+
+            this.miscParams = commandParams;
         }
 
         public override string ToString()
@@ -108,45 +273,89 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
     }
 
-    internal abstract class MovementCommand : GCodeCommand
+    public abstract class MovementCommand : GCodeCommand
     {
-        public readonly Vector2 position;
-        public readonly ToolParams toolParams;
-        public readonly float? feedRate;
-        public readonly float? zHeight;
+        internal float? xPosition;
+        internal float? yPosition;
+        internal float? zPosition;
+        internal float? feedRate;
+        internal float? acceleration;
 
-        public MovementCommand(Vector2 position, ToolParams toolParams, PrepCode prepCode, int codeNumber, float? feedRate = null, float ? zHeight = null)
-            : base(prepCode, codeNumber)
+        public MovementCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
         {
-            this.position = position;
-            this.feedRate = feedRate;
-            this.toolParams = toolParams;
-            this.zHeight = zHeight;
+            InitParameterMap();
+            if (commandParams != null) 
+            {
+                ParseParams(commandParams);
+            }
         }
 
-        public MovementCommand(Vector2 position, ToolParams toolParams, float? feedRate = null, float ? zHeight = null)
-            : base()
+        public MovementCommand(GCode gCode, Dictionary<char, float> commandParams = null) : base(gCode)
         {
-            this.position = position;
-            this.feedRate = feedRate;
-            this.toolParams = toolParams;
-            this.zHeight = zHeight;
+            InitParameterMap();
+            if (commandParams != null)
+            {
+                ParseParams(commandParams);
+            }
+        }
+
+        public MovementCommand(Dictionary<char, float> commandParams = null) : base(PrepCode.G, 1)
+        {
+            InitParameterMap();
+            if (commandParams != null)
+            {
+                ParseParams(commandParams);
+            }
+        }
+
+
+        private new void InitParameterMap()
+        {
+            parameterMap.Add('X', (float x) => xPosition = x);
+            parameterMap.Add('Y', (float y) => yPosition = y);
+            parameterMap.Add('Z', (float z) => zPosition = z);
+            parameterMap.Add('F', (float f) => feedRate = f);
         }
 
         public override string ToString()
         {
-            return base.ToString() + $" F{feedRate} X{position.X} Y{position.Y}"
-                + (zHeight != null ? $" Z{zHeight}" : "");
+            return base.ToString() + (feedRate != null ? $" F{feedRate}" : "") + (xPosition != null ? $" X{xPosition}" : "") + (yPosition != null ? $" Y{yPosition}" : "")
+                + (zPosition != null ? $" Z{zPosition}" : "");
         }
     }
 
     internal class LinearInterpolationCmd : MovementCommand
     {
-        public readonly bool isOperation;
-        public LinearInterpolationCmd(bool isOperation, Vector2 position, ToolParams toolParams, PrepCode prepCode, int codeNumber, float? feedRate = null, float? zHeight = null)
-            : base(position, toolParams, prepCode, codeNumber, feedRate, zHeight)
+        private bool isOperation;
+
+        public LinearInterpolationCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
         {
-            this.isOperation = isOperation;
+            CheckOperation();
+            if (commandParams != null)
+            {
+                ParseParams(commandParams);
+            }
+        }
+
+        public LinearInterpolationCmd(GCode gCode, Dictionary<char, float> commandParams = null) : base(gCode)
+        {
+            CheckOperation();
+            if (commandParams != null)
+            {
+                ParseParams(commandParams);
+            }
+        }
+
+        private void CheckOperation()
+        {
+            if (this.gCode.codeNumber == 0 || this.gCode.codeNumber == 1)
+            {
+                this.isOperation = this.gCode.codeNumber == 1;
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid code number for linear interpolation: {this.gCode.codeNumber} in line '{this.ToString()}'");
+            }
         }
 
         public override string ToString()
@@ -157,16 +366,57 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     internal class CircularInterpolationCmd : MovementCommand
     {
-        public readonly Vector2 centerRel;
-        public readonly float angle;
+        internal float? xStartPos;
+        internal float? yStartPos;
+        internal float? xCenterRel;
+        internal float? yCenterRel;
+        internal float? angle;
 
-        public CircularInterpolationCmd(Vector2 startPos, Vector2 targetPos, Vector2 centerRel, ToolParams toolParams, PrepCode prepCode, int codeNumber, float? feedRate = null, float? zHeight = null)
-            : base(startPos, toolParams, prepCode, codeNumber, feedRate, zHeight)
+        internal bool isClockwise;
+
+        public CircularInterpolationCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
         {
-            this.centerRel = centerRel;
-            this.angle = (float)Math.Atan2(position.Y - this.centerRel.Y, position.X - this.centerRel.X) - (float)Math.Atan2(startPos.Y - this.centerRel.Y, startPos.X - this.centerRel.X);
+            CheckDirection();
+            InitParameterMap();
+            if (commandParams != null)
+            {
+                ParseParams(commandParams);
+            }
         }
 
+        public CircularInterpolationCmd(GCode gCode, Dictionary<char, float> commandParams = null) : base(gCode)
+        {
+            CheckDirection();
+            InitParameterMap();
+            if (commandParams != null)
+            {
+                ParseParams(commandParams);
+            }
+        }
+
+        private new void InitParameterMap()
+        {
+            parameterMap.Add('I', (float i) => xCenterRel = i);
+            parameterMap.Add('J', (float j) => yCenterRel = j);
+        }
+
+        private void CheckDirection()
+        {
+            if (this.gCode.codeNumber == 2 || this.gCode.codeNumber == 3)
+            {
+                this.isClockwise = this.gCode.codeNumber == 2;
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid code number for circular interpolation: {this.gCode.codeNumber} in line '{this.ToString()}'");
+            }
+        }
+
+        // Move angle calculation below to gcode state object or to transition point of OVF-Parameters
+        // this.angle = (float) Math.Atan2((double)(yPosition - yCenterRel),(double) (xPosition - xCenterRel)) - (float) Math.Atan2((double)(yStartPos - yCenterRel), (double) (xStartPos - xCenterRel));
+
+
+        /*
         public CircularInterpolationCmd(Vector2 startPos, Vector2 targetPos, float radius, ToolParams toolParams, PrepCode prepCode, int codeNumber, float? feedRate = null, float? zHeight = null) 
             : base(startPos, toolParams, prepCode, codeNumber, feedRate, zHeight)
         {
@@ -176,29 +426,43 @@ namespace OpenVectorFormat.GCodeReaderWriter
             this.centerRel = new Vector2(centerRelX, centerRelY);
             this.angle = (float)Math.Atan2(targetPos.Y - this.centerRel.Y, targetPos.X - this.centerRel.X) - (float)Math.Atan2(startPos.Y - this.centerRel.Y, startPos.X - this.centerRel.X);
         }
-
+        */
         public override string ToString()
         {
-            return base.ToString() + $"I{centerRel.X} J{centerRel.Y}";
+            return base.ToString() + (xCenterRel != null ? $" I{xCenterRel}" : "") + (yCenterRel != null ? $" I{yCenterRel}" : "");
         }
     }
 
     internal class PauseCommand : GCodeCommand
     {
-        public readonly float duration;
-        public readonly bool isEstimated;
+        internal float? duration;
 
-        public PauseCommand(float duration) : base(PrepCode.G, 4)
-        {
-            this.duration = duration;
-            this.isEstimated = false;
-        }
-
-        public PauseCommand(float duration, bool isEstimated, PrepCode prepCode, int codeNumber)
+        public PauseCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null)
             : base(prepCode, codeNumber)
         {
-            this.duration = duration;
-            this.isEstimated = isEstimated;
+            InitParameterMap();
+            if (commandParams != null)
+            {
+                ParseParams(commandParams);
+            }
+        }
+
+        public PauseCommand(GCode gCode, Dictionary<char, float> commandParams = null) : base(gCode)
+        {
+            InitParameterMap();
+            if (commandParams != null)
+            {
+                ParseParams(commandParams);
+            }
+        }
+
+        public PauseCommand(Dictionary<char, float> commandParams = null) : base(PrepCode.G, 4)
+        {
+            InitParameterMap();
+            if (commandParams != null)
+            {
+                ParseParams(commandParams);
+            }
         }
 
         public override string ToString()
@@ -211,9 +475,13 @@ namespace OpenVectorFormat.GCodeReaderWriter
     {
         public readonly ToolParams toolParams;
 
-        public ToolChangeCommand(ToolParams toolParams) : base()
+        public ToolChangeCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
         {
-            this.toolParams = toolParams;
+            InitParameterMap();
+            if (commandParams != null)
+            {
+                ParseParams(commandParams);
+            }
         }
 
         public override string ToString()
@@ -224,9 +492,15 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     internal class MonitoringCommand : GCodeCommand
     {
-        public MonitoringCommand() : base()
+        public MonitoringCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
         {
+            InitParameterMap();
+            if (commandParams != null)
+            {
+                ParseParams(commandParams);
+            }
         }
+
         public override string ToString()
         {
             return base.ToString();
@@ -235,9 +509,24 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     internal class ProgramLogicsCommand : GCodeCommand
     {
-        public ProgramLogicsCommand() : base()
+        public ProgramLogicsCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
         {
+            InitParameterMap();
+            if (commandParams != null)
+            {
+                ParseParams(commandParams);
+            }
         }
+
+        public ProgramLogicsCommand(GCode gCode, Dictionary<char, float> commandParams = null) : base(gCode)
+        {
+            InitParameterMap();
+            if (commandParams != null)
+            {
+                ParseParams(commandParams);
+            }
+        }
+
         public override string ToString()
         {
             return base.ToString();
@@ -246,9 +535,25 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     internal class BlockEndCmd : ProgramLogicsCommand
     {
-        public BlockEndCmd() : base()
+        public BlockEndCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
         {
+            InitParameterMap();
+            if (commandParams != null)
+            {
+                ParseParams(commandParams);
+            }
         }
+
+        public BlockEndCmd(GCode gCode, Dictionary<char, float> commandParams = null) : base(gCode)
+        {
+            InitParameterMap();
+            if (commandParams != null)
+            {
+                ParseParams(commandParams);
+            }
+        }
+
+
         public override string ToString()
         {
             return base.ToString();
@@ -257,9 +562,24 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     internal class ProgramEndCmd : ProgramLogicsCommand
     {
-        public ProgramEndCmd() : base()
+        public ProgramEndCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
         {
+            InitParameterMap();
+            if (commandParams != null)
+            {
+                ParseParams(commandParams);
+            }
         }
+
+        public ProgramEndCmd(GCode gCode, Dictionary<char, float> commandParams = null) : base(gCode)
+        {
+            InitParameterMap();
+            if (commandParams != null)
+            {
+                ParseParams(commandParams);
+            }
+        }
+
         public override string ToString()
         {
             return base.ToString();
@@ -269,25 +589,29 @@ namespace OpenVectorFormat.GCodeReaderWriter
     internal class MiscCommand : GCodeCommand
     {
         public readonly Dictionary<string, float> cmdParams;
-        public MiscCommand(PrepCode prepCode, int codeNumber) : base(prepCode, codeNumber)
-        {
-        }
 
-        public MiscCommand(PrepCode prepCode, int codeNumber, Dictionary<string, float> cmdParams) :base(prepCode, codeNumber)
+        public MiscCommand(PrepCode prepCode, int codeNumber, Dictionary<string, float> cmdParams = null) :base(prepCode, codeNumber)
+        {
+            this.cmdParams = cmdParams;
+        }
+         public MiscCommand(GCode gCode, Dictionary<string, float> cmdParams = null) : base(gCode)
         {
             this.cmdParams = cmdParams;
         }
         public override string ToString()
         {
             string outString = base.ToString();
-            for (int i = 0; i < cmdParams.Count; i++)
-            {
-               outString += $" {cmdParams.Keys.ElementAt(i)}{cmdParams.Values.ElementAt(i)}";
+            if (cmdParams != null) {
+                for (int i = 0; i < cmdParams.Count; i++)
+                {
+                    outString += $" {cmdParams.Keys.ElementAt(i)}{cmdParams.Values.ElementAt(i)}";
+                }
             }
             return outString;
         }
     }
 
+    /*
     internal class GCodeCommandList : List<GCodeCommand>
     {
         //Hier "lookahead" implementieren. Bspw. eine Klasse CommandBlock einführen, die quasi einem VectorBlock ähnlich ist. Den CommmandBlock dann über Lookahed füllen
@@ -335,7 +659,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     switch (gCode.codeNumber)
                     {
                         case 0:
-                            commandInstance = new LinearInterpolationCmd(
+                            commandInstance = new OperationalLinearInterpolationCmd(
                                 false,
                                 new Vector2(cmdParams["X"], cmdParams["Y"]),
                                 new ToolParams(),
@@ -343,7 +667,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                                 cmdParams["F"]);
                             break;
                         case 1:
-                            commandInstance = new LinearInterpolationCmd(
+                            commandInstance = new OperationalLinearInterpolationCmd(
                                 true,
                                 new Vector2(cmdParams["X"], cmdParams["Y"]),
                                 new ToolParams(),
@@ -428,4 +752,5 @@ namespace OpenVectorFormat.GCodeReaderWriter
             return lastPosition;
         }
     }
+    */
 }
