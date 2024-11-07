@@ -122,6 +122,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
         private Dictionary<int, GCodeType> _tCodeTranslations = new Dictionary<int, GCodeType>();
 
         internal GCodeCommand gCodeCommand;
+        internal Vector3 position;
 
         public GCodeState(string serializedCmdLine)
         {
@@ -172,51 +173,64 @@ namespace OpenVectorFormat.GCodeReaderWriter
             GCodeCommand previousGCodeCommand = this.gCodeCommand;
             GCodeCommand currentGCodeCommand = ParseToGCodeCommand(serializedCmdLine);
 
+            bool workingPlaneChanged = false;
             bool markingParamsChanged = false;
             bool vectorBlockChanged = false;
-            //bool newVectorBlock = false;
-            //bool newMarkingParams = false;
-            // Check if the new command is similar to the existing one
-            // If it is, fill the new command with the missing parameters and return the GCodeCommand
-            // If it is not, also return the command. Then create a new vectorblock and/or markingParam set
-            // Do this in reader
-            //Compare properties with existing markingparams. Create new markingparams, if necessary
-            //Need to define what params are markingparams first
-            if (previousGCodeCommand.GetType() == currentGCodeCommand.GetType())
+
+            if (previousGCodeCommand.GetType() != currentGCodeCommand.GetType())
             {
-                foreach (var property in previousGCodeCommand.GetType().GetProperties())
+                vectorBlockChanged = true;
+            }
+            markingParamsChanged = UpdateParameters();
+            workingPlaneChanged = updatePosition();
+
+            bool UpdateParameters()
+            {
+                bool parametersChanged = false;
+                bool positionChanged = false;
+                foreach (var property in previousGCodeCommand.GetType().GetProperties().Where(p => p.Name != "xPosition" && p.Name != "yPosition" && p.Name != "zPosition"))
                 {
                     var previousValue = property.GetValue(previousGCodeCommand);
                     var currentValue = property.GetValue(currentGCodeCommand);
-                    if (property.Name == "xPosition" || property.Name == "yPosition")
-                    {
-                        if (currentValue == null && previousValue != null)
-                        {
-                            property.SetValue(currentGCodeCommand, previousValue);
-                        }
-                        continue;
-                    }
 
                     if (!Equals(previousValue, currentValue))
                     {
-                        markingParamsChanged = true;
-                        vectorBlockChanged = true;
-
-                        if (currentValue == null && previousValue != null)
-                        {
-                            property.SetValue(currentGCodeCommand, previousValue);
-                        }
+                        property.SetValue(currentGCodeCommand, previousValue);
+                        parametersChanged = true;                        
                     }
                 }
+                if (positionChanged)
+                {
+                    MovementCommand movementCmd = currentGCodeCommand as MovementCommand;
+                    position = new Vector3(movementCmd.xPosition ?? 0, movementCmd.yPosition ?? 0, movementCmd.zPosition ?? 0);
+                }
+                return parametersChanged;
             }
-            else
+
+            bool updatePosition()
             {
-                vectorBlockChanged = true;
+                bool zChange = false;
+                if (currentGCodeCommand is MovementCommand movementCmd)
+                {
+                    try
+                    {
+                        if (movementCmd.zPosition != position.Z)
+                        {
+                            zChange = true;
+                        }
+                        position = new Vector3((float)movementCmd.xPosition, (float)movementCmd.yPosition, (float)movementCmd.zPosition);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new ArgumentException($"Unable to update position in line '{serializedCmdLine}'. Creating a Vector3 object from command was not possible.");
+                    }
+                }
+                return zChange;
             }
 
             this.gCodeCommand = currentGCodeCommand;
 
-            return [markingParamsChanged, vectorBlockChanged];
+            return new bool [] { workingPlaneChanged, markingParamsChanged, vectorBlockChanged};
         }
     }
 
