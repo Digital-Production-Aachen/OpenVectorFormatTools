@@ -152,23 +152,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         private void ParseGCodeFile()
         {
-            Dictionary<int, MarkingParams> _markingParamsMap = new Dictionary<int, MarkingParams>
-            {
-                // {LaserSpeedInMmPerSec, LinearInterpolationCommand.feedRate where isOperation = true}
-                // {JumpSpeedInMmPerSec, LinearInterpolationCommand.feedRate where isOperation = false}
-                // {FurtherMarkingParams, Acceleration}
-                // {FurtherMarkingParams, ToolParams}
-                // {FurtherMarkingParams, RemainingParameters}
-                // {FurtherMarkingParams, RecordedParameters}
-            };
-        
-            Dictionary<Type, Func<VectorBlock.VectorDataOneofCase>> vectorDataMap = new Dictionary<Type, Func<VectorBlock.VectorDataOneofCase>>
-            {   
-                //{typeof(LinearInterpolationCmd), () => new LinearInterpolationCmd()},
-                //{typeof(CircularInterpolationCmd), () => new CircularInterpolationCmd()},
-                //{typeof(PauseCommand), () => new PauseCommand()},
-                //{typeof(MiscCommand), () => new MiscCommand()}
-            };
             _workPlane = new WorkPlane
             {
                 WorkPlaneNumber = 0,
@@ -191,49 +174,15 @@ namespace OpenVectorFormat.GCodeReaderWriter
             {
                 bool[] objectUpdates = gCodeState.Update(commandLine);
                 bool workingPlaneChanged = objectUpdates[0], markingParamsChanged = objectUpdates[1], vectorBlockChanged = objectUpdates[2];
-                if (gCodeState.Update(commandLine))
+
+                if (workingPlaneChanged)
                 {
-                    switch (gCodeState.gCodeCommand)
+                    _workPlane = new WorkPlane
                     {
-                        case LinearInterpolationCmd linearCmd:
-                            _currentVectorBlock.Vector
-                            break;
-
-                        case CircularInterpolationCmd circularCmd:
-                            break;
-
-                        case PauseCommand pauseCmd:
-                            break;
-
-                        case MiscCommand miscCommand:
-                            break;
-                    }
+                        WorkPlaneNumber = _workPlane.WorkPlaneNumber + 1,
+                        ZPosInMm = gCodeState.position.Z
+                    };
                 }
-                else
-                {
-                    switch (gCodeState.gCodeCommand)
-                    {
-                        case LinearInterpolationCmd linearCmd:
-                            _currentVectorBlock.LineSequence.Points.Add((float)linearCmd.xPosition);
-                            _currentVectorBlock.LineSequence.Points.Add((float)linearCmd.yPosition);
-                            break;
-
-                        case CircularInterpolationCmd circularCmd:
-                            _currentVectorBlock.Arcs.Centers.Add((float)circularCmd.xCenterRel);
-                            _currentVectorBlock.Arcs.Centers.Add((float)circularCmd.yCenterRel);
-                            break;
-
-                        case PauseCommand pauseCmd:
-                            _currentVectorBlock.ExposurePause.PauseInUs = (ulong)pauseCmd.duration*1000;
-                            break;
-
-                        case MiscCommand miscCommand:
-                            //_currentMarkingParams._unknownFields
-                            break;
-                    }
-                    
-                }
-                
             }
             _cacheState = CacheState.CompleteJobCached;
 
