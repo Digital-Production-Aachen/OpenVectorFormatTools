@@ -189,11 +189,14 @@ namespace OpenVectorFormat.GCodeReaderWriter
             GCodeState gCodeState = new GCodeState(commandLines[0]);
             foreach (string commandLine in commandLines.Skip(1))
             {
+                bool[] objectUpdates = gCodeState.Update(commandLine);
+                bool workingPlaneChanged = objectUpdates[0], markingParamsChanged = objectUpdates[1], vectorBlockChanged = objectUpdates[2];
                 if (gCodeState.Update(commandLine))
                 {
                     switch (gCodeState.gCodeCommand)
                     {
                         case LinearInterpolationCmd linearCmd:
+                            _currentVectorBlock.Vector
                             break;
 
                         case CircularInterpolationCmd circularCmd:
