@@ -29,19 +29,22 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using OpenVectorFormat.GCodeReaderWriter;
+using System.IO;
 
 namespace UnitTests
 {
     [TestClass]
     public class GCodeTest
     {
+        public static DirectoryInfo dir = new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "TestFiles/gcode"));
         [TestMethod]
         public void TestGetJobShell()
         {
             GCodeReader reader = new GCodeReader();
-            string filename = "to implement";
+            string filename = Directory.GetCurrentDirectory() + "/pumpkin_basic.gcode";
             reader.OpenJob(filename);
             var jobShell = reader.JobShell;
+            Assert.IsNotNull(jobShell);
         }
     }
 }
