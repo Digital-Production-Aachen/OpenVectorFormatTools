@@ -79,35 +79,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     internal class GCodeState
     {
-        // This class contains a gcode command
-        // When a new object of this class is created, the gcode command is parsed from the input string
-        // If an object of gcodestate already exists, the new instance compares the gcode command with the existing one
-        // If the command is similar, the new command is filled with the missing parameters, which already exist in the old command
-        // The command is then added to the existing vectorblock
-        // If the existing command is dissimilar this can be noted through a new vectorblock and/or marikingParam set
-
-        /* Potentially not needed
-        public readonly VectorBlock.VectorDataOneofCase ovfVectordataType;
-        public GCodeType gCodeType;
-
-        // Movement parameters
-        public readonly Vector3 position;
-        public readonly float feedRate;
-        public readonly float acceleration;
-
-        // Linear movement parameters
-        public readonly bool isOperation;
-
-        //Circular movement parameters
-        public readonly Vector3 centerRel;
-        public readonly float angle;
-
-        // Pause patameters
-        public readonly float pauseDuration;
-        public readonly bool isManualPause;
-        */
-
-        //Hier Klassen der GCodes behalten und dem GCodeCommand eine entsprechenede Klasse zuweisen. Hier
         private readonly Dictionary<int, Type> _gCodeTranslations = new Dictionary<int, Type>
         {
             {0, typeof(LinearInterpolationCmd)},
@@ -116,6 +87,37 @@ namespace OpenVectorFormat.GCodeReaderWriter
             {3, typeof(CircularInterpolationCmd)},
             {4, typeof(PauseCommand)},
         };
+
+        internal class GCodeMarkingParams
+        {
+            // Marking parameters
+            internal float workSpeed = 0;
+            internal float travelSpeed = 0;
+            internal float acceleration = 0;
+
+            // Pause parameters
+            internal float pauseDuration = 0;
+
+            // Other parameters
+            internal ToolParams toolParams;
+
+            Dictionary<string, float> miscParameters = new Dictionary<string, float>();
+
+            internal GCodeMarkingParams()
+            {
+
+            }
+        }
+
+        internal class GCodePositions
+        {
+            internal Vector3 position;
+            internal Vector2 centerRel;
+            internal GCodePositions()
+            {
+
+            }
+        }
 
         private Dictionary<int, GCodeType> _mCodeTranslations = new Dictionary<int, GCodeType>();
 
@@ -173,7 +175,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             GCodeCommand previousGCodeCommand = this.gCodeCommand;
             GCodeCommand currentGCodeCommand = ParseToGCodeCommand(serializedCmdLine);
 
-            bool workingPlaneChanged = false;
+            bool workPlaneChanged = false;
             bool markingParamsChanged = false;
             bool vectorBlockChanged = false;
 
@@ -182,13 +184,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 vectorBlockChanged = true;
             }
             markingParamsChanged = UpdateParameters();
-            workingPlaneChanged = updatePosition();
+            workPlaneChanged = updatePosition();
 
             bool UpdateParameters()
             {
                 bool parametersChanged = false;
-                bool positionChanged = false;
-                foreach (var property in previousGCodeCommand.GetType().GetProperties().Where(p => p.Name != "xPosition" && p.Name != "yPosition" && p.Name != "zPosition"))
+                foreach (var property in previousGCodeCommand.GetType().GetProperties())
                 {
                     var previousValue = property.GetValue(previousGCodeCommand);
                     var currentValue = property.GetValue(currentGCodeCommand);
@@ -196,14 +197,10 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     if (!Equals(previousValue, currentValue))
                     {
                         property.SetValue(currentGCodeCommand, previousValue);
-                        parametersChanged = true;                        
+                        parametersChanged = (property.Name != "xPosition" && property.Name != "yPosition" && property.Name != "zPosition");
                     }
                 }
-                if (positionChanged)
-                {
-                    MovementCommand movementCmd = currentGCodeCommand as MovementCommand;
-                    position = new Vector3(movementCmd.xPosition ?? 0, movementCmd.yPosition ?? 0, movementCmd.zPosition ?? 0);
-                }
+                
                 return parametersChanged;
             }
 
@@ -222,7 +219,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     }
                     catch (Exception e)
                     {
-                        throw new ArgumentException($"Unable to update position in line '{serializedCmdLine}'. Creating a Vector3 object from command was not possible.");
+                        throw new ArgumentException($"Unable to update position in line '{serializedCmdLine}'. Creating a Vector object from command was not possible.");
                     }
                 }
                 return zChange;
@@ -230,7 +227,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             this.gCodeCommand = currentGCodeCommand;
 
-            return new bool [] { workingPlaneChanged, markingParamsChanged, vectorBlockChanged};
+            return new bool [] { workPlaneChanged, markingParamsChanged, vectorBlockChanged};
         }
     }
 
@@ -340,7 +337,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     internal class LinearInterpolationCmd : MovementCommand
     {
-        private bool isOperation;
+        internal bool isOperation;
 
         public LinearInterpolationCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
         {
@@ -380,11 +377,8 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     internal class CircularInterpolationCmd : MovementCommand
     {
-        internal float? xStartPos;
-        internal float? yStartPos;
         internal float? xCenterRel;
         internal float? yCenterRel;
-        internal float? angle;
 
         internal bool isClockwise;
 

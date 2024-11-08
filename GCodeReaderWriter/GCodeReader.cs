@@ -173,16 +173,53 @@ namespace OpenVectorFormat.GCodeReaderWriter
             foreach (string commandLine in commandLines.Skip(1))
             {
                 bool[] objectUpdates = gCodeState.Update(commandLine);
-                bool workingPlaneChanged = objectUpdates[0], markingParamsChanged = objectUpdates[1], vectorBlockChanged = objectUpdates[2];
+                bool workPlaneChanged = objectUpdates[0], markingParamsChanged = objectUpdates[1], vectorBlockChanged = objectUpdates[2];
 
-                if (workingPlaneChanged)
+                if (markingParamsChanged)
+                {
+                    GCodeCommand gCodeCommand = gCodeState.gCodeCommand;
+                    //check if markingParams are already in the map
+                    foreach (var markingParams in CompleteJob.MarkingParamsMap.Values)
+                    {
+                        object[] relevantParams = new object[] { markingParams.LaserSpeedInMmPerS, markingParams.JumpSpeedInMmS, };
+                        if (gCodeCommand is LinearInterpolationCmd linearCmd &&linearCmd.isOperation)
+                        {
+                            if(markingParams.LaserSpeedInMmPerS == linearCmd.feedRate)
+                            {
+                                markingParamsChanged = false;
+                            }
+                        }
+                        foreach (var markingParam in markingParams.GetType().GetProperties().Where<>)
+                        {
+                            switch (markingParam.Name)
+                            {
+                                case "LaserSpeedInMmPerS":
+                                    if (markingParam.GetValue(markingParams) != gCodeState.gCodeCommand.)
+                                    {
+                                        markingParamsChanged = true;
+                                    }
+                                    break;
+
+                            }
+                    }
+                    
+                }
+                if (workPlaneChanged)
                 {
                     _workPlane = new WorkPlane
                     {
                         WorkPlaneNumber = _workPlane.WorkPlaneNumber + 1,
                         ZPosInMm = gCodeState.position.Z
                     };
+                    NewVectorBlock();
+                    vectorBlockChanged = false;
                 }
+                if (vectorBlockChanged)
+                {
+                    NewVectorBlock();
+                }
+                // Add coordinates to the current vector block, clculate angles and centers from positions of arcs
+
             }
             _cacheState = CacheState.CompleteJobCached;
 
