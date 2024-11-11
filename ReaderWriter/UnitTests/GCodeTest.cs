@@ -31,20 +31,38 @@ using System.Threading.Tasks;
 using OpenVectorFormat.GCodeReaderWriter;
 using System.IO;
 
-namespace UnitTests
+namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
     [TestClass]
     public class GCodeTest
     {
-        public static DirectoryInfo dir = new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "TestFiles/gcode"));
+        public static DirectoryInfo dir = new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "TestFiles"));
+
+        [DynamicData("GCodeFiles")]
         [TestMethod]
-        public void TestGetJobShell()
+        public void TestGCodeFiles(FileInfo fileName)
         {
-            GCodeReader reader = new GCodeReader();
-            string filename = Directory.GetCurrentDirectory() + "/pumpkin_basic.gcode";
-            reader.OpenJob(filename);
-            var jobShell = reader.JobShell;
-            Assert.IsNotNull(jobShell);
+            var gCodeReader = new GCodeReader();
+
+            string testCommand = File.ReadAllLines(fileName.FullName)[21];
+            GCodeState gCodeState = new GCodeState(testCommand);
+
+            LinearInterpolationCmd assertCmd = new LinearInterpolationCmd(PrepCode.G, 1, new Dictionary<char, float> { { 'F', 1800 }, { 'X', 110.414f }, { 'Y', 94.025f }, { 'E', 0.02127f } });
+            Assert.AreEqual(gCodeState.gCodeCommand.gCode, assertCmd.gCode );
+            Assert.AreEqual(gCodeState.gCodeCommand.GetType(), assertCmd.GetType());
+        }
+        public static List<object[]> GCodeFiles
+        {
+            get
+            {
+                FileInfo[] testFiles = dir.GetFiles("*.gcode"); //getting all .cli files
+                List<object[]> files = new List<object[]>(testFiles.Length);
+                for (int i = 0; i < testFiles.Length; i++)
+                {
+                    files.Add(new object[] { testFiles[i] });
+                }
+                return files;
+            }
         }
     }
 }
