@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -30,6 +31,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Globalization;
 using OpenVectorFormat.Utils;
 
 namespace OpenVectorFormat.GCodeReaderWriter
@@ -64,20 +66,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
         int toolNumber;
     }
 
-    public enum GCodeType
-    {
-        LinearInterpolation,
-        CircularInterpolation,
-        Pause,
-        ToolManipulation,
-        Monitoring,
-        ProgramLogics,
-        BlockEnd,
-        ProgramEnd,
-        Misc
-    }
-
-    internal class GCodeState
+    public class GCodeState
     {
         private readonly Dictionary<int, Type> _gCodeTranslations = new Dictionary<int, Type>
         {
@@ -87,6 +76,13 @@ namespace OpenVectorFormat.GCodeReaderWriter
             {3, typeof(CircularInterpolationCmd)},
             {4, typeof(PauseCommand)},
         };
+
+        internal class GCodeProperties
+        {
+            internal Type gCodeType;
+            internal List<char> recordedParams;
+            internal Dictionary<char, float> miscParams;
+        }
 
         internal class GCodeMarkingParams
         {
@@ -109,25 +105,27 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-        internal class GCodePositions
+        internal class GCodePosition
         {
             internal Vector3 position;
             internal Vector2 centerRel;
-            internal GCodePositions()
+            internal GCodePosition()
             {
 
             }
         }
 
-        private Dictionary<int, GCodeType> _mCodeTranslations = new Dictionary<int, GCodeType>();
+        private Dictionary<int, Type> _mCodeTranslations = new Dictionary<int, Type>();
 
-        private Dictionary<int, GCodeType> _tCodeTranslations = new Dictionary<int, GCodeType>();
+        private Dictionary<int, Type> _tCodeTranslations = new Dictionary<int, Type>();
 
-        internal GCodeCommand gCodeCommand;
+        public GCodeCommand gCodeCommand;
         internal Vector3 position;
 
         public GCodeState(string serializedCmdLine)
         {
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
             this.gCodeCommand = ParseToGCodeCommand(serializedCmdLine);
         }
 
@@ -145,6 +143,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 throw new ArgumentException($"Invalid number format: {commandNumber} in line '{serializedCmdLine}'");
 
             Dictionary<char, float> commandParams = new Dictionary<char, float>();
+            Console.WriteLine(string.Join(Environment.NewLine, commandArr));
 
             foreach (var commandParam in commandArr.Skip(1))
             {
@@ -161,13 +160,13 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     throw new ArgumentException($"Invalid command parameter format: {commandParam} in line '{serializedCmdLine}'. Command parameters must be of format <char><float>");
                 }
             }
-
+            Console.WriteLine(string.Join(Environment.NewLine, commandParams));
             if (_gCodeTranslations.TryGetValue(codeNumber, out Type gCodeClassType))
             {
-                return Activator.CreateInstance(gCodeClassType, commandParams) as GCodeCommand;
+                return Activator.CreateInstance(gCodeClassType, new Object[] { prepCode, codeNumber, commandParams }) as GCodeCommand;
             }
 
-            return Activator.CreateInstance(typeof(MiscCommand), commandParams) as GCodeCommand;
+            return Activator.CreateInstance(typeof(MiscCommand), new Object[] { prepCode, codeNumber, commandParams }) as GCodeCommand;
         }
 
         public bool[] Update(string serializedCmdLine)
@@ -241,22 +240,39 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         public GCodeCommand(GCode gCode, Dictionary<char, float> commandParams = null)
         {
+            miscParams = new Dictionary<char, float>();
+            recordedParams = new List<char>();
+            parameterMap = new Dictionary<char, Action<float>>();
             this.gCode = gCode;
         }
 
         public GCodeCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null)
         {
+            miscParams = new Dictionary<char, float>();
+            recordedParams = new List<char>();
+            parameterMap = new Dictionary<char, Action<float>>();
             this.gCode = new GCode(prepCode, codeNumber);
         }
 
         public GCodeCommand(GCode gCode)
         {
             this.gCode = gCode;
+            miscParams = new Dictionary<char, float>();
+            recordedParams = new List<char>();
+            parameterMap = new Dictionary<char, Action<float>>();
         }
 
         public GCodeCommand(PrepCode prepCode, int codeNumber)
         {
             this.gCode = new GCode(prepCode, codeNumber);
+            miscParams = new Dictionary<char, float>();
+            recordedParams = new List<char>();
+            parameterMap = new Dictionary<char, Action<float>>();
+        }
+
+        protected static void InitMaps()
+        {
+
         }
 
         protected static void InitParameterMap() 
@@ -280,7 +296,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         public override string ToString()
         {
-            return gCode.ToString();
+            string outString = gCode.ToString();
+            foreach (var param in miscParams)
+            {
+                outString += $" {param.Key}{param.Value}";
+            }
+            return outString;
         }
     }
 
@@ -335,7 +356,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
     }
 
-    internal class LinearInterpolationCmd : MovementCommand
+    public class LinearInterpolationCmd : MovementCommand
     {
         internal bool isOperation;
 
@@ -618,147 +639,4 @@ namespace OpenVectorFormat.GCodeReaderWriter
             return outString;
         }
     }
-
-    /*
-    internal class GCodeCommandList : List<GCodeCommand>
-    {
-        //Hier "lookahead" implementieren. Bspw. eine Klasse CommandBlock einführen, die quasi einem VectorBlock ähnlich ist. Den CommmandBlock dann über Lookahed füllen
-        // CommandBLock enthält dann eine Liste von GCodeCommands und deren Gemeinsamkeiten, also feedRate, Accel... bzw. deren Unterscheide, also z.B. positions
-        public void Parse(string serializedCmds)
-        {  
-            ToolParams toolParams = new ToolParams();
-            Vector2 lastPosition = new Vector2(0, 0);
-
-            string[] commandLines = serializedCmds.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-
-            foreach (string commandLine in commandLines)
-            {
-                lastPosition = ParseLine(commandLine, lastPosition);
-            }
-        }
-
-        public Vector2 ParseLine(string commandLine, Vector2 lastPosition)
-        {
-            commandLine = commandLine.Split(';')[0].Trim();
-            string commandString = Regex.Replace(commandLine.Split(' ')[0], @"[A-Z]0(\d)", "$1"); // kann weg
-
-            char commandChar = commandString[0];
-            if (!Enum.TryParse(commandChar.ToString(), out PrepCode prepCode))
-                throw new ArgumentException($"Invalid preparatory function code: {commandChar}");
-
-            string commandNumber = commandString.Substring(1);
-            if(!int.TryParse(commandNumber, out int codeNumber))
-                throw new ArgumentException($"Invalid number format: {commandNumber}");
-
-            GCode gCode = new GCode(prepCode, codeNumber);
-            
-            Dictionary<string, float> cmdParams = new Dictionary<string, float>();
-
-            foreach (string cmdParam in commandLine.Split(' ').Skip(1))
-            {
-                cmdParams.Add(cmdParam.Substring(0, 1), float.Parse(cmdParam.Substring(1)));
-            }
-
-            GCodeCommand commandInstance = null;
-
-            switch (gCode.preparatoryFunctionCode)
-            {
-                case PrepCode.G:
-                    switch (gCode.codeNumber)
-                    {
-                        case 0:
-                            commandInstance = new OperationalLinearInterpolationCmd(
-                                false,
-                                new Vector2(cmdParams["X"], cmdParams["Y"]),
-                                new ToolParams(),
-                                gCode.preparatoryFunctionCode, gCode.codeNumber,
-                                cmdParams["F"]);
-                            break;
-                        case 1:
-                            commandInstance = new OperationalLinearInterpolationCmd(
-                                true,
-                                new Vector2(cmdParams["X"], cmdParams["Y"]),
-                                new ToolParams(),
-                                gCode.preparatoryFunctionCode, gCode.codeNumber,
-                                cmdParams["F"]);
-                            break;
-                        case 2:
-                            if (cmdParams.ContainsKey("R"))
-                            {
-                                commandInstance = new CircularInterpolationCmd(
-                                    lastPosition,
-                                    new Vector2(cmdParams["X"], cmdParams["Y"]),
-                                    new Vector2(cmdParams["R"], cmdParams["R"]),
-                                    new ToolParams(),
-                                    gCode.preparatoryFunctionCode, gCode.codeNumber,
-                                    cmdParams["F"]);
-                            }
-                            else
-                            {
-                                commandInstance = new CircularInterpolationCmd(
-                                    lastPosition,
-                                    new Vector2(cmdParams["X"], cmdParams["Y"]),
-                                    new Vector2(cmdParams["I"], cmdParams["J"]),
-                                    new ToolParams(),
-                                    gCode.preparatoryFunctionCode, gCode.codeNumber,
-                                    cmdParams["F"]);
-                            }
-                            break;
-                        case 3:
-                            if (cmdParams.ContainsKey("R"))
-                            {
-                                commandInstance = new CircularInterpolationCmd(
-                                    lastPosition,
-                                    new Vector2(cmdParams["X"], cmdParams["Y"]),
-                                    new Vector2(cmdParams["R"], cmdParams["R"]),
-                                    new ToolParams(),
-                                    gCode.preparatoryFunctionCode, gCode.codeNumber,
-                                    cmdParams["F"]);
-                            }
-                            else
-                            {
-                                commandInstance = new CircularInterpolationCmd(
-                                    lastPosition,
-                                    new Vector2(cmdParams["X"], cmdParams["Y"]),
-                                    new Vector2(cmdParams["I"], cmdParams["J"]),
-                                    new ToolParams(),
-                                    gCode.preparatoryFunctionCode, gCode.codeNumber,
-                                    cmdParams["F"]);
-                            }
-                            break;
-                        case 4:
-                            commandInstance = new PauseCommand(
-                                cmdParams["F"]);
-                            break;
-                        default:
-                            commandInstance = new MiscCommand(gCode.preparatoryFunctionCode, gCode.codeNumber, cmdParams);
-                            break;
-                    }
-                    break;
-                case PrepCode.M:
-                    switch(gCode.codeNumber)
-                    {
-                        default:
-                            commandInstance = new MiscCommand(gCode.preparatoryFunctionCode, gCode.codeNumber, cmdParams);
-                            break;
-                    }
-                    break;
-                case PrepCode.T:
-                    switch(gCode.codeNumber)
-                    {
-                        default:
-                            commandInstance = new ToolChangeCommand(new ToolParams());
-                            break;
-                    }
-                    break;
-            }
-            if (commandInstance != null)
-            {
-                Add(commandInstance);
-                return new Vector2(cmdParams["X"], cmdParams["Y"]);
-            }
-            return lastPosition;
-        }
-    }
-    */
 }

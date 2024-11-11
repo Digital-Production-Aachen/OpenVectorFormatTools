@@ -36,10 +36,13 @@ namespace OpenVectorFormat.GCodeReaderWriter
 {
     public class GCodeReader : FileReader
     {
-        private WorkPlane _workPlane;
-        private VectorBlock _currentVectorBlock;
+        private WorkPlane workPlane;
+        private VectorBlock currentVectorBlock;
+        private IFileReaderWriterProgress progress;
         private CacheState _cacheState = CacheState.NotCached;
-        private string _filename;
+        private Job job;
+        private string filename;
+        private bool fileLoadingFinished;
 
         public new static List<String> SupportedFileFormats { get; } = new List<string>() { ".gcode", ".gco" };
 
@@ -70,7 +73,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             {
                 return CompleteJob;
             }
-            else if (File.Exists(_filename))
+            else if (File.Exists(filename))
             {
                 ParseGCodeFile();
                 return CompleteJob;
@@ -134,6 +137,11 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         public override void OpenJob(string filename, IFileReaderWriterProgress progress = null)
         {
+            this.progress = progress;
+            this.filename = filename;
+            fileLoadingFinished = false;
+            _cacheState = CacheState.NotCached;
+            job = new Job();
             if (!SupportedFileFormats.Contains(Path.GetExtension(filename)))
             {
                 throw new ArgumentException(Path.GetExtension(filename) + " is not supported by GCodeReader. Supported formats are: " + string.Join(";", SupportedFileFormats));
@@ -147,27 +155,27 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 }
             };
 
-            _filename = filename;
+            this.filename = filename;
         }
 
         private void ParseGCodeFile()
         {
-            _workPlane = new WorkPlane
+            workPlane = new WorkPlane
             {
                 WorkPlaneNumber = 0,
                 ZPosInMm = 0
             };
             CompleteJob.NumWorkPlanes = 1;
-            _workPlane.Repeats = 0;
+            workPlane.Repeats = 0;
 
             MarkingParams _currentMarkingParams = new MarkingParams();
 
-            _currentVectorBlock = new VectorBlock
+            currentVectorBlock = new VectorBlock
             {
                 MarkingParamsKey = 0
             };
 
-            string[] commandLines = File.ReadAllLines(_filename);
+            string[] commandLines = File.ReadAllLines(filename);
 
             GCodeState gCodeState = new GCodeState(commandLines[0]);
             foreach (string commandLine in commandLines.Skip(1))
@@ -189,26 +197,23 @@ namespace OpenVectorFormat.GCodeReaderWriter
                                 markingParamsChanged = false;
                             }
                         }
-                        foreach (var markingParam in markingParams.GetType().GetProperties().Where<>)
+                        foreach (var markingParam in markingParams.GetType().GetProperties())
                         {
                             switch (markingParam.Name)
                             {
                                 case "LaserSpeedInMmPerS":
-                                    if (markingParam.GetValue(markingParams) != gCodeState.gCodeCommand.)
-                                    {
-                                        markingParamsChanged = true;
-                                    }
                                     break;
 
                             }
+                        }
                     }
                     
                 }
                 if (workPlaneChanged)
                 {
-                    _workPlane = new WorkPlane
+                    workPlane = new WorkPlane
                     {
-                        WorkPlaneNumber = _workPlane.WorkPlaneNumber + 1,
+                        WorkPlaneNumber = workPlane.WorkPlaneNumber + 1,
                         ZPosInMm = gCodeState.position.Z
                     };
                     NewVectorBlock();
@@ -226,12 +231,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
             void NewVectorBlock()
             {
                 // if there is no geometry in the block, do not create new one.
-                if (_currentVectorBlock.VectorDataCase == VectorBlock.VectorDataOneofCase.None)
+                if (currentVectorBlock.VectorDataCase == VectorBlock.VectorDataOneofCase.None)
                 {
                     return;
                 }
 
-                int paramMapKey = _currentVectorBlock.MarkingParamsKey;
+                int paramMapKey = currentVectorBlock.MarkingParamsKey;
 
                 if (CompleteJob.MarkingParamsMap.Count == 0)
                 {
@@ -240,13 +245,13 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 else if (!_currentMarkingParams.Equals(CompleteJob.MarkingParamsMap[paramMapKey]))
                 {
                     CompleteJob.MarkingParamsMap.Add(++paramMapKey, _currentMarkingParams.Clone());
-                    _currentVectorBlock.MarkingParamsKey = paramMapKey;
+                    currentVectorBlock.MarkingParamsKey = paramMapKey;
                 }
 
-                _workPlane.VectorBlocks.Add(_currentVectorBlock);
-                _workPlane.NumBlocks++;
+                workPlane.VectorBlocks.Add(currentVectorBlock);
+                workPlane.NumBlocks++;
 
-                _currentVectorBlock = new VectorBlock
+                currentVectorBlock = new VectorBlock
                 {
                     MarkingParamsKey = paramMapKey
                 };
