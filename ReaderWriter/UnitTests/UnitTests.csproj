@@ -75,6 +75,9 @@
     <None Update="TestFiles\netfabb_bin.ilt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="TestFiles\pumpkin_basic.gcode">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestFiles\test_marking_params_ascii.cli">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
