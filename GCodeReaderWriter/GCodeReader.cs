@@ -375,7 +375,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 return new bool[] { positionChanged, markingParamsChanged, vectorBlockChanged };
             }
         }
-        }
 
         public override void UnloadJobFromMemory()
         {
