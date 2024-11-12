@@ -31,6 +31,7 @@ using OpenVectorFormat.Utils;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Numerics;
+using System.Globalization;
 
 namespace OpenVectorFormat.GCodeReaderWriter
 {
@@ -170,64 +171,24 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             MarkingParams _currentMarkingParams = new MarkingParams();
 
+
+            List<MarkingParams> gCodeMarkingParams = new List<MarkingParams>();
             currentVectorBlock = new VectorBlock
             {
                 MarkingParamsKey = 0
             };
 
-            string[] commandLines = File.ReadAllLines(filename);
+            //GCodeCommandList gCodeCommands = new GCodeCommandList(File.ReadAllLines(filename));
+            string[] gCodeCommands = File.ReadAllLines(filename);
+            // Split list into segments of same Type. Then use parsing of gcode state and potentially split further.
+            GCodeState currentGCodeState = new GCodeState(gCodeCommands[0]);
 
-            GCodeState gCodeState = new GCodeState(commandLines[0]);
-            foreach (string commandLine in commandLines.Skip(1))
+            foreach (string gCodeCommand in gCodeCommands)
             {
-                bool[] objectUpdates = gCodeState.Update(commandLine);
-                bool workPlaneChanged = objectUpdates[0], markingParamsChanged = objectUpdates[1], vectorBlockChanged = objectUpdates[2];
-
-                if (markingParamsChanged)
-                {
-                    GCodeCommand gCodeCommand = gCodeState.gCodeCommand;
-                    //check if markingParams are already in the map
-                    foreach (var markingParams in CompleteJob.MarkingParamsMap.Values)
-                    {
-                        object[] relevantParams = new object[] { markingParams.LaserSpeedInMmPerS, markingParams.JumpSpeedInMmS, };
-                        if (gCodeCommand is LinearInterpolationCmd linearCmd &&linearCmd.isOperation)
-                        {
-                            if(markingParams.LaserSpeedInMmPerS == linearCmd.feedRate)
-                            {
-                                markingParamsChanged = false;
-                            }
-                        }
-                        foreach (var markingParam in markingParams.GetType().GetProperties())
-                        {
-                            switch (markingParam.Name)
-                            {
-                                case "LaserSpeedInMmPerS":
-                                    break;
-
-                            }
-                        }
-                    }
-                    
-                }
-                if (workPlaneChanged)
-                {
-                    workPlane = new WorkPlane
-                    {
-                        WorkPlaneNumber = workPlane.WorkPlaneNumber + 1,
-                        ZPosInMm = gCodeState.position.Z
-                    };
-                    NewVectorBlock();
-                    vectorBlockChanged = false;
-                }
-                if (vectorBlockChanged)
-                {
-                    NewVectorBlock();
-                }
-                // Add coordinates to the current vector block, clculate angles and centers from positions of arcs
-
+                currentGCodeState.Update(gCodeCommand);
             }
-            _cacheState = CacheState.CompleteJobCached;
 
+                
             void NewVectorBlock()
             {
                 // if there is no geometry in the block, do not create new one.
@@ -256,6 +217,164 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     MarkingParamsKey = paramMapKey
                 };
             }
+        }
+
+        public class GCodeState
+        {
+            /*
+            internal class GCodeMarkingParams
+            {
+                internal float LaserSpeedInMmPerS;
+                internal float JumpSpeedInMmS;
+                internal float AccelerationInMmPerSSquared;
+                internal string name;
+                internal Dictionary<char, float> miscParams;
+
+                public GCodeMarkingParams(float operationSpeed, float travelSpeed, float acceleration, string name)
+                {
+                    this.LaserSpeedInMmPerS = operationSpeed;
+                    this.JumpSpeedInMmS = travelSpeed;
+                    this.AccelerationInMmPerSSquared = acceleration;
+                    this.name = name;
+                }
+            }
+            */
+            private readonly Dictionary<int, Type> _gCodeTranslations = new Dictionary<int, Type>
+        {
+            {0, typeof(LinearInterpolationCmd)},
+            {1, typeof(LinearInterpolationCmd)},
+            {2, typeof(CircularInterpolationCmd)},
+            {3, typeof(CircularInterpolationCmd)},
+            {4, typeof(PauseCommand)},
+        };
+
+            private Dictionary<int, Type> _mCodeTranslations = new Dictionary<int, Type>();
+
+            private Dictionary<int, Type> _tCodeTranslations = new Dictionary<int, Type>();
+
+            public GCodeCommand gCodeCommand;
+            public Vector3 position { internal set; get; }
+            public MarkingParams currentGCodeMarkingParams { internal set; get; }
+
+            public GCodeState(string serializedCmdLine)
+            {
+                CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+                CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+                this.gCodeCommand = ParseToGCodeCommand(serializedCmdLine);
+                if (this.gCodeCommand is MovementCommand movementCmd)
+                {
+                    position = new Vector3(movementCmd.xPosition ?? 0, movementCmd.yPosition ?? 0, movementCmd.zPosition ?? 0);
+                }
+                // potentially use 'this.Update(serializedCmdLine);' This though repeats the gCode assignment. Find better solution.
+            }
+
+            public GCodeCommand ParseToGCodeCommand(string serializedCmdLine)
+            {
+                string commandString = serializedCmdLine.Split(';')[0].Trim();
+                string[] commandArr = commandString.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                char commandChar = char.ToUpper(commandArr[0][0]);
+                if (!Enum.TryParse(commandChar.ToString(), out PrepCode prepCode))
+                    throw new ArgumentException($"Invalid preparatory function code: {commandChar} in line '{serializedCmdLine}'");
+
+                string commandNumber = commandArr[0].Substring(1);
+                if (!int.TryParse(commandNumber, out int codeNumber))
+                    throw new ArgumentException($"Invalid number format: {commandNumber} in line '{serializedCmdLine}'");
+
+                Dictionary<char, float> commandParams = new Dictionary<char, float>();
+                Console.WriteLine(string.Join(Environment.NewLine, commandArr));
+
+                foreach (var commandParam in commandArr.Skip(1))
+                {
+                    if (float.TryParse(commandParam.Substring(1), out float paramValue))
+                    {
+                        commandParams[commandParam[0]] = paramValue;
+                    }
+                    else if (commandParam.Length == 1)
+                    {
+                        commandParams[commandParam[0]] = 0;
+                    }
+                    else
+                    {
+                        throw new ArgumentException($"Invalid command parameter format: {commandParam} in line '{serializedCmdLine}'. Command parameters must be of format <char><float>");
+                    }
+                }
+                Console.WriteLine(string.Join(Environment.NewLine, commandParams));
+                if (_gCodeTranslations.TryGetValue(codeNumber, out Type gCodeClassType))
+                {
+                    return Activator.CreateInstance(gCodeClassType, new Object[] { prepCode, codeNumber, commandParams }) as GCodeCommand;
+                }
+
+                return Activator.CreateInstance(typeof(MiscCommand), new Object[] { prepCode, codeNumber, commandParams }) as GCodeCommand;
+            }
+
+            public void ParseMarkingParams(GCodeCommand gCodeCommand)
+            {
+                this.currentGCodeMarkingParams = new MarkingParams();
+                if (gCodeCommand is MovementCommand movementCmd)
+                {
+                    this.currentGCodeMarkingParams.LaserSpeedInMmPerS = movementCmd.feedRate ?? 0;
+                    this.currentGCodeMarkingParams.JumpSpeedInMmS = movementCmd.feedRate ?? 0;
+                    //this.currentGCodeMarkingParams.AccelerationInMmPerSSquared = movementCmd.acceleration ?? 0;
+                }
+                else if (gCodeCommand is PauseCommand pauseCmd)
+                {
+                    this.currentGCodeMarkingParams.LaserSpeedInMmPerS = 0;
+                    this.currentGCodeMarkingParams.JumpSpeedInMmS = 0;
+                    //this.currentGCodeMarkingParams.AccelerationInMmPerSSquared = 0;
+                }
+
+                // Add logic so if a set is found where jumpspeed or work speed are same, the set is added to the list of marking params
+            }
+
+            public bool[] Update(string serializedCmdLine)
+            {
+                GCodeCommand previousGCodeCommand = this.gCodeCommand;
+                GCodeCommand currentGCodeCommand = ParseToGCodeCommand(serializedCmdLine);
+
+                bool vectorBlockChanged = previousGCodeCommand.GetType() != currentGCodeCommand.GetType();
+                bool markingParamsChanged = UpdateParameters();
+                bool positionChanged = updatePosition();
+
+                bool UpdateParameters()
+                {
+                    bool parametersChanged = false;
+                    foreach (var property in previousGCodeCommand.GetType().GetProperties())
+                    {
+                        var previousValue = property.GetValue(previousGCodeCommand);
+                        var currentValue = property.GetValue(currentGCodeCommand);
+                        var propName = property.Name;
+                        Dictionary<string, object> currentGCodeMarkingParams = new Dictionary<string, object>();
+
+                        if (!Equals(previousValue, currentValue))
+                        {
+                            property.SetValue(currentGCodeCommand, previousValue);
+                            if (propName != "xPosition" && propName != "yPosition" && propName != "zPosition")
+                            {
+                                //gCodeMarkingParams.Add(propName, currentValue);
+                                parametersChanged = true;
+                            }
+                        }
+                    }
+
+                    return parametersChanged;
+                }
+
+                bool updatePosition()
+                {
+                    bool newPosition = false;
+                    if (currentGCodeCommand is MovementCommand movementCmd)
+                    {
+                        newPosition = (movementCmd.xPosition != null && movementCmd.xPosition != position.X) || (movementCmd.yPosition != null && movementCmd.yPosition != position.Y) || (movementCmd.zPosition != null && movementCmd.zPosition != position.Z);
+                    }
+                    return newPosition;
+                }
+
+                this.gCodeCommand = currentGCodeCommand;
+
+                return new bool[] { positionChanged, markingParamsChanged, vectorBlockChanged };
+            }
+        }
         }
 
         public override void UnloadJobFromMemory()

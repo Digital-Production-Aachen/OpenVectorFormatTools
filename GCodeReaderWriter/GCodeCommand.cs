@@ -33,6 +33,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Globalization;
 using OpenVectorFormat.Utils;
+using System.Net.Http.Headers;
+using OpenVectorFormat.GCodeReaderWriter;
 
 namespace OpenVectorFormat.GCodeReaderWriter
 {
@@ -42,7 +44,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
         M,
         T
     }
-
 
     public struct GCode
     {
@@ -64,170 +65,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
     class ToolParams
     {
         int toolNumber;
-    }
-
-    public class GCodeState
-    {
-        private readonly Dictionary<int, Type> _gCodeTranslations = new Dictionary<int, Type>
-        {
-            {0, typeof(LinearInterpolationCmd)},
-            {1, typeof(LinearInterpolationCmd)},
-            {2, typeof(CircularInterpolationCmd)},
-            {3, typeof(CircularInterpolationCmd)},
-            {4, typeof(PauseCommand)},
-        };
-
-        internal class GCodeProperties
-        {
-            internal Type gCodeType;
-            internal List<char> recordedParams;
-            internal Dictionary<char, float> miscParams;
-        }
-
-        internal class GCodeMarkingParams
-        {
-            // Marking parameters
-            internal float workSpeed = 0;
-            internal float travelSpeed = 0;
-            internal float acceleration = 0;
-
-            // Pause parameters
-            internal float pauseDuration = 0;
-
-            // Other parameters
-            internal ToolParams toolParams;
-
-            Dictionary<string, float> miscParameters = new Dictionary<string, float>();
-
-            internal GCodeMarkingParams()
-            {
-
-            }
-        }
-
-        internal class GCodePosition
-        {
-            internal Vector3 position;
-            internal Vector2 centerRel;
-            internal GCodePosition()
-            {
-
-            }
-        }
-
-        private Dictionary<int, Type> _mCodeTranslations = new Dictionary<int, Type>();
-
-        private Dictionary<int, Type> _tCodeTranslations = new Dictionary<int, Type>();
-
-        public GCodeCommand gCodeCommand;
-        internal Vector3 position;
-
-        public GCodeState(string serializedCmdLine)
-        {
-            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
-            this.gCodeCommand = ParseToGCodeCommand(serializedCmdLine);
-        }
-
-        public GCodeCommand ParseToGCodeCommand(string serializedCmdLine)
-        {
-            string commandString = serializedCmdLine.Split(';')[0].Trim();
-            string[] commandArr = commandString.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-            char commandChar = char.ToUpper(commandArr[0][0]);
-            if (!Enum.TryParse(commandChar.ToString(), out PrepCode prepCode))
-                throw new ArgumentException($"Invalid preparatory function code: {commandChar} in line '{serializedCmdLine}'");
-
-            string commandNumber = commandArr[0].Substring(1);
-            if (!int.TryParse(commandNumber, out int codeNumber))
-                throw new ArgumentException($"Invalid number format: {commandNumber} in line '{serializedCmdLine}'");
-
-            Dictionary<char, float> commandParams = new Dictionary<char, float>();
-            Console.WriteLine(string.Join(Environment.NewLine, commandArr));
-
-            foreach (var commandParam in commandArr.Skip(1))
-            {
-                if (float.TryParse(commandParam.Substring(1), out float paramValue))
-                {
-                    commandParams[commandParam[0]] = paramValue;
-                }
-                else if (commandParam.Length == 1)
-                {
-                    commandParams[commandParam[0]] = 0;
-                }
-                else
-                {
-                    throw new ArgumentException($"Invalid command parameter format: {commandParam} in line '{serializedCmdLine}'. Command parameters must be of format <char><float>");
-                }
-            }
-            Console.WriteLine(string.Join(Environment.NewLine, commandParams));
-            if (_gCodeTranslations.TryGetValue(codeNumber, out Type gCodeClassType))
-            {
-                return Activator.CreateInstance(gCodeClassType, new Object[] { prepCode, codeNumber, commandParams }) as GCodeCommand;
-            }
-
-            return Activator.CreateInstance(typeof(MiscCommand), new Object[] { prepCode, codeNumber, commandParams }) as GCodeCommand;
-        }
-
-        public bool[] Update(string serializedCmdLine)
-        {
-            GCodeCommand previousGCodeCommand = this.gCodeCommand;
-            GCodeCommand currentGCodeCommand = ParseToGCodeCommand(serializedCmdLine);
-
-            bool workPlaneChanged = false;
-            bool markingParamsChanged = false;
-            bool vectorBlockChanged = false;
-
-            if (previousGCodeCommand.GetType() != currentGCodeCommand.GetType())
-            {
-                vectorBlockChanged = true;
-            }
-            markingParamsChanged = UpdateParameters();
-            workPlaneChanged = updatePosition();
-
-            bool UpdateParameters()
-            {
-                bool parametersChanged = false;
-                foreach (var property in previousGCodeCommand.GetType().GetProperties())
-                {
-                    var previousValue = property.GetValue(previousGCodeCommand);
-                    var currentValue = property.GetValue(currentGCodeCommand);
-
-                    if (!Equals(previousValue, currentValue))
-                    {
-                        property.SetValue(currentGCodeCommand, previousValue);
-                        parametersChanged = (property.Name != "xPosition" && property.Name != "yPosition" && property.Name != "zPosition");
-                    }
-                }
-                
-                return parametersChanged;
-            }
-
-            bool updatePosition()
-            {
-                bool zChange = false;
-                if (currentGCodeCommand is MovementCommand movementCmd)
-                {
-                    try
-                    {
-                        if (movementCmd.zPosition != position.Z)
-                        {
-                            zChange = true;
-                        }
-                        position = new Vector3((float)movementCmd.xPosition, (float)movementCmd.yPosition, (float)movementCmd.zPosition);
-                    }
-                    catch (Exception e)
-                    {
-                        throw new ArgumentException($"Unable to update position in line '{serializedCmdLine}'. Creating a Vector object from command was not possible.");
-                    }
-                }
-                return zChange;
-            }
-
-            this.gCodeCommand = currentGCodeCommand;
-
-            return new bool [] { workPlaneChanged, markingParamsChanged, vectorBlockChanged};
-        }
     }
 
     public class GCodeCommand
@@ -296,12 +133,15 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         public override string ToString()
         {
+            /*
             string outString = gCode.ToString();
             foreach (var param in miscParams)
             {
                 outString += $" {param.Key}{param.Value}";
             }
             return outString;
+            */
+           return this.gCode.ToString();
         }
     }
 
@@ -444,18 +284,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
         // Move angle calculation below to gcode state object or to transition point of OVF-Parameters
         // this.angle = (float) Math.Atan2((double)(yPosition - yCenterRel),(double) (xPosition - xCenterRel)) - (float) Math.Atan2((double)(yStartPos - yCenterRel), (double) (xStartPos - xCenterRel));
 
-
-        /*
-        public CircularInterpolationCmd(Vector2 startPos, Vector2 targetPos, float radius, ToolParams toolParams, PrepCode prepCode, int codeNumber, float? feedRate = null, float? zHeight = null) 
-            : base(startPos, toolParams, prepCode, codeNumber, feedRate, zHeight)
-        {
-            float pointDistance = (float)Math.Sqrt(Math.Pow(targetPos.X - startPos.X, 2) + Math.Pow(targetPos.Y - startPos.Y, 2));
-            float centerRelX = (float)(startPos.X + radius * Math.Cos(Math.Asin(radius / pointDistance)));
-            float centerRelY = (float)(startPos.Y + radius * Math.Sin(Math.Asin(radius / pointDistance)));
-            this.centerRel = new Vector2(centerRelX, centerRelY);
-            this.angle = (float)Math.Atan2(targetPos.Y - this.centerRel.Y, targetPos.X - this.centerRel.X) - (float)Math.Atan2(startPos.Y - this.centerRel.Y, startPos.X - this.centerRel.X);
-        }
-        */
         public override string ToString()
         {
             return base.ToString() + (xCenterRel != null ? $" I{xCenterRel}" : "") + (yCenterRel != null ? $" I{yCenterRel}" : "");
@@ -617,26 +445,106 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     internal class MiscCommand : GCodeCommand
     {
-        public readonly Dictionary<string, float> cmdParams;
 
-        public MiscCommand(PrepCode prepCode, int codeNumber, Dictionary<string, float> cmdParams = null) :base(prepCode, codeNumber)
+        public MiscCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> cmdParams = null) :base(prepCode, codeNumber)
         {
-            this.cmdParams = cmdParams;
+            this.miscParams = cmdParams;
         }
-         public MiscCommand(GCode gCode, Dictionary<string, float> cmdParams = null) : base(gCode)
+         public MiscCommand(GCode gCode, Dictionary<char, float> cmdParams = null) : base(gCode)
         {
-            this.cmdParams = cmdParams;
+            this.miscParams = cmdParams;
         }
         public override string ToString()
         {
+            /*
             string outString = base.ToString();
-            if (cmdParams != null) {
-                for (int i = 0; i < cmdParams.Count; i++)
+            if (this.miscParams != null) 
+            {
+                for (int i = 0; i < this.miscParams.Count; i++)
                 {
-                    outString += $" {cmdParams.Keys.ElementAt(i)}{cmdParams.Values.ElementAt(i)}";
+                    outString += $" {this.miscParams.Keys.ElementAt(i)}{this.miscParams.Values.ElementAt(i)}";
                 }
             }
             return outString;
+            */
+            return base.ToString();
         }
+    }
+}
+
+public class GCodeCommandList : List<GCodeCommand>
+{
+    private readonly Dictionary<int, Type> _gCodeTranslations = new Dictionary<int, Type>
+        {
+            {0, typeof(LinearInterpolationCmd)},
+            {1, typeof(LinearInterpolationCmd)},
+            {2, typeof(CircularInterpolationCmd)},
+            {3, typeof(CircularInterpolationCmd)},
+            {4, typeof(PauseCommand)},
+        };
+
+    private Dictionary<int, Type> _mCodeTranslations = new Dictionary<int, Type>();
+
+    private Dictionary<int, Type> _tCodeTranslations = new Dictionary<int, Type>();
+
+    public GCodeCommandList(string[] commandLines)
+    {
+        CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+        CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+        TryParse(commandLines);
+    }
+
+    public void TryParse(string[] commandLines)
+    {
+        foreach (string line in commandLines)
+        {
+            try
+            {
+                this.Add(ParseLine(line));
+            }
+            catch (ArgumentException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+    }
+
+    public GCodeCommand ParseLine(string serializedCmdLine)
+    {
+        string commandString = serializedCmdLine.Split(';')[0].Trim();
+        string[] commandArr = commandString.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+        char commandChar = char.ToUpper(commandArr[0][0]);
+        if (!Enum.TryParse(commandChar.ToString(), out PrepCode prepCode))
+            throw new ArgumentException($"Invalid preparatory function code: {commandChar} in line '{serializedCmdLine}'");
+
+        string commandNumber = commandArr[0].Substring(1);
+        if (!int.TryParse(commandNumber, out int codeNumber))
+            throw new ArgumentException($"Invalid number format: {commandNumber} in line '{serializedCmdLine}'");
+
+        Dictionary<char, float> commandParams = new Dictionary<char, float>();
+
+        foreach (var commandParam in commandArr.Skip(1))
+        {
+            if (float.TryParse(commandParam.Substring(1), out float paramValue))
+            {
+                commandParams[commandParam[0]] = paramValue;
+            }
+            else if (commandParam.Length == 1)
+            {
+                commandParams[commandParam[0]] = 0;
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid command parameter format: {commandParam} in line '{serializedCmdLine}'. Command parameters must be of format <char><float>");
+            }
+        }
+        Console.WriteLine(string.Join(Environment.NewLine, commandParams));
+        if (_gCodeTranslations.TryGetValue(codeNumber, out Type gCodeClassType))
+        {
+            return Activator.CreateInstance(gCodeClassType, new Object[] { prepCode, codeNumber, commandParams }) as GCodeCommand;
+        }
+
+        return Activator.CreateInstance(typeof(MiscCommand), new Object[] { prepCode, codeNumber, commandParams }) as GCodeCommand;
     }
 }
