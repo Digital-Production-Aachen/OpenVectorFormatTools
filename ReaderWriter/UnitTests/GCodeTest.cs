@@ -30,6 +30,7 @@ using System.Text;
 using System.Threading.Tasks;
 using OpenVectorFormat.GCodeReaderWriter;
 using System.IO;
+using OpenVectorFormat.ASPFileReaderWriter;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
@@ -44,13 +45,41 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         {
             var gCodeReader = new GCodeReader();
 
-            string testCommand = File.ReadAllLines(fileName.FullName)[21];
-            GCodeState gCodeState = new GCodeState(testCommand);
+            string testCommandLinear = File.ReadAllLines(fileName.FullName)[19];
+            GCodeState gCodeState = new GCodeState(testCommandLinear);
 
-            LinearInterpolationCmd assertCmd = new LinearInterpolationCmd(PrepCode.G, 1, new Dictionary<char, float> { { 'F', 1800 }, { 'X', 110.414f }, { 'Y', 94.025f }, { 'E', 0.02127f } });
+            LinearInterpolationCmd assertCmd = new LinearInterpolationCmd(PrepCode.G, 0, new Dictionary<char, float> { { 'F', 1800 }, { 'X', 110.414f }, { 'Y', 94.025f }, { 'E', 0.02127f } });
             Assert.AreEqual(gCodeState.gCodeCommand.gCode, assertCmd.gCode );
             Assert.AreEqual(gCodeState.gCodeCommand.GetType(), assertCmd.GetType());
+
+            object[] stateUpdates = gCodeState.Update(File.ReadAllLines(fileName.FullName)[22]);
+
+            Assert.IsNotNull(stateUpdates[0]);
+            Assert.IsNull(stateUpdates[1]);
+            Assert.IsNull(stateUpdates[2]);
         }
+
+        [DynamicData("GCodeFiles")]
+        [TestMethod]
+        public void TestGCodeGrouping(FileInfo fileName)
+        {
+            string[] testCommands = File.ReadAllLines(fileName.FullName);
+            GCodeReader gCodeReader = new GCodeReader();
+
+            GCodeCommandList gCodeCommandList = new GCodeCommandList(testCommands);
+
+            for (int i = 0; i < 30; i++)
+            {
+                Console.WriteLine(gCodeCommandList[i].GetType());
+                //Console.WriteLine(gCodeCommandList[i].ToString());
+            }
+
+            IEnumerable<IGrouping<Type, GCodeCommand>> gCodeTypeGrouping = gCodeCommandList.GroupBy(gCodeCommand => gCodeCommand.GetType()).ToList();
+            Console.WriteLine(gCodeTypeGrouping.ToString());
+
+            Assert.AreEqual(3, gCodeTypeGrouping.Count());
+        }
+
         public static List<object[]> GCodeFiles
         {
             get
