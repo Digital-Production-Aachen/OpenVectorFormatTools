@@ -14,18 +14,51 @@ namespace MyApp // Note: actual namespace depends on the project name.
         static DirectoryInfo dir;
         static DirectoryInfo outputDir;
 
+        private enum Export
+        {
+            EOS_Prepared,
+            EOS_Unprepared,
+            ACONITY
+        }
+
         static void Main(string[] args)
         {
             dir = new DirectoryInfo(@"C:\Users\Domin\Desktop\source\ACAM24\OVFs\");
             outputDir = new DirectoryInfo(@"C:\Users\Domin\Desktop\sink\");
+            var export = Export.ACONITY;
 
             foreach (var file in dir.GetFiles())
             {
-                if(file.Extension == ".ovf")
+                if (export == Export.EOS_Prepared)
                 {
-                    string name = Path.GetFileNameWithoutExtension(file.FullName);
+                    //Prepared
+                    if (file.Extension == ".ovf")
+                    {
+                        string name = Path.GetFileNameWithoutExtension(file.FullName);
 
-                    RUN_PolylineToHatch(file, name, true, false, false);
+                        WriteCLI(file, outputDir, name);
+                    }
+
+                }
+                else if (export == Export.EOS_Unprepared)
+                {
+                    //Not Prepared
+                    if (file.Extension == ".ovf")
+                    {
+                        string name = Path.GetFileNameWithoutExtension(file.FullName);
+
+                        RUN_PolylineToHatch(file, name, true, false, false);
+                    }
+                }
+                else if (export == Export.ACONITY)
+                {
+                    //CLI Plus
+                    if (file.Extension == ".ovf")
+                    {
+                        string name = Path.GetFileNameWithoutExtension(file.FullName);
+
+                        WriteCliPlus(file, outputDir, name);
+                    }
                 }
             }
         }
@@ -70,7 +103,7 @@ namespace MyApp // Note: actual namespace depends on the project name.
                             {
                                 var vb = new VectorBlock();
                                 vb.Hatches = new Hatches();
-                                for (int j = 0; j < vectorBlock.LineSequence.Points.ToList().Count-3; j+=2)
+                                for (int j = 0; j < vectorBlock.LineSequence.Points.ToList().Count - 3; j += 2)
                                 {
                                     var x_1 = vectorBlock.LineSequence.Points.ToList()[j];
                                     var y_1 = vectorBlock.LineSequence.Points.ToList()[j + 1];
@@ -93,7 +126,7 @@ namespace MyApp // Note: actual namespace depends on the project name.
                                 vb.MetaData = vectorBlock.MetaData;
                                 workPlane.VectorBlocks.Add(vb);
                             }
-                            else if(vectorBlock.VectorDataCase == VectorBlock.VectorDataOneofCase.Hatches)
+                            else if (vectorBlock.VectorDataCase == VectorBlock.VectorDataOneofCase.Hatches)
                             {
                                 workPlane.VectorBlocks.Add(vectorBlock);
                             }
@@ -151,8 +184,6 @@ namespace MyApp // Note: actual namespace depends on the project name.
             hatch.Delete();
 
         }
-
-
         private static void WriteOVF(FileInfo origin, FileInfo target, bool contour1, bool contour2, bool hatches, bool continiusContours = false)
         {
             var reader = new OVFFileReader();
@@ -298,6 +329,21 @@ namespace MyApp // Note: actual namespace depends on the project name.
                 var job = reader.CacheJobToMemoryAsync().GetAwaiter().GetResult();
 
                 CLIWriterAdapter cliWriter = new CLIWriterAdapter() { units = 1 / 200f };
+                cliWriter.ExportForEOS();
+                cliWriter.SimpleJobWriteAsync(job, new FileInfo(outPutDir.FullName + name + ".cli").FullName, progress).Wait();
+                reader.Dispose();
+            }
+        }
+        private static void WriteCliPlus(FileInfo ovfFile, DirectoryInfo outPutDir, string name)
+        {
+            using (var reader = new OVFFileReader())
+            {
+                var progress = new FileReaderWriterProgress();
+                reader.OpenJobAsync(ovfFile.FullName, progress).GetAwaiter().GetResult();
+                var job = reader.CacheJobToMemoryAsync().GetAwaiter().GetResult();
+
+                CLIWriterAdapter cliWriter = new CLIWriterAdapter() { units = 1  };
+                CLIWriterAdapter.CliPlus = true;
                 cliWriter.SimpleJobWriteAsync(job, new FileInfo(outPutDir.FullName + name + ".cli").FullName, progress).Wait();
                 reader.Dispose();
             }

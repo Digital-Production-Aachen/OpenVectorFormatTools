@@ -82,5 +82,6 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
 
             return new Dimension(0, zPos, aabb.XMin, aabb.XMax, aabb.YMin, aabb.YMax);
         }
+
     }
 }

@@ -62,5 +62,11 @@ namespace OpenVectorFormat.ILTFileReader.Model
             get;
             set;
         }
+
+        public int Power
+        {
+            get;
+            set;
+        }
     }
 }

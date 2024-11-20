@@ -41,5 +41,7 @@ namespace ILTFileReader.OVFToCLIAdapter
         public int Id => hatchBlock.MetaData == null ? 1 : hatchBlock.MetaData.PartKey;
 
         public int N => hatchBlock.Hatches.Points.Count / 2;
+
+        public int Power => throw new NotImplementedException();
     }
 }

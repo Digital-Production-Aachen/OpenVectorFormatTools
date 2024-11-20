@@ -41,5 +41,7 @@ namespace ILTFileReader.OVFToCLIAdapter
         public int Id => polyBlock.MetaData == null ? 1 : polyBlock.MetaData.PartKey;
 
         public int N => polyBlock.LineSequence.Points.Count / 2;
+
+        public int Power => throw new NotImplementedException();
     }
 }

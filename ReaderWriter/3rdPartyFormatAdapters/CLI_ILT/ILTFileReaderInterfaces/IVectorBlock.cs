@@ -59,6 +59,7 @@ namespace OpenVectorFormat.ILTFileReader {
         {
 			get;
 		}
+
 	}//end IVectorBlock
 
 }//end namespace OpenVectorFormat.ILTFileReader

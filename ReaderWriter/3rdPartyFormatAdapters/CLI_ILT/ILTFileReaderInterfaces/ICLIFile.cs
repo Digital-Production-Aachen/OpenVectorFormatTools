@@ -65,6 +65,7 @@ namespace OpenVectorFormat.ILTFileReader
 		IList<IPart> Parts{
 			get;
 		}
-	}//end ICLIFile
+
+    }//end ICLIFile
 
 }//end namespace OpenVectorFormat.ILTFileReader

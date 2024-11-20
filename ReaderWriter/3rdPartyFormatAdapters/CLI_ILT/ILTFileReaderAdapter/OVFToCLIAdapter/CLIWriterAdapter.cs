@@ -30,6 +30,8 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
         private static List<string> fileFormats = new List<string>() { ".cli" };
         private BinaryWriter binaryWriter;
         private CliFileAccess cliAdapter;
+        public static bool CliPlus = false;
+        public static bool ForEOS = false;
 
         /// <summary>
         /// List of file format extensions supported by this file reader.
@@ -69,8 +71,22 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
 
         public override Task SimpleJobWriteAsync(Job job, string filename, IFileReaderWriterProgress progress)
         {
-            var adapter = new CliFileAccess() { units = units };
-            adapter.WriteFile(filename, new OVFCliJob(job) { Units = units } , LayerStyle, HatchesStyle, PolylineStyle, units != 1);
+            if(CliPlus)
+            {
+                var adapter = new CliPlusFileAccess() { units = units }; 
+                var map = new Dictionary<int, Tuple<float,float>>();
+
+                foreach (var part in job.MarkingParamsMap)
+                {
+                    map.Add(part.Key, Tuple.Create(part.Value.LaserPowerInW, part.Value.LaserSpeedInMmPerS));
+                }
+                adapter.WriteFile(filename, new OVFCliJob(job) { Units = units }, map);
+            }
+            else
+            {
+                var adapter = new CliFileAccess() { units = units };
+                adapter.WriteFile(filename, new OVFCliJob(job) { Units = units }, LayerStyle, HatchesStyle, PolylineStyle, units != 1);
+            }
             return Task.CompletedTask;
         }
 
@@ -84,6 +100,14 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
             }
             binaryWriter = new BinaryWriter(new FileStream(filename, FileMode.Append, FileAccess.Write, FileShare.None));
             cliAdapter = new CliFileAccess() { HatchesStyle = HatchesStyle, PolylineStyle = PolylineStyle, LayerStyle = LayerStyle, units = units };
+        }
+
+        public void ExportForEOS()
+        {
+            ForEOS = true;
+            HatchesStyle = BinaryWriteStyle.SHORT;
+            PolylineStyle = BinaryWriteStyle.LONG;
+            LayerStyle = BinaryWriteStyle.LONG;
         }
     }
 }
