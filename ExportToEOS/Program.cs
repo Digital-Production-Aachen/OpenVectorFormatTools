@@ -23,8 +23,8 @@ namespace MyApp // Note: actual namespace depends on the project name.
 
         static void Main(string[] args)
         {
-            dir = new DirectoryInfo(@"C:\Users\Domin\Desktop\source\ACAM24\OVFs\");
-            outputDir = new DirectoryInfo(@"C:\Users\Domin\Desktop\sink\");
+            dir = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\source\ACAM24\OVFs\");
+            outputDir = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + @"\sink\");
             var export = Export.ACONITY;
 
             foreach (var file in dir.GetFiles())
