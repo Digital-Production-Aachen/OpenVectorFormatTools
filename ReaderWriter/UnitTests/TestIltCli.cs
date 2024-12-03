@@ -64,23 +64,23 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             cliWriter.SimpleJobWriteAsync(job, fileName.FullName + ".cli", progress).Wait();
         }
 
-        [TestMethod]
-        public void TestWriteCliFile()
-        {
-            string name = "Cantilever_new";
-            var ovfFile = new FileInfo(@"C:\Users\Domin\Desktop\sink\"+ name + ".ovf");
-            var cliFile = new FileInfo(@"C:\Users\Domin\Desktop\sink\" + name + ".cli");
+        //[TestMethod]
+        //public void TestWriteCliFile()
+        //{
+        //    string name = "Cantilever_new";
+        //    var ovfFile = new FileInfo(@"C:\Users\Domin\Desktop\sink\"+ name + ".ovf");
+        //    var cliFile = new FileInfo(@"C:\Users\Domin\Desktop\sink\" + name + ".cli");
 
 
-            var reader = new OVFFileReader();
-            var progress = new FileReaderWriterProgress();
-            reader.OpenJobAsync(ovfFile.FullName, progress).GetAwaiter().GetResult();
-            var job = reader.CacheJobToMemoryAsync().GetAwaiter().GetResult();
+        //    var reader = new OVFFileReader();
+        //    var progress = new FileReaderWriterProgress();
+        //    reader.OpenJobAsync(ovfFile.FullName, progress).GetAwaiter().GetResult();
+        //    var job = reader.CacheJobToMemoryAsync().GetAwaiter().GetResult();
 
-            CLIWriterAdapter cliWriter = new CLIWriterAdapter() { units = 1/200f };
-            cliWriter.SimpleJobWriteAsync(job, cliFile.FullName, progress).Wait();
-            FileReaderWriterFactory.FileConverter.ConvertAsync(ovfFile, cliFile, progress).GetAwaiter().GetResult();
-        }
+        //    CLIWriterAdapter cliWriter = new CLIWriterAdapter() { units = 1/200f };
+        //    cliWriter.SimpleJobWriteAsync(job, cliFile.FullName, progress).Wait();
+        //    FileReaderWriterFactory.FileConverter.ConvertAsync(ovfFile, cliFile, progress).GetAwaiter().GetResult();
+        //}
 
         [DynamicData("CliFiles")]
         [DataTestMethod]
