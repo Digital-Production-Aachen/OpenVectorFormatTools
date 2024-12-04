@@ -38,6 +38,7 @@ using OpenVectorFormat.GCodeReaderWriter;
 
 namespace OpenVectorFormat.GCodeReaderWriter
 {
+    // Possible preparatory function codes
     public enum PrepCode
     {
         G,
@@ -45,6 +46,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
         T
     }
 
+    // Represents a basic GCode with a preparatory function code and a code number
     public struct GCode
     {
         public readonly PrepCode preparatoryFunctionCode;
@@ -64,15 +66,22 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     class ToolParams
     {
+        // Number of the currently equipped tool
         int toolNumber;
     }
 
     public class GCodeCommand
     {
+        // The GCode of the command
         public readonly GCode gCode;
 
+        // Dictionary of all unassignable parameters in a GCode line
         private protected Dictionary<char, float> miscParams;
+
+        // List of all recorded parameters in a GCode line
         private protected List<char> recordedParams;
+
+        // Dicionary mapping parameter characters to their respective class variables
         protected static Dictionary<char, Action<float>> parameterMap;
 
         public GCodeCommand(GCode gCode, Dictionary<char, float> commandParams = null)
@@ -107,15 +116,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
             parameterMap = new Dictionary<char, Action<float>>();
         }
 
-        protected static void InitMaps()
-        {
-
-        }
-
+        // Is used by child classes to initialize their parameter map
         protected static void InitParameterMap() 
         {
         }
 
+        // Iterates through all given parameter characters and assigns the according values to the respective variables
         protected void ParseParams(Dictionary<char, float> commandParams)
         {
             foreach (var commandParam in commandParams)
@@ -128,6 +134,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 }
             }
 
+            // If there are still unknown parameters left, they are added to the miscParams dictionary
             this.miscParams = commandParams;
         }
 
@@ -147,6 +154,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     public abstract class MovementCommand : GCodeCommand
     {
+        // Target position in mm, feedrate in mm/min and acceleration in mm/min^2 of movement commands
         internal float? xPosition;
         internal float? yPosition;
         internal float? zPosition;
@@ -180,7 +188,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-
         private new void InitParameterMap()
         {
             parameterMap.Add('X', (float x) => xPosition = x);
@@ -198,6 +205,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     public class LinearInterpolationCmd : MovementCommand
     {
+        // Operational move or travel move
         internal bool isOperation;
 
         public LinearInterpolationCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
@@ -238,9 +246,11 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     internal class CircularInterpolationCmd : MovementCommand
     {
+        // Center of the circle relative to the start position in mm
         internal float? xCenterRel;
         internal float? yCenterRel;
 
+        // Direction of the circular interpolation
         internal bool isClockwise;
 
         public CircularInterpolationCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
@@ -292,6 +302,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     internal class PauseCommand : GCodeCommand
     {
+        // Duration of the pause in ms
         internal float? duration;
 
         public PauseCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null)
