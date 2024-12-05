@@ -161,6 +161,15 @@ namespace OpenVectorFormat.GCodeReaderWriter
         internal float? feedRate;
         internal float? acceleration;
 
+        public MovementCommand(PrepCode prepCode, int codeNumber, float? xPosition, float? yPosition, float? zPosition, float? feedRate, float? acceleration) : base(prepCode, codeNumber)
+        {
+            this.xPosition = xPosition;
+            this.yPosition = yPosition;
+            this.zPosition = zPosition;
+            this.feedRate = feedRate;
+            this.acceleration = acceleration;
+        }
+
         public MovementCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
         {
             InitParameterMap();
@@ -208,6 +217,11 @@ namespace OpenVectorFormat.GCodeReaderWriter
         // Operational move or travel move
         internal bool isOperation;
 
+        public LinearInterpolationCmd(PrepCode prepCode, int codeNumber, float? xPosition, float? yPosition, float? zPosition, float? feedRate, float? acceleration) : base(prepCode, codeNumber, xPosition, yPosition, zPosition, feedRate, acceleration)
+        {
+            CheckOperation();
+        }
+
         public LinearInterpolationCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
         {
             CheckOperation();
@@ -253,6 +267,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
         // Direction of the circular interpolation
         internal bool isClockwise;
 
+        public CircularInterpolationCmd(PrepCode prepCode, int codeNumer, float? xPosition, float? yPosition, float? xCenterRel, float? yCenterRel, float? feedRate, float? acceleration) : base(prepCode, codeNumer, xPosition, yPosition, null, feedRate, acceleration)
+        {
+            this.xCenterRel = xCenterRel;
+            this.yCenterRel = yCenterRel;
+        }
+
         public CircularInterpolationCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
         {
             CheckDirection();
@@ -291,9 +311,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-        // Move angle calculation below to gcode state object or to transition point of OVF-Parameters
-        // this.angle = (float) Math.Atan2((double)(yPosition - yCenterRel),(double) (xPosition - xCenterRel)) - (float) Math.Atan2((double)(yStartPos - yCenterRel), (double) (xStartPos - xCenterRel));
-
         public override string ToString()
         {
             return base.ToString() + (xCenterRel != null ? $" I{xCenterRel}" : "") + (yCenterRel != null ? $" I{yCenterRel}" : "");
@@ -304,6 +321,11 @@ namespace OpenVectorFormat.GCodeReaderWriter
     {
         // Duration of the pause in ms
         internal float? duration;
+
+        public PauseCommand(PrepCode prepCode, int codeNumber, float? duration) : base(prepCode, codeNumber)
+        {
+            this.duration = duration;
+        }
 
         public PauseCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null)
             : base(prepCode, codeNumber)
@@ -343,6 +365,11 @@ namespace OpenVectorFormat.GCodeReaderWriter
     {
         public readonly ToolParams toolParams;
 
+        public ToolChangeCommand(PrepCode prepCode, int codeNumber, ToolParams toolParams) : base(prepCode, codeNumber)
+        {
+            this.toolParams = toolParams;
+        }
+
         public ToolChangeCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
         {
             InitParameterMap();
@@ -360,6 +387,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     internal class MonitoringCommand : GCodeCommand
     {
+        public MonitoringCommand(PrepCode prepCode, int codeNumber) : base(prepCode, codeNumber)
+        {
+        }
         public MonitoringCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
         {
             InitParameterMap();
@@ -377,6 +407,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     internal class ProgramLogicsCommand : GCodeCommand
     {
+        public ProgramLogicsCommand(PrepCode prepCode, int codeNumber) : base(prepCode, codeNumber)
+        {
+        }
         public ProgramLogicsCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
         {
             InitParameterMap();
@@ -403,6 +436,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     internal class BlockEndCmd : ProgramLogicsCommand
     {
+        public BlockEndCmd(PrepCode prepCode, int codeNumber) : base(prepCode, codeNumber)
+        {
+        }
         public BlockEndCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
         {
             InitParameterMap();
@@ -430,6 +466,10 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     internal class ProgramEndCmd : ProgramLogicsCommand
     {
+        public ProgramEndCmd(PrepCode prepCode, int codeNumber) : base(prepCode, codeNumber)
+        {
+        }
+
         public ProgramEndCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
         {
             InitParameterMap();
@@ -456,6 +496,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     internal class MiscCommand : GCodeCommand
     {
+        public MiscCommand(PrepCode prepCode, int codeNumber) : base(prepCode, codeNumber)
+        {
+        }
 
         public MiscCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> cmdParams = null) :base(prepCode, codeNumber)
         {
