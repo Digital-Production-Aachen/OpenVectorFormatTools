@@ -35,6 +35,7 @@ using System.Globalization;
 using Google.Protobuf.Collections;
 using System.Runtime.CompilerServices;
 using System.ComponentModel;
+using OVFDefinition;
 
 namespace OpenVectorFormat.GCodeReaderWriter
 {
@@ -163,14 +164,14 @@ namespace OpenVectorFormat.GCodeReaderWriter
             this.filename = filename;
         }
 
-        private void ParseGCodeFile()
+        public void ParseGCodeFile()
         {
 
             MapField<int, MarkingParams> MPsMap = new MapField<int, MarkingParams>();
             Dictionary<MarkingParams, int> cachedMP = new Dictionary<MarkingParams, int>();
 
             MarkingParams currentMP = new MarkingParams();
-            Vector3 position = new Vector3();
+            Vector3 position = new Vector3(0, 0, 0);
             float angle = 0;
             GCodeCommandList gCodeCommands = new GCodeCommandList(File.ReadAllLines(filename));
             GCodeCommand firstGCodeCommand = gCodeCommands[0];
@@ -213,6 +214,14 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     currentVB.Arcs3D.StartDx = 0;
                     currentVB.Arcs3D.StartDy = 0;
                     currentVB.Arcs3D.StartDz = 0;
+
+                    Vector3 targetPosition = new Vector3(circularCmd.xPosition ?? 0, circularCmd.yPosition ?? 0, circularCmd.zPosition ?? 0);
+                    Vector3 center = new Vector3(position.X + circularCmd.xCenterRel ?? 0, position.Y + circularCmd.yCenterRel ?? 0, position.Z);
+
+                    currentVB.Arcs3D.Centers.Add(position.X + circularCmd.xCenterRel ?? 0);
+                    currentVB.Arcs3D.Centers.Add(position.Y + circularCmd.yCenterRel ?? 0);
+                    currentVB.Arcs3D.Centers.Add(position.Z);
+
                     currentWP.ZPosInMm = circularCmd.zPosition ?? 0;
                     position = new Vector3(circularCmd.xPosition ?? 0, circularCmd.yPosition ?? 0, circularCmd.zPosition ?? 0);
                     break;
@@ -227,9 +236,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             foreach (GCodeCommand currentGCodeCommand in gCodeCommands.Skip(1))
             {
-                Type currentGCodeType = currentGCodeCommand.GetType();
                 if (currentGCodeCommand is MovementCommand movementCmd)
                 {
+                    // processMovementCmd(movementCmd);
                     if (movementCmd.zPosition != currentWP.ZPosInMm)
                     {
                         NewWorkPlane();
@@ -274,50 +283,70 @@ namespace OpenVectorFormat.GCodeReaderWriter
                         currentVB.Arcs3D.Centers.Add(position.Z);
                     }
 
-                    updatePosition();
+                    updatePosition(movementCmd);
                     prevGCodeCommand = currentGCodeCommand;
                 }
-
-                void updatePosition()
+                else if(currentGCodeCommand is PauseCommand pauseCmd)
                 {
-                    position = new Vector3(movementCmd.xPosition ?? position.X, movementCmd.yPosition ?? position.Y, movementCmd.zPosition ?? position.Z);
+                    // processPauseCmd(pauseCmd);
+                    currentVB.ExposurePause.PauseInUs = (ulong)pauseCmd.duration * 1000;
+                }
+                else if(currentGCodeCommand is ToolChangeCommand toolChangeCmd)
+                {
+                    // processToolchangeCmd(toolChangeCmd);
+                }
+                else if(currentGCodeCommand is MonitoringCommand monitoringCmd)
+                {
+                    // processMonitoringCmd(monitoringCmd);
+                }
+                else if (currentGCodeCommand is ProgramLogicsCommand programLogicsCmd)
+                {
+                    // processProgramLogicsCmd(programLogicsCmd);
+                }
+                else if (currentGCodeCommand is MiscCommand miscCmd)
+                {
+                    // processMiscCmd(miscCmd);
+                }
+                job.MarkingParamsMap.MergeFromWithRemap(MPsMap, out var keyMapping);
+            }
+            void updatePosition(MovementCommand movementCmd)
+            {
+                position = new Vector3(movementCmd.xPosition ?? position.X, movementCmd.yPosition ?? position.Y, movementCmd.zPosition ?? position.Z);
+            }
+
+            int NewMarkingParams()
+            {
+                if (cachedMP.TryGetValue(currentMP, out int key)) ;
+                else
+                {
+                    key++;
+                    MPsMap.Add(key, currentMP);
+                    cachedMP.Add(currentMP, key);
                 }
 
-                int NewMarkingParams()
+                currentMP = new MarkingParams();
+
+                return key;
+            }
+
+            void NewVectorBlock()
+            {
+                currentVB.MarkingParamsKey = NewMarkingParams();
+                currentWP.VectorBlocks.Add(currentVB);
+                currentWP.NumBlocks++;
+
+                currentVB = new VectorBlock();
+            }
+
+            void NewWorkPlane()
+            {
+                NewVectorBlock();
+                CompleteJob.WorkPlanes.Add(currentWP);
+                CompleteJob.NumWorkPlanes++;
+                currentWP = new WorkPlane
                 {
-                    if (cachedMP.TryGetValue(currentMP, out int key)) ;
-                    else
-                    {
-                        key++;
-                        MPsMap.Add(key, currentMP);
-                        cachedMP.Add(currentMP, key);
-                    }
-
-                    currentMP = new MarkingParams();
-
-                    return key;
-                }
-
-
-                void NewVectorBlock()
-                {
-                    currentVB.MarkingParamsKey = NewMarkingParams();
-                    currentWP.VectorBlocks.Add(currentVB);
-                    currentWP.NumBlocks++;
-
-                    currentVB = new VectorBlock();
-                }
-
-                void NewWorkPlane()
-                {
-                    NewVectorBlock();
-                    CompleteJob.WorkPlanes.Add(currentWP);
-                    CompleteJob.NumWorkPlanes++;
-                    currentWP = new WorkPlane
-                    {
-                        WorkPlaneNumber = CompleteJob.NumWorkPlanes
-                    };
-                }
+                    WorkPlaneNumber = CompleteJob.NumWorkPlanes
+                };
             }
         }
 
