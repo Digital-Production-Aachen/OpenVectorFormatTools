@@ -29,7 +29,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using ILTFileReaderAdapter.OVFToCLIAdapter;
 using OpenVectorFormat.AbstractReaderWriter;
+using OpenVectorFormat.ILTFileReaderAdapter;
 
 namespace OpenVectorFormat.FileReaderWriterFactory
 {
@@ -46,6 +48,10 @@ namespace OpenVectorFormat.FileReaderWriterFactory
             {
                 newFileWriter = new ASPFileReaderWriter.ASPFileWriter();
             }
+            else if (CLIWriterAdapter.SupportedFileFormats.Contains(extension, StringComparer.OrdinalIgnoreCase))
+            {
+                newFileWriter = new CLIWriterAdapter();
+            }
             else
             {
                 throw new ArgumentException("format " + extension + " is not supported");
@@ -59,6 +65,7 @@ namespace OpenVectorFormat.FileReaderWriterFactory
                 List<string> formats = new List<string>();
                 formats.AddRange(OVFReaderWriter.OVFFileWriter.SupportedFileFormats);
                 formats.AddRange(ASPFileReaderWriter.ASPFileWriter.SupportedFileFormats);
+                formats.AddRange(CLIWriterAdapter.SupportedFileFormats);
                 return formats;
             }
         }

@@ -32,6 +32,7 @@ using System.IO;
 using System.Threading.Tasks;
 using OpenVectorFormat.AbstractReaderWriter;
 using System.Numerics;
+using System.Diagnostics;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
@@ -79,6 +80,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             {
                 FileInfo target = new FileInfo(Path.GetTempFileName() + extension);
                 Console.WriteLine("Converting from {0} to {1}", testFile.Extension, target.Extension);
+                Debug.WriteLine("Converting from {0} to {1}", testFile.Extension, target.Extension);
 
                 FileConverter.Convert(testFile, target);
                 FileReader originalReader = FileReaderFactory.CreateNewReader(testFile.Extension);
@@ -110,7 +112,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                     }
                 }
 
-                Assert.AreEqual(originalJob, convertedJob);
+                Assert.AreEqual(originalJob, convertedJob); //ToDo: Crashes for cli & ilt
 
                 Vector2 translation = new Vector2(4, 5);
                 float rotation =(float) Math.PI / 8;
