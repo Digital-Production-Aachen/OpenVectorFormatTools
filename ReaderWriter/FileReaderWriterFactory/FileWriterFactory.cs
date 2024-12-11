@@ -31,6 +31,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ILTFileReaderAdapter.OVFToCLIAdapter;
 using OpenVectorFormat.AbstractReaderWriter;
+using OpenVectorFormat.ILTFileReader;
 using OpenVectorFormat.ILTFileReaderAdapter;
 
 namespace OpenVectorFormat.FileReaderWriterFactory

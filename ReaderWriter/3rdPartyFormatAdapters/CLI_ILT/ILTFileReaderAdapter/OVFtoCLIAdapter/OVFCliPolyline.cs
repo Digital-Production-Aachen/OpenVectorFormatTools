@@ -67,6 +67,6 @@ namespace ILTFileReader.OVFToCLIAdapter
 
         public int Power => throw new NotImplementedException();
 
-        float[] IVectorBlock.Coordinates => polyBlock.LineSequence.Points.ToArray();
+        Span<float> IVectorBlock.Coordinates => polyBlock.LineSequence.Points.AsSpan();
     }
 }

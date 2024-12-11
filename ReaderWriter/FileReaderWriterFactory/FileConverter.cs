@@ -34,6 +34,8 @@ using OpenVectorFormat.AbstractReaderWriter;
 using System.Text.RegularExpressions;
 using OVFReaderWriter;
 using System.Threading.Tasks;
+using ILTFileReaderAdapter.OVFToCLIAdapter;
+using OpenVectorFormat.ILTFileReader;
 
 namespace OpenVectorFormat.FileReaderWriterFactory
 {
@@ -109,10 +111,14 @@ namespace OpenVectorFormat.FileReaderWriterFactory
                 {
                     writer.StartWritePartial(reader.JobShell, targetFile.FullName, progress);
 
+                    if (writer is CLIWriterAdapter)
+                        (writer as CLIWriterAdapter).WriteStartGeometry();
                     for (int i = 0; i < reader.JobShell.NumWorkPlanes; i++)
                     {
                         writer.AppendWorkPlane(reader.GetWorkPlane(i));
                     }
+                    if (writer is CLIWriterAdapter)
+                        (writer as CLIWriterAdapter).WriteEndGeometry();
                 }
             }
         }

@@ -42,20 +42,15 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
         public override FileWriteOperation FileOperationInProgress => _fileOperationInProgress;
 
         private FileWriteOperation _fileOperationInProgress = FileWriteOperation.None;
-        public static BinaryWriteStyle HatchesStyle { get; set; } = BinaryWriteStyle.SHORT; //EOS => Short
-        public static BinaryWriteStyle PolylineStyle { get; set; } = BinaryWriteStyle.LONG;
-        public static BinaryWriteStyle LayerStyle { get; set; } = BinaryWriteStyle.LONG;
-
-        public float units { get; set; } = 1;
 
         private Job jobShell;
         private IFileReaderWriterProgress progress;
 
         private static List<string> fileFormats = new List<string>() { ".cli" };
         private BinaryWriter binaryWriter;
-        private CliFileAccess cliAdapter;
-        public static bool CliPlus = false;
-        public static bool ForEOS = false;
+        private StreamWriter steamWriter;
+        private CliFileAccess cliAdapter = new CliFileAccess();
+
 
         /// <summary>
         /// List of file format extensions supported by this file reader.
@@ -64,52 +59,30 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
 
         public override Job JobShell => jobShell;
 
-        //public override Task AppendVectorBlockAsync(VectorBlock block)
-        //{
-        //    IVectorBlock blockAdapter;
-        //    switch (block.VectorDataCase)
-        //    {
-        //        case VectorBlock.VectorDataOneofCase.Hatches:
-        //            blockAdapter = new OVFCliHatches(block);
-        //            break;
-        //        case VectorBlock.VectorDataOneofCase.LineSequence:
-        //            blockAdapter = new OVFCliPolyline(block);
-        //            break;
-        //        default:
-        //            throw new ArgumentException($"vector block type {block.VectorDataCase} is not supported by cli, only Hatches and LineSequence");
-        //    }
-        //    cliAdapter.AppendVectorBlock(binaryWriter, blockAdapter);
-        //    return Task.CompletedTask;
-        //}
-
-        //public override Task AppendWorkPlaneAsync(WorkPlane workPlane)
-        //{
-        //    cliAdapter.AppendLayer(binaryWriter, new OVFCliLayer(workPlane));
-        //    return Task.CompletedTask;
-        //}
-
         public override void Dispose()
         {
             binaryWriter?.Dispose();
+            steamWriter?.Dispose();
         }
 
         public override Task SimpleJobWriteAsync(Job job, string filename, IFileReaderWriterProgress progress)
         {
             if(CliPlus)
             {
-                //var adapter = new CliPlusFileAccess() { units = units }; 
-                //var map = new Dictionary<int, Tuple<float,float>>();
+                
+                var map = new Dictionary<int, Tuple<float, float>>();
 
-                //foreach (var part in job.MarkingParamsMap)
-                //{
-                //    map.Add(part.Key, Tuple.Create(part.Value.LaserPowerInW, part.Value.LaserSpeedInMmPerS));
-                //}
-                //adapter.WriteFile(filename, new OVFCliJob(job) { Units = units }, map);
+                foreach (var part in job.MarkingParamsMap)
+                {
+                    map.Add(part.Key, Tuple.Create(part.Value.LaserPowerInW, part.Value.LaserSpeedInMmPerS));
+                }
+                var adapter = new CliFileAccess();
+                adapter.WriteFile(filename, new OVFCliJob(job) { Units = CliFormatSettings.Instance.Units }, map);
             }
             else
             {
-                var adapter = new CliFileAccess() { units = units };
-                adapter.WriteFile(filename, new OVFCliJob(job) { Units = units }, LayerStyle, HatchesStyle, PolylineStyle, units != 1);
+                var adapter = new CliFileAccess();
+                adapter.WriteFile(filename, new OVFCliJob(job) { Units = CliFormatSettings.Instance.Units });
             }
             return Task.CompletedTask;
         }
@@ -120,48 +93,67 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
             this.progress = progress;
             using (var sW = new StreamWriter(filename, false))
             {
-                WriteHeader(sW, new OVFCliJob(jobShell) { Units = units });
+                WriteHeader(sW, new OVFCliJob(jobShell) { Units = CliFormatSettings.Instance.Units });
             }
-            binaryWriter = new BinaryWriter(new FileStream(filename, FileMode.Append, FileAccess.Write, FileShare.None));
-            cliAdapter = new CliFileAccess() { HatchesStyle = HatchesStyle, PolylineStyle = PolylineStyle, LayerStyle = LayerStyle, units = units };
-        }
+            
+            cliAdapter = new CliFileAccess() ;
 
-        public void ExportForEOS()
-        {
-            ForEOS = true;
-            HatchesStyle = BinaryWriteStyle.SHORT;
-            PolylineStyle = BinaryWriteStyle.LONG;
-            LayerStyle = BinaryWriteStyle.LONG;
+            if (CliFormatSettings.Instance.dataFormatType == DataFormatType.binary)
+                binaryWriter = new BinaryWriter(new FileStream(filename, FileMode.Append, FileAccess.Write, FileShare.None));
+            else
+                steamWriter = new StreamWriter(new FileStream(filename, FileMode.Append, FileAccess.Write, FileShare.None), Encoding.ASCII);
         }
 
         public override void SimpleJobWrite(Job job, string filename, IFileReaderWriterProgress progress = null)
         {
             if (CliPlus)
             {
-                //var adapter = new CliPlusFileAccess() { units = units }; 
-                //var map = new Dictionary<int, Tuple<float,float>>();
+                var adapter = new CliFileAccess();
+                var map = new Dictionary<int, Tuple<float, float>>();
 
-                //foreach (var part in job.MarkingParamsMap)
-                //{
-                //    map.Add(part.Key, Tuple.Create(part.Value.LaserPowerInW, part.Value.LaserSpeedInMmPerS));
-                //}
-                //adapter.WriteFile(filename, new OVFCliJob(job) { Units = units }, map);
+                foreach (var part in job.MarkingParamsMap)
+                {
+                    map.Add(part.Key, Tuple.Create(part.Value.LaserPowerInW, part.Value.LaserSpeedInMmPerS));
+                }
+                adapter.WriteFile(filename, new OVFCliJob(job) { Units = CliFormatSettings.Instance.Units }, map);
             }
             else
             {
-                var adapter = new CliFileAccess() { units = units };
-                adapter.WriteFile(filename, new OVFCliJob(job) { Units = units }, LayerStyle, HatchesStyle, PolylineStyle, units != 1);
+                var adapter = new CliFileAccess();
+                adapter.WriteFile(filename, new OVFCliJob(job) { Units = CliFormatSettings.Instance.Units });
             }
         }
 
         public override void AppendWorkPlane(WorkPlane workPlane)
         {
-            cliAdapter.AppendLayer(binaryWriter, new OVFCliLayer(workPlane));
+            if(CliFormatSettings.Instance.dataFormatType == DataFormatType.binary)
+                cliAdapter.AppendLayer(binaryWriter, new OVFCliLayer(workPlane));
+            else
+                cliAdapter.AppendLayer(steamWriter, new OVFCliLayer(workPlane));
         }
 
         public override void AppendVectorBlock(VectorBlock block)
         {
             throw new NotImplementedException();
+        }
+
+        public void WriteStartGeometry()
+        {
+            if(CliFormatSettings.Instance.dataFormatType == DataFormatType.ASCII)
+            {
+                steamWriter.WriteLine("");
+                steamWriter.WriteLine("$$GEOMETRYSTART");
+            }
+        }
+
+        public void WriteEndGeometry()
+        {
+            if (CliFormatSettings.Instance.dataFormatType == DataFormatType.ASCII)
+            {
+                steamWriter.WriteLine("");
+                steamWriter.WriteLine("$$GEOMETRYEND");
+            }
+                
         }
     }
 }

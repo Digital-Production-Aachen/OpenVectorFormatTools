@@ -68,22 +68,52 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         [DataTestMethod]
         public void TestWriteCliFile(FileInfo fileName)
         {
-            var ovfFile = new FileInfo(@"C:\Users\Domin\Desktop\source\Rillen_285-960-0,11-Stripes-0,03-10-0,12.ovf");
-            var cliFile = new FileInfo(@"C:\Users\Domin\Desktop\sink\test.cli");
+            var cliFile = new FileInfo(Path.GetTempFileName() + ".cli");
 
-
-            //var reader = new OVFFileReader();
             var progress = new FileReaderWriterProgress();
-            //reader.OpenJobAsync(fileName.FullName, progress).GetAwaiter().GetResult();
-            //var job = reader.CacheJobToMemoryAsync().GetAwaiter().GetResult();
-
-            //CLIWriterAdapter cliWriter = new CLIWriterAdapter() { units = 1 / 200f };
-            //cliWriter.SimpleJobWriteAsync(job, cliFile.FullName, progress).Wait();
-            FileReaderWriterFactory.FileConverter.ConvertAsync(ovfFile, cliFile, progress).GetAwaiter().GetResult();
+            var dataFormat = DataFormatType.binary;
+            CliFormatSettings.Instance.dataFormatType = dataFormat;
+            FileReaderWriterFactory.FileConverter.ConvertAsync(fileName, cliFile, progress).GetAwaiter().GetResult();
 
             //Test
             CliFileAccess cliFileTest = new CliFileAccess();
             cliFileTest.OpenFile(cliFile.FullName);
+            Assert.AreEqual(dataFormat, cliFileTest.Header.DataFormat);
+            TestCLIFile(cliFileTest);
+        }
+
+        [DynamicData("OvfFiles")]
+        [DataTestMethod]
+        public void TestWriteCliFileASCII(FileInfo fileName)
+        {
+            var cliFile = new FileInfo(Path.GetTempFileName() + ".cli");
+
+            var progress = new FileReaderWriterProgress();
+            var dataFormat = DataFormatType.ASCII;
+            CliFormatSettings.Instance.dataFormatType = dataFormat;
+            FileReaderWriterFactory.FileConverter.ConvertAsync(fileName, cliFile, progress).GetAwaiter().GetResult();
+
+            //Test
+            CliFileAccess cliFileTest = new CliFileAccess();
+            cliFileTest.OpenFile(cliFile.FullName);
+            Assert.AreEqual(dataFormat, cliFileTest.Header.DataFormat);
+            TestCLIFile(cliFileTest);
+        }
+
+        [DynamicData("OvfFiles")]
+        [DataTestMethod]
+        public void TestWriteCliFileForEOS(FileInfo fileName)
+        {
+            var cliFile = new FileInfo(Path.GetTempFileName() + ".cli");
+
+            var progress = new FileReaderWriterProgress();
+            CliFormatSettings.Instance.FormatForEOS = true;
+            FileReaderWriterFactory.FileConverter.ConvertAsync(fileName, cliFile, progress).GetAwaiter().GetResult();
+
+            //Test
+            CliFileAccess cliFileTest = new CliFileAccess();
+            cliFileTest.OpenFile(cliFile.FullName);
+            Assert.AreEqual(CliFormatSettings.Instance.FormatForEOS, true);
             TestCLIFile(cliFileTest);
         }
 

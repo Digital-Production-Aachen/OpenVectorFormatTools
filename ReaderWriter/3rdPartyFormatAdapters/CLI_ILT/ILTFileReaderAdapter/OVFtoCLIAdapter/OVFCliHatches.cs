@@ -67,6 +67,5 @@ namespace ILTFileReader.OVFToCLIAdapter
 
         public int Power => throw new NotImplementedException();
 
-        float[] IVectorBlock.Coordinates => hatchBlock.Hatches.Points.ToArray();
     }
 }

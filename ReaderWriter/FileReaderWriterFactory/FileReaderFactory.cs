@@ -31,6 +31,7 @@ using System.Collections.Generic;
 using System.Linq;
 using OpenVectorFormat.AbstractReaderWriter;
 using OpenVectorFormat.ASPFileReaderWriter;
+using OpenVectorFormat.ILTFileReader;
 
 namespace OpenVectorFormat.FileReaderWriterFactory
 {

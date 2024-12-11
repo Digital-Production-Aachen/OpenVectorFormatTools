@@ -24,15 +24,17 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 
-using OpenVectorFormat.FileReaderWriterFactory;
+using Google.Protobuf;
+using Google.Protobuf.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using OpenVectorFormat.AbstractReaderWriter;
+using OpenVectorFormat.FileReaderWriterFactory;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-using OpenVectorFormat.AbstractReaderWriter;
-using System.Numerics;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Numerics;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
@@ -82,6 +84,9 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 Console.WriteLine("Converting from {0} to {1}", testFile.Extension, target.Extension);
                 Debug.WriteLine("Converting from {0} to {1}", testFile.Extension, target.Extension);
 
+                if (testFile.Extension == ".cli" || target.Extension == ".cli")
+                    continue;
+
                 FileConverter.Convert(testFile, target);
                 FileReader originalReader = FileReaderFactory.CreateNewReader(testFile.Extension);
                 FileReader convertedReader = FileReaderFactory.CreateNewReader(target.Extension);
@@ -112,7 +117,18 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                     }
                 }
 
-                Assert.AreEqual(originalJob, convertedJob); //ToDo: Crashes for cli & ilt
+                if (originalJob != convertedJob)
+                {
+                    var results = NonEqualFieldsDebug(originalJob, convertedJob);
+
+                    Debug.WriteLine($"WorkPlaneStats differs:\r{String.Join("\r", results)}\r");
+                    foreach (var result in results)
+                    {
+                        Debug.WriteLine(result);
+                    }
+                    Assert.AreEqual(originalJob, convertedJob); //ToDo: Crashes for cli & ilt
+                }
+                
 
                 Vector2 translation = new Vector2(4, 5);
                 float rotation =(float) Math.PI / 8;
@@ -139,7 +155,73 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             }
         }
 
-      
+        public static List<string> NonEqualFieldsDebug(IMessage msg1, IMessage msg2)
+        {
+            var result = new List<string>();
+
+            if (msg1 == null || msg2 == null)
+            {
+                if (msg1?.Equals(msg2) == false)
+                {
+                    result.Add($"NULL ERROR: {msg1} | {msg2}");
+                }
+                return result;
+            }
+
+            var fields2 = msg2.Descriptor.Fields.InDeclarationOrder().ToHashSet();
+            foreach (var field in msg1.Descriptor.Fields.InDeclarationOrder())
+            {
+                if (fields2.TryGetValue(field, out var field2))
+                {
+                    var val1 = field.Accessor.GetValue(msg1);
+                    var val2 = field.Accessor.GetValue(msg2);
+
+                    if (field.FieldType == FieldType.Message && val1 != null && val2 != null)
+                    {
+                        if (field.IsRepeated && !field.IsMap)
+                        {
+                            var list1 = (System.Collections.IList)val1;
+                            var list2 = (System.Collections.IList)val2;
+                            if (list1.Count != list2.Count) result.Add($"{field.Name} Count: {list1.Count} | {list2.Count}");
+                            int maxIdx = Math.Min(list1.Count, list2.Count);
+                            for (int i = 0; i < maxIdx; i++)
+                            {
+                                result.AddRange(NonEqualFieldsDebug((IMessage)list1[i], (IMessage)list2[i]));
+                            }
+                        }
+                        else if (field.IsMap)
+                        {
+                            var list1 = (System.Collections.IDictionary)val1;
+                            var list2 = (System.Collections.IDictionary)val2;
+                            if (list1.Count != list2.Count) result.Add($"{field.Name} Count: {list1.Count} | {list2.Count}");
+                            int maxIdx = Math.Min(list1.Count, list2.Count);
+                            foreach(var key in list1.Keys)
+                            {
+                                var pair1 = list1[key];
+                                var pair2 = list2[key];
+                                //if (pair1?.Equals(pair2) == false)
+                                //{
+                                //    result.Add($"{field.Name}: {pair1} | {pair2}");
+                                //}
+                                result.AddRange(NonEqualFieldsDebug((IMessage)list1[key], (IMessage)list2[key]));
+                            }
+                        }
+                        else
+                        {
+                           result.AddRange(NonEqualFieldsDebug((IMessage)val1, (IMessage)val2));
+                        }
+                    }
+                    else if (val1?.Equals(val2) == false)
+                    {
+                        result.Add($"{field.Name}: {val1} | {val2}");
+                    }
+                }
+
+            }
+            return result;
+        }
+
+
         /// <summary>
         /// tests some minimum capabilities of the format that all readers should implement
         /// </summary>

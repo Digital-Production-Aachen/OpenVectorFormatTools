@@ -54,16 +54,16 @@ namespace OpenVectorFormat.ILTFileReader.Model
         }
 
 
-        override public float[] Coordinates
+        override public Span<float> Coordinates
         {
             get
             {
                 if (isASCII)
-                    return coordinates;
+                    return coordinates.AsSpan();
                 else if (IsLong)
-                    return readHelper.readFloatArray(reader, OffsetInFile, N * 4 * 4);
+                    return readHelper.readFloatArray(reader, OffsetInFile, N * 4 * 4).AsSpan();
                 else
-                    return readHelper.readFloatArrayFromUshorts(reader, OffsetInFile, N * 4 * 2);
+                    return readHelper.readFloatArrayFromUshorts(reader, OffsetInFile, N * 4 * 2).AsSpan();
             }
 
         }
