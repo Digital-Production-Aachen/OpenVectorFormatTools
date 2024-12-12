@@ -62,9 +62,9 @@ namespace OpenVectorFormat.ILTFileReader.Model
                 if (isASCII)
                     return coordinates;
                 else if (IsLong)
-                    return readHelper.readFloatArray(reader, OffsetInFile, N * 2 * 4);
+                    return readHelper.readFloatArray(reader, OffsetInFile, N * 2 );
                 else
-                    return readHelper.readFloatArrayFromUshorts(reader, OffsetInFile, N * 2 * 2);
+                    return readHelper.readFloatArrayFromUshorts(reader, OffsetInFile, N  * 2);
             }
             
         }

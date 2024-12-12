@@ -33,6 +33,7 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using ILTFileReader.Model;
+using System.Linq;
 
 namespace OpenVectorFormat.ILTFileReader.Controller
 {
@@ -40,7 +41,7 @@ namespace OpenVectorFormat.ILTFileReader.Controller
     {
         private static int NumOfEolChars = 1; //Number of chars that indicate a new line (have to be added to the length of a line)
         private IList<IPart> parts;
-        private IList<IUserData> userData;
+        private IList<UserData> userData;
         private Header header;
         private StreamReader sR;
         private BinaryReader bR;
@@ -53,7 +54,7 @@ namespace OpenVectorFormat.ILTFileReader.Controller
         public CliFileAccess()
         {
             this.parts = new List<IPart>();
-            this.userData = new List<IUserData>();
+            this.userData = new List<UserData>();
             this.header = new Header();
         }
 
@@ -195,11 +196,11 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                         {
                             string uid;
                             long len;
-                            byte[] data;
+                            string data;
                             uid = match.Groups[1].Value.Split(',')[0];
                             len = long.Parse(match.Groups[1].Value.Split(',')[1], NumberStyles.Any, CultureInfo.InvariantCulture);
-                            data = Encoding.ASCII.GetBytes(match.Groups[1].Value.Split(',')[2]); // Not shure whether we can/should do this conversion :S
-                            this.userData.Add(new UserData(data, len, uid));
+                            data = match.Groups[1].Value.Split(',')[2]; // Not shure whether we can/should do this conversion :S
+                            this.userData.Add(new Model.UserData(data, uid));
                         }
 
                         if ((match = Regex.Match(line, @"\$\$DATE\/(\d*)")).Success)
@@ -432,6 +433,14 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                 header.Dimension.Y2.ToString("00000000.000000", CultureInfo.InvariantCulture) + "," +
                 header.Dimension.Z2.ToString("00000000.000000", CultureInfo.InvariantCulture));
             sW.WriteLine("$$LAYERS/" + file.Geometry.Layers.Count.ToString("D6"));//ignore number in the header interface
+            var userData = header.UserData;
+            if(userData != null)
+            {
+                foreach (var data in userData)
+                {
+                    sW.WriteLine($"$$USERDATA/{data.UID},{data.Data.Length},{data.Data}"); //TODO: Write String to ASCII String
+                }
+            }
             sW.Write("$$HEADEREND");//no new line at header end
         }
 
@@ -853,6 +862,20 @@ namespace OpenVectorFormat.ILTFileReader.Controller
                 throw new ArgumentException("Invalid block detected. CLI Format only supports hatches and polylines. All blocks have to be either IHatches or IPolyline.");
             }
             sW.WriteLine();
+        }
+
+        public string GetUserData(string UID)
+        {
+            foreach (var data in this.userData.ToList())
+            {
+                if (data.UID == UID)
+                {
+                    return data.Data;
+                }
+                
+            }
+
+            return "NoData";
         }
     }
 }

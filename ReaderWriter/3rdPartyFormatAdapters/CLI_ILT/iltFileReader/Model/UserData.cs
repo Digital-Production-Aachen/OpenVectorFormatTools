@@ -28,30 +28,11 @@ using System.Text;
 
 namespace OpenVectorFormat.ILTFileReader.Model
 {
-    class UserData : ILTFileReader.IUserData
+    class UserData : ILTFileReader.UserData
     {
-        public UserData(byte[] data, long len, string uid) {
+        public UserData(string data, string uid) {
             UID = uid;
             Data = data;
-            Len = len;
-            
-        }
-        public byte[] Data
-        {
-            get;
-            set;
-        }
-
-        public long Len
-        {
-            get;
-            set;
-        }
-
-        public string UID
-        {
-            get;
-            set;
         }
     }
 }

@@ -61,9 +61,9 @@ namespace OpenVectorFormat.ILTFileReader.Model
                 if (isASCII)
                     return coordinates.AsSpan();
                 else if (IsLong)
-                    return readHelper.readFloatArray(reader, OffsetInFile, N * 4 * 4).AsSpan();
+                    return readHelper.readFloatArray(reader, OffsetInFile, N * 4 ).AsSpan();
                 else
-                    return readHelper.readFloatArrayFromUshorts(reader, OffsetInFile, N * 4 * 2).AsSpan();
+                    return readHelper.readFloatArrayFromUshorts(reader, OffsetInFile, N * 2).AsSpan();
             }
 
         }

@@ -41,19 +41,10 @@ namespace OpenVectorFormat.ILTFileReader {
     /// <summary>
     /// The USERDATA command allows user- or application-specific data to be defined in the header.
     /// </summary>
-	public interface IUserData   {
+	public class UserData   {
 
-		byte[] Data{
-			get;
-		}
-
-		long Len{
-			get;
-		}
-
-		string UID{
-			get;
-		}
+        public string Data;
+        public string UID;
 	}//end IUserData
 
 }//end namespace OpenVectorFormat.ILTFileReader

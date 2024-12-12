@@ -51,7 +51,7 @@ namespace OpenVectorFormat.ILTFileReader
         public const ushort polylineStartShort = 129; // Hex 81
 
 
-        public BinaryWriteStyle HatchesStyle { get; set; } = BinaryWriteStyle.SHORT; //EOS => Short
+        public BinaryWriteStyle HatchesStyle { get; set; } = BinaryWriteStyle.LONG; //EOS => Short
         public BinaryWriteStyle LayerStyle { get; set; } = BinaryWriteStyle.LONG;
         public BinaryWriteStyle PolylineStyle { get; set; } = BinaryWriteStyle.LONG;
 

@@ -79,7 +79,7 @@ namespace OpenVectorFormat.ILTFileReader {
         /// <summary>
         /// Optional: the USERDATA command allows user- or application-specific data to be defined in the header.
         /// </summary>
-		IUserData UserData
+		UserData[] UserData
         {
 			get;
 		}
