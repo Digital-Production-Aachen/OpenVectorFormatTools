@@ -35,6 +35,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Security.Cryptography.Xml;
 using UnitTests;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
@@ -140,8 +141,30 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                             vb2.LpbfMetadata = vb1.LpbfMetadata?.Clone();
                         }
                     }
+
+                    //Delete 3D Data from asp
+                    if (testFile.Extension == ".asp")
+                    {
+                        for (int i = 0; i < originalJob.WorkPlanes.Count; i++)
+                        {
+                            var removeOutOfList = new List<VectorBlock>();
+                            for (int j = 0; j < originalJob.WorkPlanes[i].VectorBlocks.Count; j++)
+                            {
+                                var vb = originalJob.WorkPlanes[i].VectorBlocks[j];
+                                if (vb.VectorDataCase == VectorBlock.VectorDataOneofCase.LineSequence3D ||
+                                    vb.VectorDataCase == VectorBlock.VectorDataOneofCase.PointSequence3D ||
+                                    vb.VectorDataCase == VectorBlock.VectorDataOneofCase.Hatches3D)
+                                {
+                                    removeOutOfList.Add(vb);
+                                }
+                            }
+                            removeOutOfList.ForEach(vb => originalJob.WorkPlanes[i].VectorBlocks.Remove(vb));
+                            originalJob.WorkPlanes[i].NumBlocks = originalJob.WorkPlanes[i].VectorBlocks.Count;
+                        }
+                    }
                 }
                 #endregion
+
 
                 if (target.Extension == ".asp")
                 {
@@ -171,18 +194,6 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                     }
                 }
 
-                //if (originalJob != convertedJob)
-                //{
-                //    var results = NonEqualFieldsDebug(originalJob, convertedJob);
-
-                //    Debug.WriteLine($"WorkPlaneStats differs:\r{String.Join("\r", results)}\r");
-                //    foreach (var result in results)
-                //    {
-                //        Debug.WriteLine(result);
-                //    }
-                //    Assert.AreEqual(originalJob, convertedJob);
-                //}
-
                 bool failed = false;
                 if (!originalJob.Equals(convertedJob))
                 {
@@ -193,7 +204,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 Assert.IsFalse(failed);
 
                 Vector2 translation = new Vector2(4, 5);
-                float rotation =(float) Math.PI / 8;
+                float rotation = (float)Math.PI / 8;
 
                 for (int i = 0; i < originalJob.WorkPlanes.Count; i++)
                 {
@@ -216,7 +227,8 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 originalReader.Dispose();
                 convertedReader.Dispose();
             }
-        }
+            }
+        
 
         public static List<string> NonEqualFieldsDebug(IMessage msg1, IMessage msg2)
         {
