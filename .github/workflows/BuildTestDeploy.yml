@@ -50,17 +50,17 @@ jobs:
     - name: Test Linux
       if: contains(matrix.os, 'ubuntu')
       run: |
-        dotnet run --configuration Release --framework net8 --no-build --project ReaderWriter/FileReaderWriterFactoryGRPCWrapper/FileReaderWriterFactoryGRPCWrapper.csproj &
+        dotnet run --configuration Release --framework net8.0 --no-build --project ReaderWriter/FileReaderWriterFactoryGRPCWrapper/FileReaderWriterFactoryGRPCWrapper.csproj &
         grpcpid="$!"
         echo "started grpc server"
         sleep 5s
-        dotnet test --no-build --configuration Release --framework net8
+        dotnet test --no-build --configuration Release --framework net8.0
         kill $grpcpid
                   
     - name: Test Windows
       if: contains(matrix.os, 'windows')
       run: |
-        $j = Start-Process -PassThru -Filepath 'dotnet' -WorkingDirectory $PWD -ArgumentList 'run --configuration Release --framework net8 --no-build --project .\ReaderWriter\FileReaderWriterFactoryGRPCWrapper\FileReaderWriterFactoryGRPCWrapper.csproj'
+        $j = Start-Process -PassThru -Filepath 'dotnet' -WorkingDirectory $PWD -ArgumentList 'run --configuration Release --framework net8.0 --no-build --project .\ReaderWriter\FileReaderWriterFactoryGRPCWrapper\FileReaderWriterFactoryGRPCWrapper.csproj'
         Start-Sleep -s 5
         dotnet test --no-build --configuration Release
         $j | Select-Object -Property Id | Stop-Process
