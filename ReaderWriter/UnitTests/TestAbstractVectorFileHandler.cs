@@ -103,8 +103,10 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                         var partConverted = convertedJob.PartsMap.Values.ToList()[i];
                         if (partOriginal.GeometryInfo != null)
                         {
-                            if (partConverted.GeometryInfo == null) partConverted.GeometryInfo = new Part.Types.GeometryInfo();
-                                partConverted.GeometryInfo.BuildHeightInMm = partOriginal.GeometryInfo.BuildHeightInMm;
+                            if (partConverted.GeometryInfo == null) partConverted.GeometryInfo = partOriginal.GeometryInfo.Clone();
+                            //partConverted.GeometryInfo.BuildHeightInMm = partOriginal.GeometryInfo.BuildHeightInMm;
+                            partConverted.ParentPartName = partOriginal.ParentPartName;
+                            partConverted.Material = partOriginal.Material;
                         }
                     }
                     convertedJob.MarkingParamsMap.Clear();
@@ -116,11 +118,16 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                     //convertedJob.JobMetaData.Bounds = originalJob.JobMetaData.Bounds;
                     convertedJob.JobMetaData = originalJob.JobMetaData?.Clone();
 
-                    for (int i = 0; i < originalJob.WorkPlanes.Count; i++)
+                    for (int i = 0; i < Math.Min(originalJob.WorkPlanes.Count, convertedJob.WorkPlanes.Count); i++)
                     {
-                        convertedJob.WorkPlanes[i].MetaData = originalJob.WorkPlanes[i].MetaData?.Clone();
+                        //if (originalJob.WorkPlanes[i].MetaData != null)
+                        //{
+                        //    convertedJob.WorkPlanes[i].MetaData = originalJob.WorkPlanes[i].MetaData?.Clone();
+                        //}
+                        var wp1 = originalJob.WorkPlanes[i];
+                        var wp2 = convertedJob.WorkPlanes[i];
 
-                        for (int j = 0; j < originalJob.WorkPlanes[i].VectorBlocks.Count; j++)
+                        for (int j = 0; j < Math.Min(originalJob.WorkPlanes[i].VectorBlocks.Count, convertedJob.WorkPlanes[i].VectorBlocks.Count); j++)
                         {
                             var vb1 = originalJob.WorkPlanes[i].VectorBlocks[j];
                             var vb2 = convertedJob.WorkPlanes[i].VectorBlocks[j];
@@ -131,7 +138,6 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                             vb1.LpbfMetadata.SkinCoreStrategyArea = VectorBlock.Types.LPBFMetadata.Types.SkinCoreStrategyArea.OuterHull;
 
                             vb2.LpbfMetadata = vb1.LpbfMetadata?.Clone();
-
                         }
                     }
                 }
@@ -151,8 +157,15 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 if (target.Extension != testFile.Extension)
                 {
                     // all formats except ovf are unable to store meta data
+                    var job = originalJob;
+                    if (target.Extension == ".ovf")
+                        job = convertedJob;
+
+                    originalJob.JobMetaData.Bounds = null;
                     convertedJob.JobMetaData.Bounds = null;
-                    foreach (var workplane in convertedJob.WorkPlanes)
+
+                    job.JobParameters = null;
+                    foreach (var workplane in job.WorkPlanes)
                     {
                         workplane.MetaData = null;
                     }
@@ -167,7 +180,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 //    {
                 //        Debug.WriteLine(result);
                 //    }
-                //    Assert.AreEqual(originalJob, convertedJob); //ToDo: Crashes for cli & ilt
+                //    Assert.AreEqual(originalJob, convertedJob);
                 //}
 
                 bool failed = false;

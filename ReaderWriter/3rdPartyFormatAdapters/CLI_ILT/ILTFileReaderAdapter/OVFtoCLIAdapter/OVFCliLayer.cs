@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 using ILTFileReader.OVFToCLIAdapter;
+using ILTFileReaderAdapter.OVFtoCLIAdapter;
 using OpenVectorFormat;
 using OpenVectorFormat.ILTFileReader;
 using System;
@@ -58,6 +59,22 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
                     else if (block.VectorDataCase == VectorBlock.VectorDataOneofCase.Hatches)
                     {
                         result.Add(new OVFCliHatches(block));
+                    }
+                    else if (block.VectorDataCase == VectorBlock.VectorDataOneofCase.LineSequence3D)
+                    {
+                        result.Add(new OVFCliLineSequence3D(block));
+                    }
+                    else if (block.VectorDataCase == VectorBlock.VectorDataOneofCase.Hatches3D)
+                    {
+                        result.Add(new OVFCliHatches3D(block));
+                    }
+                    else if (block.VectorDataCase == VectorBlock.VectorDataOneofCase.PointSequence3D)
+                    {
+                        result.Add(new OVFCliPointSequence3D(block));
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
                     }
                 }
                 return result;

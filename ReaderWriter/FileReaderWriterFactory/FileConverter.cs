@@ -109,7 +109,9 @@ namespace OpenVectorFormat.FileReaderWriterFactory
                 reader.OpenJob(file.FullName, progress);
                 using (var writer = FileWriterFactory.CreateNewWriter(targetFile.Extension))
                 {
-                    writer.StartWritePartial(reader.JobShell, targetFile.FullName, progress);
+                    var job = reader.CacheJobToMemory();
+                    writer.StartWritePartial(job, targetFile.FullName, progress);
+                    //writer.StartWritePartial(reader.JobShell, targetFile.FullName, progress);
 
                     if (writer is CLIWriterAdapter)
                         (writer as CLIWriterAdapter).WriteStartGeometry();

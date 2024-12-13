@@ -38,6 +38,7 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
         public OVFCliJob(Job job)
         {
             this.job = job ?? throw new ArgumentNullException(nameof(job));
+            
         }
 
         public IList<ILayer> Layers

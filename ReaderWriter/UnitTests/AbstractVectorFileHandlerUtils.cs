@@ -27,6 +27,7 @@ using Google.Protobuf.Reflection;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -45,6 +46,11 @@ namespace UnitTests
                 {
                     var val1 = field.Accessor.GetValue(msg1);
                     var val2 = field.Accessor.GetValue(msg2);
+
+                    //if (val1?.Equals(val2) == false)
+                    //{
+                    //    Debug.WriteLine($"{field.Name}: {val1} | {val2}");
+                    //}
 
                     if (field.FieldType == FieldType.Message && val1 != null && val2 != null)
                     {
