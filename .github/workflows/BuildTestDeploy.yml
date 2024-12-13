@@ -38,7 +38,7 @@ jobs:
     - name: Setup Dotnet sdk
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 7.0.x
+        dotnet-version: 8.0.x
 
     - name: Remove GUI Projects (Linux)
       if: contains(matrix.os, 'ubuntu')
@@ -81,7 +81,7 @@ jobs:
     - name: Setup Dotnet sdk
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 7.0.x
+        dotnet-version: 8.0.x
                   
     - name: Build Windows
       run: |
