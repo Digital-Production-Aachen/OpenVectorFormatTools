@@ -227,7 +227,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 originalReader.Dispose();
                 convertedReader.Dispose();
             }
-            }
+        }
         
 
         public static List<string> NonEqualFieldsDebug(IMessage msg1, IMessage msg2)
