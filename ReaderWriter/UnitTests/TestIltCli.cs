@@ -113,6 +113,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             //Test
             CliFileAccess cliFileTest = new CliFileAccess();
             cliFileTest.OpenFile(cliFile.FullName);
+
             Assert.AreEqual(CliFormatSettings.Instance.FormatForEOS, true);
             TestCLIFile(cliFileTest);
         }
