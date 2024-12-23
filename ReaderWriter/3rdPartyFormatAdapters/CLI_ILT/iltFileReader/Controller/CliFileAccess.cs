@@ -51,11 +51,12 @@ namespace OpenVectorFormat.ILTFileReader.Controller
         public static bool CliPlus = false;
         Dictionary<int, Tuple<float, float>> MarkingParameterMap;
 
-        public CliFileAccess()
+        public CliFileAccess(Dictionary<int, Tuple<float, float>> map = null)
         {
             this.parts = new List<IPart>();
             this.userData = new List<UserData>();
             this.header = new Header();
+            this.MarkingParameterMap = map;
         }
 
         public void OpenFile(string filePath)
@@ -86,15 +87,8 @@ namespace OpenVectorFormat.ILTFileReader.Controller
         /// <param name="hatchesStyle">write the hatches coordinates int16 or float32 bit</param>
         /// <param name="polylineStyle">write the polyline coordinates int16 or float32 bit</param>
         /// <param name="convertUnits">if true, the coordiantes passed into the interface will be converted based on the unit given in the header. if false, no conversion is appplied but the units are still written to the header</param>
-        public void WriteFile(string filePath, ICLIFile fileToWrite, Dictionary<int, Tuple<float, float>> map = null)
+        public void WriteFile(string filePath, ICLIFile fileToWrite)
         {
-            if (map != null && map.Count > 0)
-            {
-                CliPlus = true;
-                MarkingParameterMap = map;
-            }
-
-
             using (var sW = new StreamWriter(filePath, false))
             {
                 WriteHeader(sW, fileToWrite);

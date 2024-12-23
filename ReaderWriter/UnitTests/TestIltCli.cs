@@ -118,6 +118,24 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             TestCLIFile(cliFileTest);
         }
 
+        [DynamicData("OvfFiles")]
+        [DataTestMethod]
+        public void TestWriteCliFileForCliPlus(FileInfo fileName)
+        {
+            var cliFile = new FileInfo(Path.GetTempFileName() + ".cli");
+
+            var progress = new FileReaderWriterProgress();
+            var dataFormat = DataFormatType.ASCII;
+            CliFormatSettings.Instance.dataFormatType = dataFormat;
+            CliFileAccess.CliPlus = true;
+            FileReaderWriterFactory.FileConverter.ConvertAsync(fileName, cliFile, progress).GetAwaiter().GetResult();
+
+            //Test
+            CliFileAccess cliFileTest = new CliFileAccess();
+            cliFileTest.OpenFile(cliFile.FullName);
+            TestCLIFile(cliFileTest);
+        }
+
         private FileReaderWriterFactory.FileConverter SetupConverter()
         {
             FileReaderWriterFactory.FileConverter converter = new FileReaderWriterFactory.FileConverter();
