@@ -67,23 +67,20 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
 
         public override Task SimpleJobWriteAsync(Job job, string filename, IFileReaderWriterProgress progress)
         {
-            if(CliPlus)
-            {
-                
-                var map = new Dictionary<int, Tuple<float, float>>();
 
+            var map = new Dictionary<int, Tuple<float, float>>();
+
+            if (CliPlus)
+            {
                 foreach (var part in job.MarkingParamsMap)
                 {
                     map.Add(part.Key, Tuple.Create(part.Value.LaserPowerInW, part.Value.LaserSpeedInMmPerS));
                 }
-                var adapter = new CliFileAccess();
-                adapter.WriteFile(filename, new OVFCliJob(job) { Units = CliFormatSettings.Instance.Units }, map);
             }
-            else
-            {
-                var adapter = new CliFileAccess();
-                adapter.WriteFile(filename, new OVFCliJob(job) { Units = CliFormatSettings.Instance.Units });
-            }
+
+            var adapter = new CliFileAccess(map);
+            adapter.WriteFile(filename, new OVFCliJob(job) { Units = CliFormatSettings.Instance.Units });
+
             return Task.CompletedTask;
         }
 
@@ -91,12 +88,23 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
         {
             this.jobShell = jobShell;
             this.progress = progress;
+
+            var map = new Dictionary<int, Tuple<float, float>>();
+
+            if (CliPlus)
+            {
+                foreach (var part in jobShell.MarkingParamsMap)
+                {
+                    map.Add(part.Key, Tuple.Create(part.Value.LaserPowerInW, part.Value.LaserSpeedInMmPerS));
+                }
+            }
+
             using (var sW = new StreamWriter(filename, false))
             {
                 WriteHeader(sW, new OVFCliJob(jobShell) { Units = CliFormatSettings.Instance.Units });
             }
             
-            cliAdapter = new CliFileAccess() ;
+            cliAdapter = new CliFileAccess(map) ;
 
             if (CliFormatSettings.Instance.dataFormatType == DataFormatType.binary)
                 binaryWriter = new BinaryWriter(new FileStream(filename, FileMode.Append, FileAccess.Write, FileShare.None));
@@ -106,22 +114,18 @@ namespace ILTFileReaderAdapter.OVFToCLIAdapter
 
         public override void SimpleJobWrite(Job job, string filename, IFileReaderWriterProgress progress = null)
         {
+            var map = new Dictionary<int, Tuple<float, float>>();
+
             if (CliPlus)
             {
-                var adapter = new CliFileAccess();
-                var map = new Dictionary<int, Tuple<float, float>>();
-
                 foreach (var part in job.MarkingParamsMap)
                 {
                     map.Add(part.Key, Tuple.Create(part.Value.LaserPowerInW, part.Value.LaserSpeedInMmPerS));
                 }
-                adapter.WriteFile(filename, new OVFCliJob(job) { Units = CliFormatSettings.Instance.Units }, map);
             }
-            else
-            {
-                var adapter = new CliFileAccess();
-                adapter.WriteFile(filename, new OVFCliJob(job) { Units = CliFormatSettings.Instance.Units });
-            }
+
+            var adapter = new CliFileAccess(map);
+            adapter.WriteFile(filename, new OVFCliJob(job) { Units = CliFormatSettings.Instance.Units });
         }
 
         public override void AppendWorkPlane(WorkPlane workPlane)
