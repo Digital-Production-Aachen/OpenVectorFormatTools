@@ -78,7 +78,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             //Test
             CliFileAccess cliFileTest = new CliFileAccess();
             cliFileTest.OpenFile(cliFile.FullName);
-            Assert.AreEqual(dataFormat, cliFileTest.Header.DataFormat);
+            Assert.AreEqual(cliFileTest.Header.DataFormat, dataFormat);
             TestCLIFile(cliFileTest);
         }
 
@@ -96,7 +96,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             //Test
             CliFileAccess cliFileTest = new CliFileAccess();
             cliFileTest.OpenFile(cliFile.FullName);
-            Assert.AreEqual(dataFormat, cliFileTest.Header.DataFormat);
+            Assert.AreEqual(cliFileTest.Header.DataFormat, dataFormat);
             TestCLIFile(cliFileTest);
         }
 
@@ -132,6 +132,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             //Test
             CliFileAccess cliFileTest = new CliFileAccess();
             cliFileTest.OpenFile(cliFile.FullName);
+            Assert.AreEqual(cliFileTest.Header.DataFormat, dataFormat);
             TestCLIFile(cliFileTest);
         }
 
