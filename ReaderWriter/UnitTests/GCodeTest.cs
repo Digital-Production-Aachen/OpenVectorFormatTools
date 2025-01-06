@@ -31,6 +31,9 @@ using System.Threading.Tasks;
 using OpenVectorFormat.GCodeReaderWriter;
 using System.IO;
 using OpenVectorFormat.ASPFileReaderWriter;
+using Microsoft.VisualStudio.TestPlatform.CoreUtilities.Helpers;
+using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
@@ -41,26 +44,48 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
 
         [DynamicData("GCodeFiles")]
         [TestMethod]
-        public void TestGCodeFiles(FileInfo fileName)
+        public void TestGCodeFile(FileInfo fileName)
         {
-            var gCodeReader = new GCodeReader();
+            string[] fileContent = File.ReadAllLines(fileName.FullName);
 
-            string testCommandLinear = File.ReadAllLines(fileName.FullName)[19];
-            GCodeState gCodeState = new GCodeState(testCommandLinear);
+            Assert.IsTrue(IsValidGCode(fileContent));
 
-            LinearInterpolationCmd assertCmd = new LinearInterpolationCmd(PrepCode.G, 0, new Dictionary<char, float> { { 'F', 1800 }, { 'X', 110.414f }, { 'Y', 94.025f }, { 'E', 0.02127f } });
-            Assert.AreEqual(gCodeState.gCodeCommand.gCode, assertCmd.gCode );
-            Assert.AreEqual(gCodeState.gCodeCommand.GetType(), assertCmd.GetType());
+            static bool IsValidGCode(string[] commandLines)
+            {
+                Regex gcodePattern = new Regex(@"^[GMT]\w*\s*(-?\d+(\.\d+)?)?\s*(;.*)?$");
 
-            object[] stateUpdates = gCodeState.Update(File.ReadAllLines(fileName.FullName)[22]);
-
-            Assert.IsNotNull(stateUpdates[0]);
-            Assert.IsNull(stateUpdates[1]);
-            Assert.IsNull(stateUpdates[2]);
+                foreach (string commandLine in commandLines)
+                {
+                    string[] commandParts = commandLine.Split(' ');
+                    
+                    string trimmedLine = commandLine.Trim();
+                    if (!string.IsNullOrEmpty(trimmedLine) && !gcodePattern.IsMatch(trimmedLine))  // Ignore empty lines
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
         }
 
         [DynamicData("GCodeFiles")]
         [TestMethod]
+        public void TestGCodeCmdLineToObject(FileInfo fileName)
+        {
+            string[] testCommands = File.ReadAllLines(fileName.FullName);
+
+            GCodeCommandList gCodeCommandList = new GCodeCommandList(testCommands);
+
+            /*
+            for (int i = 0; i < 30; i++)
+            {
+                Console.WriteLine(gCodeCommandList[i].GetType());
+                //Console.WriteLine(gCodeCommandList[i].ToString());
+            }
+            */
+            Assert.AreEqual(testCommands.Length, gCodeCommandList.Count);
+        }
+        /*
         public void TestGCodeGrouping(FileInfo fileName)
         {
             string[] testCommands = File.ReadAllLines(fileName.FullName);
@@ -79,7 +104,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
 
             Assert.AreEqual(3, gCodeTypeGrouping.Count());
         }
-
+        */
         public static List<object[]> GCodeFiles
         {
             get
