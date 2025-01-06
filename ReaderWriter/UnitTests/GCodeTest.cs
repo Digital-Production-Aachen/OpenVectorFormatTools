@@ -59,7 +59,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                     string[] commandParts = commandLine.Split(' ');
                     
                     string trimmedLine = commandLine.Trim();
-                    if (!string.IsNullOrEmpty(trimmedLine) && !gcodePattern.IsMatch(trimmedLine))  // Ignore empty lines
+                    if (string.IsNullOrEmpty(trimmedLine) || !gcodePattern.IsMatch(trimmedLine))  // Ignore empty lines
                     {
                         return false;
                     }
