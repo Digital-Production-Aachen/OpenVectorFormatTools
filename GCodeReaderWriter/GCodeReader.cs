@@ -43,7 +43,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
     {
         private WorkPlane currentWP;
         private VectorBlock currentVB;
-        private MarkingParams currentMarkingParams;
         private IFileReaderWriterProgress progress;
         private CacheState _cacheState = CacheState.NotCached;
         private Job job;
@@ -166,7 +165,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         public void ParseGCodeFile()
         {
-
             MapField<int, MarkingParams> MPsMap = new MapField<int, MarkingParams>();
             Dictionary<MarkingParams, int> cachedMP = new Dictionary<MarkingParams, int>();
 
@@ -189,8 +187,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
             {
                 MarkingParamsKey = 0
             };
-
-            currentMP = new MarkingParams();
 
             switch (firstGCodeCommand)
             {
