@@ -217,7 +217,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
         // Operational move or travel move
         internal bool isOperation;
 
-        public LinearInterpolationCmd(PrepCode prepCode, int codeNumber, float? xPosition, float? yPosition, float? zPosition, float? feedRate, float? acceleration) : base(prepCode, codeNumber, xPosition, yPosition, zPosition, feedRate, acceleration)
+        public LinearInterpolationCmd(PrepCode prepCode, int codeNumber, float? xPosition, float? yPosition, float? zPosition = null, float? feedRate = null, float? acceleration = null) : base(prepCode, codeNumber, xPosition, yPosition, zPosition, feedRate, acceleration)
         {
             CheckOperation();
         }
@@ -543,8 +543,11 @@ public class GCodeCommandList : List<GCodeCommand>
 
     public GCodeCommandList(string[] commandLines)
     {
+        // Set culture info, so that floats are parsed correctly
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
         CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+
+        // Try to parse the given command lines to GCodeCommand objects
         TryParse(commandLines);
     }
 
