@@ -47,7 +47,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
     }
 
     // Represents a basic GCode with a preparatory function code and a code number
-    public struct GCode
+    public readonly struct GCode
     {
         public readonly PrepCode preparatoryFunctionCode;
         public readonly int codeNumber;
@@ -561,6 +561,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 catch (ArgumentException e)
                 {
                     Console.WriteLine(e.Message);
+                    continue;
                 }
             }
         }
@@ -568,9 +569,16 @@ namespace OpenVectorFormat.GCodeReaderWriter
         public GCodeCommand ParseLine(string serializedCmdLine)
         {
             string commandString = serializedCmdLine.Split(';')[0].Trim();
+            if (string.IsNullOrEmpty(commandString))
+            {
+                return null;
+            }
             string[] commandArr = commandString.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            char commandChar;
 
-            char commandChar = char.ToUpper(commandArr[0][0]);
+            commandChar = char.ToUpper(commandArr[0][0]);
+
+
             if (!Enum.TryParse(commandChar.ToString(), out PrepCode prepCode))
                 throw new ArgumentException($"Invalid preparatory function code: {commandChar} in line '{serializedCmdLine}'");
 
