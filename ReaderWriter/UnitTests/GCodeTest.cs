@@ -47,21 +47,26 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         public void TestGCodeFile(FileInfo fileName)
         {
             string[] fileContent = File.ReadAllLines(fileName.FullName);
-
-            Assert.IsTrue(IsValidGCode(fileContent));
+            bool isContentValid = IsValidGCode(fileContent);
+            Assert.IsTrue(isContentValid);
 
             static bool IsValidGCode(string[] commandLines)
             {
-                Regex gcodePattern = new Regex(@"^[GMT]\w*\s*(-?\d+(\.\d+)?)?\s*(;.*)?$");
-
                 foreach (string commandLine in commandLines)
                 {
-                    string[] commandParts = commandLine.Split(' ');
-                    
-                    string trimmedLine = commandLine.Trim();
-                    if (string.IsNullOrEmpty(trimmedLine) || !gcodePattern.IsMatch(trimmedLine))  // Ignore empty lines
+                    string commandString = commandLine.Split(';')[0].Trim();
+                    if (string.IsNullOrEmpty(commandString))
                     {
-                        return false;
+                        continue;
+                    }
+                    string[] commandParts = commandString.Split(' ');
+
+                    foreach (string commandPart in commandParts)
+                    {
+                        if (!char.IsLetter(commandPart[0]) || (commandPart.Length>1 && !float.TryParse(commandPart.Substring(1), out _)))
+                        {
+                            return false;
+                        }
                     }
                 }
                 return true;
@@ -109,7 +114,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         {
             get
             {
-                FileInfo[] testFiles = dir.GetFiles("*.gcode"); //getting all .cli files
+                FileInfo[] testFiles = dir.GetFiles("*.gcode"); //getting all .gcode files
                 List<object[]> files = new List<object[]>(testFiles.Length);
                 for (int i = 0; i < testFiles.Length; i++)
                 {
