@@ -161,6 +161,8 @@ namespace OpenVectorFormat.GCodeReaderWriter
             };
 
             this.filename = filename;
+
+            ParseGCodeFile();
         }
 
         public void ParseGCodeFile()
@@ -278,6 +280,15 @@ namespace OpenVectorFormat.GCodeReaderWriter
                         else
                         {
                             angle = (float)-Math.Atan2((double)center.Y - position.Y, (double)center.X - position.X);
+                        }
+
+                        if (angle != currentVB.Arcs3D.Angle)
+                        {
+                            if (currentVB.Arcs3D.Angle != 0)
+                            {
+                                NewVectorBlock();
+                            }
+                            currentVB.Arcs3D.Angle = angle;
                         }
 
                         if (currentMP.LaserSpeedInMmPerS != (float)circularCmd.feedRate)
