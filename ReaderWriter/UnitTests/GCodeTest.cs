@@ -80,36 +80,9 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             string[] testCommands = File.ReadAllLines(fileName.FullName);
 
             GCodeCommandList gCodeCommandList = new GCodeCommandList(testCommands);
-
-            /*
-            for (int i = 0; i < 30; i++)
-            {
-                Console.WriteLine(gCodeCommandList[i].GetType());
-                //Console.WriteLine(gCodeCommandList[i].ToString());
-            }
-            */
             Assert.AreEqual(testCommands.Length, gCodeCommandList.Count);
         }
-        /*
-        public void TestGCodeGrouping(FileInfo fileName)
-        {
-            string[] testCommands = File.ReadAllLines(fileName.FullName);
-            GCodeReader gCodeReader = new GCodeReader();
 
-            GCodeCommandList gCodeCommandList = new GCodeCommandList(testCommands);
-
-            for (int i = 0; i < 30; i++)
-            {
-                Console.WriteLine(gCodeCommandList[i].GetType());
-                //Console.WriteLine(gCodeCommandList[i].ToString());
-            }
-
-            IEnumerable<IGrouping<Type, GCodeCommand>> gCodeTypeGrouping = gCodeCommandList.GroupBy(gCodeCommand => gCodeCommand.GetType()).ToList();
-            Console.WriteLine(gCodeTypeGrouping.ToString());
-
-            Assert.AreEqual(3, gCodeTypeGrouping.Count());
-        }
-        */
         public static List<object[]> GCodeFiles
         {
             get
