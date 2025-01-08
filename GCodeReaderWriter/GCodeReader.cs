@@ -234,7 +234,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
             {
                 if (currentGCodeCommand is MovementCommand movementCmd)
                 {
-                    // processMovementCmd(movementCmd);
                     if (movementCmd.zPosition != currentWP.ZPosInMm)
                     {
                         NewWorkPlane();
@@ -243,11 +242,25 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     {
                         if (linearCmd.isOperation)
                         {
-                            currentMP.LaserSpeedInMmPerS = (float)linearCmd.feedRate;
+                            if (currentMP.LaserSpeedInMmPerS != (float)linearCmd.feedRate)
+                            {
+                                if (currentMP.LaserSpeedInMmPerS != 0)
+                                {
+                                    NewVectorBlock();
+                                }
+                                currentMP.LaserSpeedInMmPerS = (float)linearCmd.feedRate;
+                            }
                         }
                         else
                         {
-                            currentMP.JumpSpeedInMmS = (float)linearCmd.feedRate;
+                            if (currentMP.JumpSpeedInMmS != (float)linearCmd.feedRate)
+                            {
+                                if (currentMP.JumpSpeedInMmS != 0)
+                                {
+                                    NewVectorBlock();
+                                }
+                                currentMP.JumpSpeedInMmS = (float)linearCmd.feedRate;
+                            }
                         }
                         currentVB.LineSequence3D.Points.Add(linearCmd.xPosition ?? 0);
                         currentVB.LineSequence3D.Points.Add(linearCmd.yPosition ?? 0);
@@ -266,8 +279,15 @@ namespace OpenVectorFormat.GCodeReaderWriter
                         {
                             angle = (float)-Math.Atan2((double)center.Y - position.Y, (double)center.X - position.X);
                         }
-                        currentMP.LaserSpeedInMmPerS = (float)circularCmd.feedRate;
 
+                        if (currentMP.LaserSpeedInMmPerS != (float)circularCmd.feedRate)
+                        {
+                            if (currentMP.LaserSpeedInMmPerS != 0)
+                            {
+                                NewVectorBlock();
+                            }
+                            currentMP.LaserSpeedInMmPerS = (float)circularCmd.feedRate;
+                        }
                         if (currentVB.Arcs3D.Centers.Count == 0)
                         {
                             currentVB.Arcs3D.StartDx = position.X;
@@ -284,7 +304,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 }
                 else if(currentGCodeCommand is PauseCommand pauseCmd)
                 {
-                    // processPauseCmd(pauseCmd);
                     currentVB.ExposurePause.PauseInUs = (ulong)pauseCmd.duration * 1000;
                 }
                 else if(currentGCodeCommand is ToolChangeCommand toolChangeCmd)
