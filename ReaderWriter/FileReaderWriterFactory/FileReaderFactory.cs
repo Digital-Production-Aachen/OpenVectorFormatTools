@@ -75,6 +75,7 @@ namespace OpenVectorFormat.FileReaderWriterFactory
                 formats.AddRange(IltFileAccess.SupportedFileFormats);
                 formats.AddRange(CliFileAccess.SupportedFileFormats);
                 formats.AddRange(ASPFileReaderWriter.ASPFileReader.SupportedFileFormats);
+                formats.AddRange(GCodeReader.SupportedFileFormats);
                 return formats;
             }
         }
