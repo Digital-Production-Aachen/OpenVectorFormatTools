@@ -56,7 +56,7 @@ namespace OpenVectorFormat.FileReaderWriterFactory
             {
                 newFileReader = new ASPFileReaderWriter.ASPFileReader();
             }
-            else if (GCodeReader.GCodeReader.SupportedFileFormats.Contains(extension, StringComparer.OrdinalIgnoreCase))
+            else if (GCodeReader.SupportedFileFormats.Contains(extension, StringComparer.OrdinalIgnoreCase))
             {
                 newFileReader = new GCodeReaderWriter.GCodeReader();
             }
