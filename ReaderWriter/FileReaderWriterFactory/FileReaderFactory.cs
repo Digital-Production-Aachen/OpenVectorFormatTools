@@ -31,6 +31,7 @@ using System.Collections.Generic;
 using System.Linq;
 using OpenVectorFormat.AbstractReaderWriter;
 using OpenVectorFormat.ASPFileReaderWriter;
+using OpenVectorFormat.GCodeReaderWriter;
 
 namespace OpenVectorFormat.FileReaderWriterFactory
 {
@@ -54,6 +55,10 @@ namespace OpenVectorFormat.FileReaderWriterFactory
             else if (ASPFileReaderWriter.ASPFileReader.SupportedFileFormats.Contains(extension, StringComparer.OrdinalIgnoreCase))
             {
                 newFileReader = new ASPFileReaderWriter.ASPFileReader();
+            }
+            else if (GCodeReader.GCodeReader.SupportedFileFormats.Contains(extension, StringComparer.OrdinalIgnoreCase))
+            {
+                newFileReader = new GCodeReaderWriter.GCodeReader();
             }
             else
             {

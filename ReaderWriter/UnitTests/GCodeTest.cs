@@ -30,7 +30,6 @@ using System.Text;
 using System.Threading.Tasks;
 using OpenVectorFormat.GCodeReaderWriter;
 using System.IO;
-using OpenVectorFormat.ASPFileReaderWriter;
 using Microsoft.VisualStudio.TestPlatform.CoreUtilities.Helpers;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
