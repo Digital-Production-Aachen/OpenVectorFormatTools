@@ -283,9 +283,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
                         {
                             currentVB.LineSequence3D = new VectorBlock.Types.LineSequence3D();
                         }
-                        currentVB.LineSequence3D.Points.Add(linearCmd.xPosition ?? 0);
-                        currentVB.LineSequence3D.Points.Add(linearCmd.yPosition ?? 0);
-                        currentVB.LineSequence3D.Points.Add(linearCmd.zPosition ?? 0);
+                        currentVB.LineSequence3D.Points.Add(linearCmd.xPosition ?? position.X);
+                        currentVB.LineSequence3D.Points.Add(linearCmd.yPosition ?? position.Y);
+                        currentVB.LineSequence3D.Points.Add(linearCmd.zPosition ?? position.Z);
                     }
                     else if (movementCmd is CircularInterpolationCmd circularCmd)
                     {
@@ -327,14 +327,14 @@ namespace OpenVectorFormat.GCodeReaderWriter
                             currentVB.Arcs3D.StartDy = position.Y;
                             currentVB.Arcs3D.StartDz = position.Z;
 
-                            currentVB.Arcs3D.Centers.Add(position.X + circularCmd.xCenterRel ?? 0);
-                            currentVB.Arcs3D.Centers.Add(position.Y + circularCmd.yCenterRel ?? 0);
+                            currentVB.Arcs3D.Centers.Add(position.X + circularCmd.xCenterRel ?? position.X);
+                            currentVB.Arcs3D.Centers.Add(position.Y + circularCmd.yCenterRel ?? position.Y);
                             currentVB.Arcs3D.Centers.Add(position.Z);
                         }
                         else
                         {
-                            currentVB.Arcs3D.Centers.Add(position.X + circularCmd.xCenterRel ?? 0);
-                            currentVB.Arcs3D.Centers.Add(position.Y + circularCmd.yCenterRel ?? 0);
+                            currentVB.Arcs3D.Centers.Add(position.X + circularCmd.xCenterRel ?? position.X);
+                            currentVB.Arcs3D.Centers.Add(position.Y + circularCmd.yCenterRel ?? position.Y);
                             currentVB.Arcs3D.Centers.Add(position.Z);
                         }
                     }
