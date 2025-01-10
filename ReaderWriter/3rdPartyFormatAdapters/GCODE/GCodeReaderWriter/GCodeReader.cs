@@ -244,7 +244,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             }
 
-
             foreach (GCodeCommand currentGCodeCommand in gCodeCommands.Skip(1))
             {
                 VBlocked = false;
@@ -364,7 +363,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 {
                     // processMiscCmd(miscCmd);
                 }
-                CompleteJob.MarkingParamsMap.MergeFromWithRemap(MPsMap, out var keyMapping);
+                CompleteJob.MarkingParamsMap.MergeFrom(MPsMap);
             }
 
             _cacheState = CacheState.CompleteJobCached;
