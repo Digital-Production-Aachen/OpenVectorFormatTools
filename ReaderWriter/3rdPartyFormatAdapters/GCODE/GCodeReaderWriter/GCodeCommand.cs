@@ -43,7 +43,8 @@ namespace OpenVectorFormat.GCodeReaderWriter
     {
         G,
         M,
-        T
+        T,
+        Comment
     }
 
     // Represents a basic GCode with a preparatory function code and a code number
@@ -64,7 +65,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
     }
 
-    class ToolParams
+    public class ToolParams
     {
         // Number of the currently equipped tool
         int toolNumber;
@@ -75,6 +76,8 @@ namespace OpenVectorFormat.GCodeReaderWriter
         // The GCode of the command
         public readonly GCode gCode;
 
+        public readonly string comment;
+
         // Dictionary of all unassignable parameters in a GCode line
         private protected Dictionary<char, float> miscParams;
 
@@ -84,36 +87,22 @@ namespace OpenVectorFormat.GCodeReaderWriter
         // Dicionary mapping parameter characters to their respective class variables
         protected static Dictionary<char, Action<float>> parameterMap;
 
-        public GCodeCommand(GCode gCode, Dictionary<char, float> commandParams = null)
+        public GCodeCommand(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null)
         {
             miscParams = new Dictionary<char, float>();
             recordedParams = new List<char>();
             parameterMap = new Dictionary<char, Action<float>>();
             this.gCode = gCode;
+            this.comment = comment;
         }
 
-        public GCodeCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null)
+        public GCodeCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null)
         {
             miscParams = new Dictionary<char, float>();
             recordedParams = new List<char>();
             parameterMap = new Dictionary<char, Action<float>>();
             this.gCode = new GCode(prepCode, codeNumber);
-        }
-
-        public GCodeCommand(GCode gCode)
-        {
-            this.gCode = gCode;
-            miscParams = new Dictionary<char, float>();
-            recordedParams = new List<char>();
-            parameterMap = new Dictionary<char, Action<float>>();
-        }
-
-        public GCodeCommand(PrepCode prepCode, int codeNumber)
-        {
-            this.gCode = new GCode(prepCode, codeNumber);
-            miscParams = new Dictionary<char, float>();
-            recordedParams = new List<char>();
-            parameterMap = new Dictionary<char, Action<float>>();
+            this.comment = comment;
         }
 
         // Is used by child classes to initialize their parameter map
@@ -161,7 +150,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
         internal float? feedRate;
         internal float? acceleration;
 
-        public MovementCommand(PrepCode prepCode, int codeNumber, float? xPosition, float? yPosition, float? zPosition, float? feedRate, float? acceleration) : base(prepCode, codeNumber)
+        public MovementCommand(PrepCode prepCode, int codeNumber, float? xPosition, float? yPosition, float? zPosition, float? feedRate, float? acceleration, string comment = null) : base(prepCode, codeNumber, null, comment)
         {
             this.xPosition = xPosition;
             this.yPosition = yPosition;
@@ -170,7 +159,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             this.acceleration = acceleration;
         }
 
-        public MovementCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
+        public MovementCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
         {
             InitParameterMap();
             if (commandParams != null) 
@@ -179,7 +168,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-        public MovementCommand(GCode gCode, Dictionary<char, float> commandParams = null) : base(gCode)
+        public MovementCommand(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null) : base(gCode, commandParams, comment)
         {
             InitParameterMap();
             if (commandParams != null)
@@ -188,7 +177,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-        public MovementCommand(Dictionary<char, float> commandParams = null) : base(PrepCode.G, 1)
+        public MovementCommand(Dictionary<char, float> commandParams = null, string comment = null) : base(PrepCode.G, 1, commandParams, comment)
         {
             InitParameterMap();
             if (commandParams != null)
@@ -217,12 +206,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
         // Operational move or travel move
         internal bool isOperation;
 
-        public LinearInterpolationCmd(PrepCode prepCode, int codeNumber, float? xPosition, float? yPosition, float? zPosition = null, float? feedRate = null, float? acceleration = null) : base(prepCode, codeNumber, xPosition, yPosition, zPosition, feedRate, acceleration)
+        public LinearInterpolationCmd(PrepCode prepCode, int codeNumber, float? xPosition, float? yPosition, float? zPosition = null, float? feedRate = null, float? acceleration = null, string comment = null) : base(prepCode, codeNumber, xPosition, yPosition, zPosition, feedRate, acceleration, comment)
         {
             CheckOperation();
         }
 
-        public LinearInterpolationCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
+        public LinearInterpolationCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
         {
             CheckOperation();
             if (commandParams != null)
@@ -231,7 +220,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-        public LinearInterpolationCmd(GCode gCode, Dictionary<char, float> commandParams = null) : base(gCode)
+        public LinearInterpolationCmd(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null) : base(gCode, commandParams, comment)
         {
             CheckOperation();
             if (commandParams != null)
@@ -258,7 +247,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
     }
 
-    internal class CircularInterpolationCmd : MovementCommand
+    public class CircularInterpolationCmd : MovementCommand
     {
         // Center of the circle relative to the start position in mm
         internal float? xCenterRel;
@@ -267,13 +256,13 @@ namespace OpenVectorFormat.GCodeReaderWriter
         // Direction of the circular interpolation
         internal bool isClockwise;
 
-        public CircularInterpolationCmd(PrepCode prepCode, int codeNumer, float? xPosition, float? yPosition, float? xCenterRel, float? yCenterRel, float? feedRate, float? acceleration) : base(prepCode, codeNumer, xPosition, yPosition, null, feedRate, acceleration)
+        public CircularInterpolationCmd(PrepCode prepCode, int codeNumer, float? xPosition, float? yPosition, float? xCenterRel, float? yCenterRel, float? feedRate, float? acceleration, string comment = null) : base(prepCode, codeNumer, xPosition, yPosition, null, feedRate, acceleration, comment)
         {
             this.xCenterRel = xCenterRel;
             this.yCenterRel = yCenterRel;
         }
 
-        public CircularInterpolationCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
+        public CircularInterpolationCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
         {
             CheckDirection();
             InitParameterMap();
@@ -283,7 +272,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-        public CircularInterpolationCmd(GCode gCode, Dictionary<char, float> commandParams = null) : base(gCode)
+        public CircularInterpolationCmd(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null) : base(gCode, commandParams, comment)
         {
             CheckDirection();
             InitParameterMap();
@@ -317,18 +306,18 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
     }
 
-    internal class PauseCommand : GCodeCommand
+    public class PauseCommand : GCodeCommand
     {
         // Duration of the pause in ms
         internal float? duration;
 
-        public PauseCommand(PrepCode prepCode, int codeNumber, float? duration) : base(prepCode, codeNumber)
+        public PauseCommand(PrepCode prepCode, int codeNumber, float? duration, string comment = null) : base(prepCode, codeNumber, null, comment)
         {
             this.duration = duration;
         }
 
-        public PauseCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null)
-            : base(prepCode, codeNumber)
+        public PauseCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null)
+            : base(prepCode, codeNumber, commandParams, comment)
         {
             InitParameterMap();
             if (commandParams != null)
@@ -337,7 +326,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-        public PauseCommand(GCode gCode, Dictionary<char, float> commandParams = null) : base(gCode)
+        public PauseCommand(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null) : base(gCode, commandParams, comment)
         {
             InitParameterMap();
             if (commandParams != null)
@@ -346,7 +335,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-        public PauseCommand(Dictionary<char, float> commandParams = null) : base(PrepCode.G, 4)
+        public PauseCommand(Dictionary<char, float> commandParams = null, string comment = null) : base(PrepCode.G, 4, commandParams, comment)
         {
             InitParameterMap();
             if (commandParams != null)
@@ -361,16 +350,16 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
     }
 
-    internal class ToolChangeCommand : GCodeCommand
+    public class ToolChangeCommand : GCodeCommand
     {
-        public readonly ToolParams toolParams;
+        internal ToolParams toolParams;
 
-        public ToolChangeCommand(PrepCode prepCode, int codeNumber, ToolParams toolParams) : base(prepCode, codeNumber)
+        public ToolChangeCommand(PrepCode prepCode, int codeNumber, ToolParams toolParams, string comment = null) : base(prepCode, codeNumber, null, comment)
         {
             this.toolParams = toolParams;
         }
 
-        public ToolChangeCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
+        public ToolChangeCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
         {
             InitParameterMap();
             if (commandParams != null)
@@ -385,12 +374,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
     }
 
-    internal class MonitoringCommand : GCodeCommand
+    public class MonitoringCommand : GCodeCommand
     {
-        public MonitoringCommand(PrepCode prepCode, int codeNumber) : base(prepCode, codeNumber)
+        public MonitoringCommand(PrepCode prepCode, int codeNumber, string comment = null) : base(prepCode, codeNumber, null, comment)
         {
         }
-        public MonitoringCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
+        public MonitoringCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
         {
             InitParameterMap();
             if (commandParams != null)
@@ -405,12 +394,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
     }
 
-    internal class ProgramLogicsCommand : GCodeCommand
+    public class ProgramLogicsCommand : GCodeCommand
     {
-        public ProgramLogicsCommand(PrepCode prepCode, int codeNumber) : base(prepCode, codeNumber)
+        public ProgramLogicsCommand(PrepCode prepCode, int codeNumber, string comment = null) : base(prepCode, codeNumber, null, comment)
         {
         }
-        public ProgramLogicsCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
+        public ProgramLogicsCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
         {
             InitParameterMap();
             if (commandParams != null)
@@ -419,7 +408,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-        public ProgramLogicsCommand(GCode gCode, Dictionary<char, float> commandParams = null) : base(gCode)
+        public ProgramLogicsCommand(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null) : base(gCode, commandParams, comment)
         {
             InitParameterMap();
             if (commandParams != null)
@@ -434,12 +423,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
     }
 
-    internal class BlockEndCmd : ProgramLogicsCommand
+    public class BlockEndCmd : ProgramLogicsCommand
     {
-        public BlockEndCmd(PrepCode prepCode, int codeNumber) : base(prepCode, codeNumber)
+        public BlockEndCmd(PrepCode prepCode, int codeNumber, string comment = null) : base(prepCode, codeNumber, comment)
         {
         }
-        public BlockEndCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
+        public BlockEndCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, comment)
         {
             InitParameterMap();
             if (commandParams != null)
@@ -448,7 +437,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-        public BlockEndCmd(GCode gCode, Dictionary<char, float> commandParams = null) : base(gCode)
+        public BlockEndCmd(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null) : base(gCode, commandParams, comment)
         {
             InitParameterMap();
             if (commandParams != null)
@@ -464,13 +453,13 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
     }
 
-    internal class ProgramEndCmd : ProgramLogicsCommand
+    public class ProgramEndCmd : ProgramLogicsCommand
     {
-        public ProgramEndCmd(PrepCode prepCode, int codeNumber) : base(prepCode, codeNumber)
+        public ProgramEndCmd(PrepCode prepCode, int codeNumber, string comment = null) : base(prepCode, codeNumber, comment)
         {
         }
 
-        public ProgramEndCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null) : base(prepCode, codeNumber)
+        public ProgramEndCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
         {
             InitParameterMap();
             if (commandParams != null)
@@ -479,7 +468,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-        public ProgramEndCmd(GCode gCode, Dictionary<char, float> commandParams = null) : base(gCode)
+        public ProgramEndCmd(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null) : base(gCode, commandParams, comment)
         {
             InitParameterMap();
             if (commandParams != null)
@@ -494,19 +483,19 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
     }
 
-    internal class MiscCommand : GCodeCommand
+    public class MiscCommand : GCodeCommand
     {
-        public MiscCommand(PrepCode prepCode, int codeNumber) : base(prepCode, codeNumber)
+        public MiscCommand(PrepCode prepCode, int codeNumber, string comment = null) : base(prepCode, codeNumber, null, comment)
         {
         }
 
-        public MiscCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> cmdParams = null) :base(prepCode, codeNumber)
+        public MiscCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) :base(prepCode, codeNumber, commandParams, comment)
         {
-            this.miscParams = cmdParams;
+            this.miscParams = commandParams;
         }
-         public MiscCommand(GCode gCode, Dictionary<char, float> cmdParams = null) : base(gCode)
+         public MiscCommand(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null) : base(gCode, commandParams, comment)
         {
-            this.miscParams = cmdParams;
+            this.miscParams = commandParams;
         }
         public override string ToString()
         {
@@ -556,7 +545,15 @@ namespace OpenVectorFormat.GCodeReaderWriter
             {
                 try
                 {
-                    this.Add(ParseLine(line));
+                    GCodeCommand parseCommand = ParseLine(line);
+                    if (parseCommand != null)
+                    {
+                        this.Add(parseCommand);
+                    }
+                    else
+                    {
+                        continue;
+                    }
                 }
                 catch (ArgumentException e)
                 {
@@ -568,16 +565,23 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         public GCodeCommand ParseLine(string serializedCmdLine)
         {
-            string commandString = serializedCmdLine.Split(';')[0].Trim();
+            string[] commentSplit = serializedCmdLine.Split(';');
+            string commandString = commentSplit[0].Trim();
+            string commentString = (commentSplit.Length > 1) ? commentSplit[1].Trim() : null;
+
             if (string.IsNullOrEmpty(commandString))
             {
-                return null;
+                if (string.IsNullOrEmpty(commentString))
+                {
+                    return null;
+                }
+                return Activator.CreateInstance(typeof(MiscCommand), new Object[] { PrepCode.Comment, 0, commentString }) as GCodeCommand;
             }
+
             string[] commandArr = commandString.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             char commandChar;
 
             commandChar = char.ToUpper(commandArr[0][0]);
-
 
             if (!Enum.TryParse(commandChar.ToString(), out PrepCode prepCode))
                 throw new ArgumentException($"Invalid preparatory function code: {commandChar} in line '{serializedCmdLine}'");
@@ -606,10 +610,10 @@ namespace OpenVectorFormat.GCodeReaderWriter
             Console.WriteLine(string.Join(Environment.NewLine, commandParams));
             if (_gCodeTranslations.TryGetValue(codeNumber, out Type gCodeClassType))
             {
-                return Activator.CreateInstance(gCodeClassType, new Object[] { prepCode, codeNumber, commandParams }) as GCodeCommand;
+                return Activator.CreateInstance(gCodeClassType, new Object[] { prepCode, codeNumber, commandParams, commentString }) as GCodeCommand;
             }
 
-            return Activator.CreateInstance(typeof(MiscCommand), new Object[] { prepCode, codeNumber, commandParams }) as GCodeCommand;
+            return Activator.CreateInstance(typeof(MiscCommand), new Object[] { prepCode, codeNumber, commandParams, commentString }) as GCodeCommand;
         }
     }
 }
