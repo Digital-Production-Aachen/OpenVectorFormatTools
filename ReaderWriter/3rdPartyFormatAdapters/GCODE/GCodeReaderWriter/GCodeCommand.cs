@@ -79,10 +79,10 @@ namespace OpenVectorFormat.GCodeReaderWriter
         public readonly string comment;
 
         // Dictionary of all unassignable parameters in a GCode line
-        private protected Dictionary<char, float> miscParams;
+        public Dictionary<char, float> miscParams;
 
         // List of all recorded parameters in a GCode line
-        private protected List<char> recordedParams;
+        public readonly List<char> recordedParams;
 
         // Dicionary mapping parameter characters to their respective class variables
         protected static Dictionary<char, Action<float>> parameterMap;
@@ -144,14 +144,16 @@ namespace OpenVectorFormat.GCodeReaderWriter
     public abstract class MovementCommand : GCodeCommand
     {
         // Target position in mm, feedrate in mm/min and acceleration in mm/min^2 of movement commands
-        internal float? xPosition;
-        internal float? yPosition;
-        internal float? zPosition;
-        internal float? feedRate;
-        internal float? acceleration;
+        public float? xPosition;
+        public float? yPosition;
+        public float? zPosition;
+        public float? feedRate;
+        public float? acceleration;
 
-        public MovementCommand(PrepCode prepCode, int codeNumber, float? xPosition, float? yPosition, float? zPosition, float? feedRate, float? acceleration, string comment = null) : base(prepCode, codeNumber, null, comment)
+        public MovementCommand(PrepCode prepCode, int codeNumber, float? xPosition, float? yPosition, float? zPosition, float? feedRate, float? acceleration, Dictionary<char, float> miscParams = null, string comment = null)
+            : base(prepCode, codeNumber, null, comment)
         {
+            this.miscParams = miscParams;
             this.xPosition = xPosition;
             this.yPosition = yPosition;
             this.zPosition = zPosition;
@@ -204,11 +206,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
     public class LinearInterpolationCmd : MovementCommand
     {
         // Operational move or travel move
-        internal bool isOperation;
+        public bool isOperation;
 
-        public LinearInterpolationCmd(PrepCode prepCode, int codeNumber, float? xPosition, float? yPosition, float? zPosition = null, float? feedRate = null, float? acceleration = null, string comment = null) : base(prepCode, codeNumber, xPosition, yPosition, zPosition, feedRate, acceleration, comment)
+        public LinearInterpolationCmd(PrepCode prepCode, int codeNumber, bool isOperation, float? xPosition, float? yPosition, float? zPosition = null, float? feedRate = null, float? acceleration = null, Dictionary<char, float> miscParams = null, string comment = null)
+            : base(prepCode, codeNumber, xPosition, yPosition, zPosition, feedRate, acceleration, miscParams, comment)
         {
-            CheckOperation();
+            this.isOperation = isOperation;
         }
 
         public LinearInterpolationCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
@@ -250,14 +253,16 @@ namespace OpenVectorFormat.GCodeReaderWriter
     public class CircularInterpolationCmd : MovementCommand
     {
         // Center of the circle relative to the start position in mm
-        internal float? xCenterRel;
-        internal float? yCenterRel;
+        public float? xCenterRel;
+        public float? yCenterRel;
 
         // Direction of the circular interpolation
-        internal bool isClockwise;
+        public bool isClockwise;
 
-        public CircularInterpolationCmd(PrepCode prepCode, int codeNumer, float? xPosition, float? yPosition, float? xCenterRel, float? yCenterRel, float? feedRate, float? acceleration, string comment = null) : base(prepCode, codeNumer, xPosition, yPosition, null, feedRate, acceleration, comment)
+        public CircularInterpolationCmd(PrepCode prepCode, int codeNumer, bool isClockwise, float? xPosition, float? yPosition, float? xCenterRel, float? yCenterRel, float? feedRate, float? acceleration, Dictionary<char, float> miscParams = null, string comment = null)
+            : base(prepCode, codeNumer, xPosition, yPosition, null, feedRate, acceleration, miscParams, comment)
         {
+            this.isClockwise = isClockwise;
             this.xCenterRel = xCenterRel;
             this.yCenterRel = yCenterRel;
         }
@@ -309,7 +314,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
     public class PauseCommand : GCodeCommand
     {
         // Duration of the pause in ms
-        internal float? duration;
+        public float? duration;
 
         public PauseCommand(PrepCode prepCode, int codeNumber, float? duration, string comment = null) : base(prepCode, codeNumber, null, comment)
         {
@@ -352,7 +357,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     public class ToolChangeCommand : GCodeCommand
     {
-        internal ToolParams toolParams;
+        public ToolParams toolParams;
 
         public ToolChangeCommand(PrepCode prepCode, int codeNumber, ToolParams toolParams, string comment = null) : base(prepCode, codeNumber, null, comment)
         {
