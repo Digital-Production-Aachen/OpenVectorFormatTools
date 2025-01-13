@@ -41,6 +41,8 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
     {
         public static DirectoryInfo dir = new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "TestFiles"));
 
+
+        // Consider moving this to GCodeWriter
         [DynamicData("GCodeFiles")]
         [TestMethod]
         public void TestGCodeFile(FileInfo fileName)
@@ -74,12 +76,20 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
 
         [DynamicData("GCodeFiles")]
         [TestMethod]
-        public void TestGCodeCmdLineToObject(FileInfo fileName)
+        public void TestGCodeToObject(FileInfo fileName)
         {
             string[] testCommands = File.ReadAllLines(fileName.FullName);
 
             GCodeCommandList gCodeCommandList = new GCodeCommandList(testCommands);
-            Assert.AreEqual(testCommands.Length, gCodeCommandList.Count);
+            Assert.AreEqual(19335, gCodeCommandList.OfType<LinearInterpolationCmd>().ToList().Count);
+            Assert.AreEqual(185, gCodeCommandList.OfType<MiscCommand>().ToList().Count);
+
+            Assert.AreEqual("set extruder temp", gCodeCommandList[4].comment);
+            Assert.AreEqual(new Dictionary<char, float> {{'E', 0f}}, gCodeCommandList[15].miscParams);
+            Assert.AreEqual(2100f, ((MovementCommand) gCodeCommandList[17]).feedRate);
+            Assert.IsTrue(((LinearInterpolationCmd) gCodeCommandList[23]).isOperation);
+            Assert.AreEqual(PrepCode.Comment, gCodeCommandList[305].gCode.preparatoryFunctionCode);
+            Assert.IsFalse(((LinearInterpolationCmd) gCodeCommandList[403]).isOperation);
         }
 
         public static List<object[]> GCodeFiles
