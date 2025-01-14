@@ -186,7 +186,11 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             currentVB = new VectorBlock
             {
-                MarkingParamsKey = 0
+                MarkingParamsKey = 0,
+                MetaData = new VectorBlock.Types.VectorBlockMetaData
+                {
+                    PartKey = 0
+                }
             };
 
             switch (firstGCodeCommand)
@@ -366,6 +370,13 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 CompleteJob.MarkingParamsMap.MergeFrom(MPsMap);
             }
 
+            Part part = new Part();
+            part.GeometryInfo = new Part.Types.GeometryInfo()
+            {
+                BuildHeightInMm = position.Z
+            };
+            CompleteJob.PartsMap.Add(0, part);
+
             _cacheState = CacheState.CompleteJobCached;
 
             void updatePosition(MovementCommand movementCmd)
@@ -394,7 +405,13 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 currentWP.VectorBlocks.Add(currentVB);
                 currentWP.NumBlocks++;
 
-                currentVB = new VectorBlock();
+                currentVB = new VectorBlock()
+                {
+                    MetaData = new VectorBlock.Types.VectorBlockMetaData
+                    {
+                        PartKey = 0
+                    }
+                };
 
                 VBlocked = true;
             }
