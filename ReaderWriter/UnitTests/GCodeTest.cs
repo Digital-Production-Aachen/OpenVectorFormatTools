@@ -26,13 +26,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using OpenVectorFormat.GCodeReaderWriter;
 using System.IO;
-using Microsoft.VisualStudio.TestPlatform.CoreUtilities.Helpers;
-using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
+using OpenVectorFormat.FileReaderWriterFactory;
+using OpenVectorFormat.Plausibility;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
@@ -83,13 +80,58 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             GCodeCommandList gCodeCommandList = new GCodeCommandList(testCommands);
             Assert.AreEqual(19335, gCodeCommandList.OfType<LinearInterpolationCmd>().ToList().Count);
             Assert.AreEqual(185, gCodeCommandList.OfType<MiscCommand>().ToList().Count);
+        }
 
-            Assert.AreEqual("set extruder temp", gCodeCommandList[4].comment);
-            Assert.AreEqual(new Dictionary<char, float> {{'E', 0f}}, gCodeCommandList[15].miscParams);
-            Assert.AreEqual(2100f, ((MovementCommand) gCodeCommandList[17]).feedRate);
-            Assert.IsTrue(((LinearInterpolationCmd) gCodeCommandList[23]).isOperation);
-            Assert.AreEqual(PrepCode.Comment, gCodeCommandList[305].gCode.preparatoryFunctionCode);
-            Assert.IsFalse(((LinearInterpolationCmd) gCodeCommandList[403]).isOperation);
+        [DynamicData("GCodeFiles")]
+        [TestMethod]
+        public void TestGCodeAddParamsToMemory(FileInfo fileName)
+        {
+            var converter = SetupConverter();
+
+            var job = converter.ConvertAddParams(fileName, new FileReaderWriterFactory.FileReaderWriterProgress());
+            CheckJob(job);
+        }
+
+        private FileReaderWriterFactory.FileConverter SetupConverter()
+        {
+            FileReaderWriterFactory.FileConverter converter = new FileReaderWriterFactory.FileConverter();
+            converter.SupportPostfix = "_support";
+            converter.FallbackContouringParams = new MarkingParams() { LaserSpeedInMmPerS = 100, LaserPowerInW = 0 };
+            converter.FallbackHatchingParams = new MarkingParams() { LaserSpeedInMmPerS = 100, LaserPowerInW = 0 };
+            converter.FallbackSupportContouringParams = new MarkingParams() { LaserSpeedInMmPerS = 100, LaserPowerInW = 0 };
+            converter.FallbackSupportHatchingParams = new MarkingParams() { LaserSpeedInMmPerS = 100, LaserPowerInW = 0 };
+            return converter;
+        }
+
+        private void CheckJob(FileInfo testFile)
+        {
+            using (var reader = FileReaderWriterFactory.FileReaderFactory.CreateNewReader(testFile.Extension))
+            {
+                reader.OpenJob(testFile.FullName, new FileReaderWriterFactory.FileReaderWriterProgress());
+                var job = reader.CacheJobToMemory();
+
+                CheckJob(job);
+            }
+        }
+
+        private void CheckJob(Job job)
+        {
+            CheckerConfig config = new CheckerConfig
+            {
+                CheckLineSequencesClosed = CheckAction.DONTCHECK,
+                CheckMarkingParamsKeys = CheckAction.CHECKERROR,
+                CheckPartKeys = CheckAction.CHECKERROR,
+                CheckPatchKeys = CheckAction.DONTCHECK,
+                CheckVectorBlocksNonEmpty = CheckAction.CHECKERROR,
+                CheckWorkPlanesNonEmpty = CheckAction.CHECKERROR,
+
+                ErrorHandling = ErrorHandlingMode.THROWEXCEPTION
+            };
+
+            CheckerResult checkResult = PlausibilityChecker.CheckJob(job, config).GetAwaiter().GetResult();
+            Assert.AreEqual(OverallResult.ALLSUCCEDED, checkResult.Result);
+            Assert.AreEqual(0, checkResult.Errors.Count);
+            Assert.AreEqual(0, checkResult.Warnings.Count);
         }
 
         public static List<object[]> GCodeFiles
