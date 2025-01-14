@@ -84,6 +84,17 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
 
         [DynamicData("GCodeFiles")]
         [TestMethod]
+        public void TestGCodeFilesAddParams(FileInfo fileName)
+        {
+            var targetFile = new FileInfo(Path.GetTempFileName() + ".ovf");
+            var converter = SetupConverter();
+
+            converter.ConvertAddParams(fileName, targetFile, new FileReaderWriterFactory.FileReaderWriterProgress());
+            CheckJob(targetFile);
+        }
+
+        [DynamicData("GCodeFiles")]
+        [TestMethod]
         public void TestGCodeAddParamsToMemory(FileInfo fileName)
         {
             var converter = SetupConverter();
