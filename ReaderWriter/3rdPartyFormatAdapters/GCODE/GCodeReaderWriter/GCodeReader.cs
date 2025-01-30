@@ -23,19 +23,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 ﻿using OpenVectorFormat.AbstractReaderWriter;
-using OpenVectorFormat;
 using System;
 using System.IO;
 using System.Collections.Generic;
 using OpenVectorFormat.Utils;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Numerics;
-using System.Globalization;
 using Google.Protobuf.Collections;
-using System.Runtime.CompilerServices;
-using System.ComponentModel;
 using OVFDefinition;
+using System.Diagnostics;
 
 namespace OpenVectorFormat.GCodeReaderWriter
 {
@@ -52,7 +48,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         public override CacheState CacheState => _cacheState;
 
-        public Job CompleteJob { get; private set; }
+        public Job job;
 
         public override Job JobShell
         {
@@ -61,7 +57,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 if (_cacheState == CacheState.CompleteJobCached)
                 {
                     Job jobShell = new Job();
-                    ProtoUtils.CopyWithExclude(CompleteJob, jobShell, new List<int> { Job.WorkPlanesFieldNumber });
+                    ProtoUtils.CopyWithExclude(job, jobShell, new List<int> { Job.WorkPlanesFieldNumber });
                     return jobShell;
                 }
                 else
@@ -75,12 +71,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
         {
             if (_cacheState == CacheState.CompleteJobCached)
             {
-                return CompleteJob;
+                return job;
             }
             else if (File.Exists(filename))
             {
                 ParseGCodeFile();
-                return CompleteJob;
+                return job;
             }
             else
             {
@@ -102,7 +98,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
         {
             if (_cacheState == CacheState.CompleteJobCached)
             {
-                return CompleteJob.WorkPlanes[i_workPlane].VectorBlocks[i_vectorblock];
+                return job.WorkPlanes[i_workPlane].VectorBlocks[i_vectorblock];
             }
             else
             {
@@ -114,7 +110,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
         {
             if (_cacheState == CacheState.CompleteJobCached)
             {
-                return CompleteJob.WorkPlanes[i_workPlane];
+                return job.WorkPlanes[i_workPlane];
             }
             else
             {
@@ -124,14 +120,14 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         public override WorkPlane GetWorkPlaneShell(int i_workPlane)
         {
-            if (CompleteJob.NumWorkPlanes < i_workPlane)
+            if (job.NumWorkPlanes < i_workPlane)
             {
-                throw new ArgumentOutOfRangeException("i_workPlane " + i_workPlane.ToString() + " out of range for jobfile with " + CompleteJob.NumWorkPlanes.ToString() + " workPlanes!");
+                throw new ArgumentOutOfRangeException("i_workPlane " + i_workPlane.ToString() + " out of range for jobfile with " + job.NumWorkPlanes.ToString() + " workPlanes!");
             }
 
             if (_cacheState == CacheState.CompleteJobCached)
             {
-                return CompleteJob.WorkPlanes[i_workPlane].CloneWithoutVectorData();
+                return job.WorkPlanes[i_workPlane].CloneWithoutVectorData();
             }
             else
             {
@@ -148,7 +144,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             {
                 throw new ArgumentException(Path.GetExtension(filename) + " is not supported by GCodeReader. Supported formats are: " + string.Join(";", SupportedFileFormats));
             }
-            CompleteJob = new Job
+            job = new Job
             {
                 JobMetaData = new Job.Types.JobMetaData
                 {
@@ -168,20 +164,21 @@ namespace OpenVectorFormat.GCodeReaderWriter
             Dictionary<MarkingParams, int> cachedMP = new Dictionary<MarkingParams, int>();
 
             MarkingParams currentMP = new MarkingParams();
-            Vector3 position = new Vector3(0, 0, 0);
-            float angle = 0;
-            GCodeCommandList gCodeCommands = new GCodeCommandList(File.ReadAllLines(filename));
-            GCodeCommand firstGCodeCommand = gCodeCommands[0];
-            GCodeCommand prevGCodeCommand = firstGCodeCommand;
+            List<VectorBlock> addedVectorBlocks = new List<VectorBlock>();
 
-            bool VBlocked = false;
+            Vector3 position = new Vector3(0, 0, 0);
+            float angle = 0f;
+
+            GCodeCommandList gCodeCommands = new GCodeCommandList(File.ReadAllLines(filename));
+
+            bool VBlocked = true;
             int MPKey = 0;
 
             currentWP = new WorkPlane
             {
                 WorkPlaneNumber = 0
             };
-            CompleteJob.NumWorkPlanes = 0;
+            job.NumWorkPlanes = 0;
             currentWP.Repeats = 0;
 
             currentVB = new VectorBlock
@@ -193,193 +190,169 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 }
             };
 
-            switch (firstGCodeCommand)
+            foreach (GCodeCommand currentGCodeCommand in gCodeCommands)
             {
-                case LinearInterpolationCmd linearCmd:
-                    if (linearCmd.isOperation)
-                    {
-                        currentMP.LaserSpeedInMmPerS = (float)linearCmd.feedRate;
-                    }
-                    else
-                    {
-                        currentMP.JumpSpeedInMmS = (float)linearCmd.feedRate;
-                    }
+                switch (currentGCodeCommand)
+                {
+                    case MovementCommand movementCmd:
+                        processMovementCmd(movementCmd);
+                        break;
+                    case PauseCommand pauseCmd:
+                        processPauseCmd(pauseCmd);
+                        break;
+                    case ToolChangeCommand toolChangeCmd:
+                        processToolChandeCmd(toolChangeCmd);
+                        break;
+                    case MonitoringCommand monitoringCmd:
+                        processMonitoringCmd(monitoringCmd);
+                        break;
+                    case ProgramLogicsCommand programLogicsCmd:
+                        processProgramLogicsCmd(programLogicsCmd);
+                        break;
+                    case MiscCommand miscCmd:
+                        processMiscCmd(miscCmd);
+                        break;
+                }
 
-                    currentVB.LineSequence3D = new VectorBlock.Types.LineSequence3D();
-                    currentVB.LineSequence3D.Points.Add(linearCmd.xPosition ?? 0);
-                    currentVB.LineSequence3D.Points.Add(linearCmd.yPosition ?? 0);
-                    currentVB.LineSequence3D.Points.Add(linearCmd.zPosition ?? 0);
-
-                    updatePosition(linearCmd);
-
-                    MPsMap.Add(0, currentMP.Clone());
-
-                    break;
-
-                case CircularInterpolationCmd circularCmd:
-                    currentMP.LaserSpeedInMmPerS = (float)circularCmd.feedRate;
-
-                    currentVB.Arcs3D = new VectorBlock.Types.Arcs3D();
-
-                    currentVB.Arcs3D.StartDx = 0;
-                    currentVB.Arcs3D.StartDy = 0;
-                    currentVB.Arcs3D.StartDz = 0;
-
-                    Vector3 targetPosition = new Vector3(circularCmd.xPosition ?? 0, circularCmd.yPosition ?? 0, circularCmd.zPosition ?? 0);
-                    Vector3 center = new Vector3(position.X + circularCmd.xCenterRel ?? 0, position.Y + circularCmd.yCenterRel ?? 0, position.Z);
-
-                    currentVB.Arcs3D.Centers.Add(position.X + circularCmd.xCenterRel ?? 0);
-                    currentVB.Arcs3D.Centers.Add(position.Y + circularCmd.yCenterRel ?? 0);
-                    currentVB.Arcs3D.Centers.Add(position.Z);
-
-                    updatePosition(circularCmd);
-
-                    MPsMap.Add(0, currentMP.Clone());
-
-                    break;
-
-                case PauseCommand pauseCmd:
-                    currentVB.ExposurePause.PauseInUs = (ulong)pauseCmd.duration * 1000;
-
-                    break;
-
-                case MiscCommand miscCmd:
-                    break;
-
-            }
-
-            foreach (GCodeCommand currentGCodeCommand in gCodeCommands.Skip(1))
-            {
                 VBlocked = false;
-
-                if (currentGCodeCommand is MovementCommand movementCmd)
-                {
-                    if (movementCmd.zPosition != null && movementCmd.zPosition != position.Z)
-                    {
-                        NewWorkPlane();
-                    }
-                    if (movementCmd is LinearInterpolationCmd linearCmd)
-                    {
-                        if (linearCmd.isOperation)
-                        {
-                            if (linearCmd.feedRate != null && currentMP.LaserSpeedInMmPerS != (float)linearCmd.feedRate)
-                            {
-                                if (currentMP.LaserSpeedInMmPerS != 0 && !VBlocked)
-                                {
-                                    NewVectorBlock();
-                                }
-                                currentMP.LaserSpeedInMmPerS = (float)linearCmd.feedRate;
-                            }
-                        }
-                        else
-                        {
-                            if (linearCmd.feedRate != null && currentMP.JumpSpeedInMmS != (float)linearCmd.feedRate)
-                            {
-                                if (currentMP.JumpSpeedInMmS != 0 && !VBlocked)
-                                {
-                                    NewVectorBlock();
-                                }
-                                currentMP.JumpSpeedInMmS = (float)linearCmd.feedRate;
-                            }
-                        }
-
-                        if (currentVB.LineSequence3D == null)
-                        {
-                            currentVB.LineSequence3D = new VectorBlock.Types.LineSequence3D();
-                        }
-                        currentVB.LineSequence3D.Points.Add(linearCmd.xPosition ?? position.X);
-                        currentVB.LineSequence3D.Points.Add(linearCmd.yPosition ?? position.Y);
-                        currentVB.LineSequence3D.Points.Add(linearCmd.zPosition ?? position.Z);
-                    }
-                    else if (movementCmd is CircularInterpolationCmd circularCmd)
-                    {
-                        Vector3 targetPosition = new Vector3(circularCmd.xPosition ?? 0, circularCmd.yPosition ?? 0, circularCmd.zPosition ?? 0);
-                        Vector3 center = new Vector3(position.X + circularCmd.xCenterRel ?? 0, position.Y + circularCmd.yCenterRel ?? 0, position.Z);
-                        if (circularCmd.isClockwise)
-                        {
-                            angle = (float)Math.Atan2((double)center.Y - position.Y, (double)center.X - position.X);
-                        }
-                        else
-                        {
-                            angle = (float)-Math.Atan2((double)center.Y - position.Y, (double)center.X - position.X);
-                        }
-
-                        if (angle != currentVB.Arcs3D.Angle)
-                        {
-                            if (currentVB.Arcs3D.Angle != 0 && !VBlocked)
-                            {
-                                NewVectorBlock();
-                            }
-                            
-                        }
-
-                        if (circularCmd.feedRate != null && currentMP.LaserSpeedInMmPerS != (float)circularCmd.feedRate)
-                        {
-                            if (currentMP.LaserSpeedInMmPerS != 0 && VBlocked)
-                            {
-                                NewVectorBlock();
-                            }
-                            currentMP.LaserSpeedInMmPerS = (float)circularCmd.feedRate;
-                        }
-                        if (currentVB.Arcs3D == null)
-                        {
-                            currentVB.Arcs3D = new VectorBlock.Types.Arcs3D();
-
-                            currentVB.Arcs3D.Angle = angle;
-
-                            currentVB.Arcs3D.StartDx = position.X;
-                            currentVB.Arcs3D.StartDy = position.Y;
-                            currentVB.Arcs3D.StartDz = position.Z;
-
-                            currentVB.Arcs3D.Centers.Add(position.X + circularCmd.xCenterRel ?? position.X);
-                            currentVB.Arcs3D.Centers.Add(position.Y + circularCmd.yCenterRel ?? position.Y);
-                            currentVB.Arcs3D.Centers.Add(position.Z);
-                        }
-                        else
-                        {
-                            currentVB.Arcs3D.Centers.Add(position.X + circularCmd.xCenterRel ?? position.X);
-                            currentVB.Arcs3D.Centers.Add(position.Y + circularCmd.yCenterRel ?? position.Y);
-                            currentVB.Arcs3D.Centers.Add(position.Z);
-                        }
-                    }
-
-                    updatePosition(movementCmd);
-                    prevGCodeCommand = currentGCodeCommand;
-                }
-                else if(currentGCodeCommand is PauseCommand pauseCmd)
-                {
-                    currentVB.ExposurePause = new VectorBlock.Types.ExposurePause();
-                    currentVB.ExposurePause.PauseInUs = (ulong)pauseCmd.duration * 1000;
-                }
-                else if(currentGCodeCommand is ToolChangeCommand toolChangeCmd)
-                {
-                    // processToolchangeCmd(toolChangeCmd);
-                }
-                else if(currentGCodeCommand is MonitoringCommand monitoringCmd)
-                {
-                    // processMonitoringCmd(monitoringCmd);
-                }
-                else if (currentGCodeCommand is ProgramLogicsCommand programLogicsCmd)
-                {
-                    // processProgramLogicsCmd(programLogicsCmd);
-                }
-                else if (currentGCodeCommand is MiscCommand miscCmd)
-                {
-                    // processMiscCmd(miscCmd);
-                }
-                CompleteJob.MarkingParamsMap.MergeFrom(MPsMap);
             }
+
+            NewWorkPlane();
+            job.MarkingParamsMap.MergeFromWithRemap(MPsMap, out var keyMapping);
+            foreach (var vectorBlock in addedVectorBlocks) // update all vector block marking param keys after merge
+                vectorBlock.MarkingParamsKey = keyMapping[vectorBlock.MarkingParamsKey];
 
             Part part = new Part();
             part.GeometryInfo = new Part.Types.GeometryInfo()
             {
                 BuildHeightInMm = position.Z
             };
-            CompleteJob.PartsMap.Add(0, part);
+            job.PartsMap.Add(0, part);
 
             _cacheState = CacheState.CompleteJobCached;
 
-            void updatePosition(MovementCommand movementCmd)
+            void processMovementCmd(MovementCommand movementCmd)
+            {
+                if (movementCmd.zPosition != null && movementCmd.zPosition != position.Z)
+                {
+                    NewWorkPlane();
+                }
+                switch (movementCmd)
+                {
+                    case LinearInterpolationCmd linearCmd:
+                        UpdateLineSequence(linearCmd);
+                        break;
+                    case CircularInterpolationCmd circularCmd:
+                        UpdateArc(circularCmd);
+                        break;
+                }
+
+                UpdatePosition(movementCmd);
+
+                void UpdateLineSequence(LinearInterpolationCmd linearCmd)
+                {
+                    UpdateSpeed(linearCmd.isOperation, linearCmd.feedRate);
+
+                    if (currentVB.LineSequence3D == null)
+                    {
+                        currentVB.LineSequence3D = new VectorBlock.Types.LineSequence3D();
+                    }
+                    currentVB.LineSequence3D.Points.Add(linearCmd.xPosition ?? position.X);
+                    currentVB.LineSequence3D.Points.Add(linearCmd.yPosition ?? position.Y);
+                    currentVB.LineSequence3D.Points.Add(linearCmd.zPosition ?? position.Z);
+                }
+
+                void UpdateArc(CircularInterpolationCmd circularCmd)
+                {
+                    Vector3 targetPosition = new Vector3(circularCmd.xPosition ?? position.X, circularCmd.yPosition ?? position.Y, circularCmd.zPosition ?? position.Z);
+                    Vector3 center = new Vector3(position.X + circularCmd.xCenterRel ?? 0, position.Y + circularCmd.yCenterRel ?? 0, position.Z);
+
+                    Vector3 vectorCP = position - center; // Vector from center to start position
+                    Vector3 vectorCT = targetPosition - center; // Vector from center to target position
+
+                    float dotProduct = Vector3.Dot(Vector3.Normalize(vectorCP), Vector3.Normalize(vectorCT));
+                    float angleAbs = (float)Math.Acos(dotProduct) * (180.0f / (float)Math.PI);
+                    angle = (circularCmd.isClockwise ? angleAbs : -angleAbs);
+
+                    if (angle != currentVB.Arcs3D.Angle && currentVB.Arcs3D != null)
+                    {
+                        if (currentVB.Arcs3D.Angle != 0 && !VBlocked)
+                        {
+                            NewVectorBlock();
+                        }
+                    }
+
+                    UpdateSpeed(true, circularCmd.feedRate); // Update Speed in between to complete all checks for new VBs before adding centers. Update speed after angle to not write a possible new speed to the old VB
+
+                    if (currentVB.Arcs3D == null)
+                    {
+                        currentVB.Arcs3D = new VectorBlock.Types.Arcs3D();
+
+                        currentVB.Arcs3D.Angle = angle;
+
+                        currentVB.Arcs3D.StartDx = position.X;
+                        currentVB.Arcs3D.StartDy = position.Y;
+                        currentVB.Arcs3D.StartDz = position.Z;
+                    }
+                    currentVB.Arcs3D.Centers.Add(position.X + circularCmd.xCenterRel ?? position.X);
+                    currentVB.Arcs3D.Centers.Add(position.Y + circularCmd.yCenterRel ?? position.Y);
+                    currentVB.Arcs3D.Centers.Add(position.Z);
+                }
+
+                void UpdateSpeed(bool isOperation, float? newSpeed)
+                {
+                    if(isOperation)
+                    {
+                        if (currentMP.LaserSpeedInMmPerS != 0 && newSpeed != null && currentMP.LaserSpeedInMmPerS != newSpeed)
+                        {
+                            if (!VBlocked)
+                            {
+                                NewVectorBlock();
+                            }
+                            currentMP.LaserSpeedInMmPerS = (float)newSpeed;
+                        }
+                    }
+                    else
+                    {
+                        if (currentMP.JumpSpeedInMmS != 0 && newSpeed != null && currentMP.JumpSpeedInMmS != newSpeed)
+                        {
+                            if (!VBlocked)
+                            {
+                                NewVectorBlock();
+                            }
+                            currentMP.JumpSpeedInMmS = (float)newSpeed;
+                        }
+                    }   
+                }
+            }
+
+            void processPauseCmd(PauseCommand pauseCmd)
+            {
+                currentVB.ExposurePause = new VectorBlock.Types.ExposurePause();
+                currentVB.ExposurePause.PauseInUs = (ulong)pauseCmd.duration * 1000;
+            }
+
+            void processToolChandeCmd(ToolChangeCommand toolChangeCmd)
+            {
+
+            }
+
+            void processMonitoringCmd(MonitoringCommand monitoringCmd)
+            {
+
+            }
+
+            void processProgramLogicsCmd(ProgramLogicsCommand programLogicsCmd)
+            {
+
+            }
+
+            void processMiscCmd(MiscCommand miscCmd)
+            {
+
+            }
+
+            void UpdatePosition(MovementCommand movementCmd)
             {
                 position = new Vector3(movementCmd.xPosition ?? position.X, movementCmd.yPosition ?? position.Y, movementCmd.zPosition ?? position.Z);
             }
@@ -404,6 +377,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 currentVB.MarkingParamsKey = NewMarkingParams();
                 currentWP.VectorBlocks.Add(currentVB);
                 currentWP.NumBlocks++;
+                addedVectorBlocks.Add(currentVB);
 
                 currentVB = new VectorBlock()
                 {
@@ -420,18 +394,18 @@ namespace OpenVectorFormat.GCodeReaderWriter
             {
                 NewVectorBlock();
                 currentWP.ZPosInMm = position.Z;
-                CompleteJob.WorkPlanes.Add(currentWP);
-                CompleteJob.NumWorkPlanes++;
+                job.WorkPlanes.Add(currentWP);
+                job.NumWorkPlanes++;
                 currentWP = new WorkPlane
                 {
-                    WorkPlaneNumber = CompleteJob.NumWorkPlanes
+                    WorkPlaneNumber = job.NumWorkPlanes
                 };
             }
         }
 
         public override void UnloadJobFromMemory()
         {
-            CompleteJob = null;
+            job = null;
             _cacheState = CacheState.NotCached;
         }
     }
