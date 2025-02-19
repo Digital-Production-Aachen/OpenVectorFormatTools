@@ -195,22 +195,22 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 switch (currentGCodeCommand)
                 {
                     case MovementCommand movementCmd:
-                        processMovementCmd(movementCmd);
+                        ProcessMovementCmd(movementCmd);
                         break;
                     case PauseCommand pauseCmd:
-                        processPauseCmd(pauseCmd);
+                        ProcessPauseCmd(pauseCmd);
                         break;
                     case ToolChangeCommand toolChangeCmd:
-                        processToolChandeCmd(toolChangeCmd);
+                        ProcessToolChangeCmd(toolChangeCmd);
                         break;
                     case MonitoringCommand monitoringCmd:
-                        processMonitoringCmd(monitoringCmd);
+                        ProcessMonitoringCmd(monitoringCmd);
                         break;
                     case ProgramLogicsCommand programLogicsCmd:
-                        processProgramLogicsCmd(programLogicsCmd);
+                        ProcessProgramLogicsCmd(programLogicsCmd);
                         break;
                     case MiscCommand miscCmd:
-                        processMiscCmd(miscCmd);
+                        ProcessMiscCmd(miscCmd);
                         break;
                 }
 
@@ -231,7 +231,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             _cacheState = CacheState.CompleteJobCached;
 
-            void processMovementCmd(MovementCommand movementCmd)
+            void ProcessMovementCmd(MovementCommand movementCmd)
             {
                 if (movementCmd.zPosition != null && movementCmd.zPosition != position.Z)
                 {
@@ -327,28 +327,28 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 }
             }
 
-            void processPauseCmd(PauseCommand pauseCmd)
+            void ProcessPauseCmd(PauseCommand pauseCmd)
             {
                 _currentVB.ExposurePause = new VectorBlock.Types.ExposurePause();
                 _currentVB.ExposurePause.PauseInUs = (ulong)pauseCmd.duration * 1000;
             }
 
-            void processToolChandeCmd(ToolChangeCommand toolChangeCmd)
+            void ProcessToolChangeCmd(ToolChangeCommand toolChangeCmd)
             {
 
             }
 
-            void processMonitoringCmd(MonitoringCommand monitoringCmd)
+            void ProcessMonitoringCmd(MonitoringCommand monitoringCmd)
             {
 
             }
 
-            void processProgramLogicsCmd(ProgramLogicsCommand programLogicsCmd)
+            void ProcessProgramLogicsCmd(ProgramLogicsCommand programLogicsCmd)
             {
 
             }
 
-            void processMiscCmd(MiscCommand miscCmd)
+            void ProcessMiscCmd(MiscCommand miscCmd)
             {
 
             }
