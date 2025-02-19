@@ -286,13 +286,14 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
                     if (currentVB.Arcs3D == null)
                     {
-                        currentVB.Arcs3D = new VectorBlock.Types.Arcs3D();
+                        currentVB.Arcs3D = new VectorBlock.Types.Arcs3D
+                        {
+                            Angle = angle,
 
-                        currentVB.Arcs3D.Angle = angle;
-
-                        currentVB.Arcs3D.StartDx = position.X;
-                        currentVB.Arcs3D.StartDy = position.Y;
-                        currentVB.Arcs3D.StartDz = position.Z;
+                            StartDx = position.X,
+                            StartDy = position.Y,
+                            StartDz = position.Z
+                        };
                     }
                     currentVB.Arcs3D.Centers.Add(position.X + circularCmd.xCenterRel ?? position.X);
                     currentVB.Arcs3D.Centers.Add(position.Y + circularCmd.yCenterRel ?? position.Y);
