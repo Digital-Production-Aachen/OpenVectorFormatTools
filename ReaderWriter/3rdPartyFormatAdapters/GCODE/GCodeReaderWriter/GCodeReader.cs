@@ -37,12 +37,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
 {
     public class GCodeReader : FileReader
     {
-        private WorkPlane currentWP;
-        private VectorBlock currentVB;
-        private IFileReaderWriterProgress progress;
+        private WorkPlane _currentWP;
+        private VectorBlock _currentVB;
+        private IFileReaderWriterProgress _progress;
         private CacheState _cacheState = CacheState.NotCached;
-        private string filename;
-        private bool fileLoadingFinished;
+        private string _filename;
+        private bool _fileLoadingFinished;
 
         public new static List<String> SupportedFileFormats { get; } = new List<string>() { ".gcode", ".gco" };
 
@@ -73,7 +73,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             {
                 return job;
             }
-            else if (File.Exists(filename))
+            else if (File.Exists(_filename))
             {
                 ParseGCodeFile();
                 return job;
@@ -137,8 +137,8 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         public override void OpenJob(string filename, IFileReaderWriterProgress progress = null)
         {
-            this.progress = progress;
-            this.filename = filename;
+            this._progress = progress;
+            this._filename = filename;
             _cacheState = CacheState.NotCached;
             if (!SupportedFileFormats.Contains(Path.GetExtension(filename)))
             {
@@ -153,7 +153,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 }
             };
 
-            this.filename = filename;
+            this._filename = filename;
 
             ParseGCodeFile();
         }
@@ -169,19 +169,19 @@ namespace OpenVectorFormat.GCodeReaderWriter
             Vector3 position = new Vector3(0, 0, 0);
             float angle = 0f;
 
-            GCodeCommandList gCodeCommands = new GCodeCommandList(File.ReadAllLines(filename));
+            GCodeCommandList gCodeCommands = new GCodeCommandList(File.ReadAllLines(_filename));
 
             bool VBlocked = true;
             int MPKey = 0;
 
-            currentWP = new WorkPlane
+            _currentWP = new WorkPlane
             {
                 WorkPlaneNumber = 0
             };
             job.NumWorkPlanes = 0;
-            currentWP.Repeats = 0;
+            _currentWP.Repeats = 0;
 
-            currentVB = new VectorBlock
+            _currentVB = new VectorBlock
             {
                 MarkingParamsKey = 0,
                 MetaData = new VectorBlock.Types.VectorBlockMetaData
@@ -253,13 +253,13 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 {
                     UpdateSpeed(linearCmd.isOperation, linearCmd.feedRate);
 
-                    if (currentVB.LineSequence3D == null)
+                    if (_currentVB.LineSequence3D == null)
                     {
-                        currentVB.LineSequence3D = new VectorBlock.Types.LineSequence3D();
+                        _currentVB.LineSequence3D = new VectorBlock.Types.LineSequence3D();
                     }
-                    currentVB.LineSequence3D.Points.Add(linearCmd.xPosition ?? position.X);
-                    currentVB.LineSequence3D.Points.Add(linearCmd.yPosition ?? position.Y);
-                    currentVB.LineSequence3D.Points.Add(linearCmd.zPosition ?? position.Z);
+                    _currentVB.LineSequence3D.Points.Add(linearCmd.xPosition ?? position.X);
+                    _currentVB.LineSequence3D.Points.Add(linearCmd.yPosition ?? position.Y);
+                    _currentVB.LineSequence3D.Points.Add(linearCmd.zPosition ?? position.Z);
                 }
 
                 void UpdateArc(CircularInterpolationCmd circularCmd)
@@ -274,9 +274,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     float angleAbs = (float)Math.Acos(dotProduct) * (180.0f / (float)Math.PI);
                     angle = (circularCmd.isClockwise ? angleAbs : -angleAbs);
 
-                    if (angle != currentVB.Arcs3D.Angle && currentVB.Arcs3D != null)
+                    if (angle != _currentVB.Arcs3D.Angle && _currentVB.Arcs3D != null)
                     {
-                        if (currentVB.Arcs3D.Angle != 0 && !VBlocked)
+                        if (_currentVB.Arcs3D.Angle != 0 && !VBlocked)
                         {
                             NewVectorBlock();
                         }
@@ -284,9 +284,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
                     UpdateSpeed(true, circularCmd.feedRate); // Update Speed in between to complete all checks for new VBs before adding centers. Update speed after angle to not write a possible new speed to the old VB
 
-                    if (currentVB.Arcs3D == null)
+                    if (_currentVB.Arcs3D == null)
                     {
-                        currentVB.Arcs3D = new VectorBlock.Types.Arcs3D
+                        _currentVB.Arcs3D = new VectorBlock.Types.Arcs3D
                         {
                             Angle = angle,
 
@@ -295,9 +295,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
                             StartDz = position.Z
                         };
                     }
-                    currentVB.Arcs3D.Centers.Add(position.X + circularCmd.xCenterRel ?? position.X);
-                    currentVB.Arcs3D.Centers.Add(position.Y + circularCmd.yCenterRel ?? position.Y);
-                    currentVB.Arcs3D.Centers.Add(position.Z);
+                    _currentVB.Arcs3D.Centers.Add(position.X + circularCmd.xCenterRel ?? position.X);
+                    _currentVB.Arcs3D.Centers.Add(position.Y + circularCmd.yCenterRel ?? position.Y);
+                    _currentVB.Arcs3D.Centers.Add(position.Z);
                 }
 
                 void UpdateSpeed(bool isOperation, float? newSpeed)
@@ -329,8 +329,8 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             void processPauseCmd(PauseCommand pauseCmd)
             {
-                currentVB.ExposurePause = new VectorBlock.Types.ExposurePause();
-                currentVB.ExposurePause.PauseInUs = (ulong)pauseCmd.duration * 1000;
+                _currentVB.ExposurePause = new VectorBlock.Types.ExposurePause();
+                _currentVB.ExposurePause.PauseInUs = (ulong)pauseCmd.duration * 1000;
             }
 
             void processToolChandeCmd(ToolChangeCommand toolChangeCmd)
@@ -375,12 +375,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             void NewVectorBlock()
             {
-                currentVB.MarkingParamsKey = NewMarkingParams();
-                currentWP.VectorBlocks.Add(currentVB);
-                currentWP.NumBlocks++;
-                addedVectorBlocks.Add(currentVB);
+                _currentVB.MarkingParamsKey = NewMarkingParams();
+                _currentWP.VectorBlocks.Add(_currentVB);
+                _currentWP.NumBlocks++;
+                addedVectorBlocks.Add(_currentVB);
 
-                currentVB = new VectorBlock()
+                _currentVB = new VectorBlock()
                 {
                     MetaData = new VectorBlock.Types.VectorBlockMetaData
                     {
@@ -394,10 +394,10 @@ namespace OpenVectorFormat.GCodeReaderWriter
             void NewWorkPlane()
             {
                 NewVectorBlock();
-                currentWP.ZPosInMm = position.Z;
-                job.WorkPlanes.Add(currentWP);
+                _currentWP.ZPosInMm = position.Z;
+                job.WorkPlanes.Add(_currentWP);
                 job.NumWorkPlanes++;
-                currentWP = new WorkPlane
+                _currentWP = new WorkPlane
                 {
                     WorkPlaneNumber = job.NumWorkPlanes
                 };
