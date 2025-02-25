@@ -168,6 +168,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             Vector3 position = new Vector3(0, 0, 0);
             float angle = 0f;
+            bool absolutePositioning = true;
 
             GCodeCommandList gCodeCommands = new GCodeCommandList(File.ReadAllLines(_filename));
 
@@ -257,14 +258,22 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     {
                         _currentVB.LineSequence3D = new VectorBlock.Types.LineSequence3D();
                     }
-                    _currentVB.LineSequence3D.Points.Add(linearCmd.xPosition ?? position.X);
-                    _currentVB.LineSequence3D.Points.Add(linearCmd.yPosition ?? position.Y);
-                    _currentVB.LineSequence3D.Points.Add(linearCmd.zPosition ?? position.Z);
+                    _currentVB.LineSequence3D.Points.Add(absolutePositioning 
+                        ? (linearCmd.xPosition ?? position.X) // Use absolute x-positioning
+                        : (position.X + (linearCmd.xPosition ?? 0))); // Use relative xpositioning
+                    _currentVB.LineSequence3D.Points.Add(absolutePositioning
+                        ? (linearCmd.yPosition ?? position.Y) // Use absolute y-positioning
+                        : (position.Y + (linearCmd.yPosition ?? 0))); // Use relative y-positioning
+                    _currentVB.LineSequence3D.Points.Add(absolutePositioning
+                        ? (linearCmd.zPosition ?? position.Z) // Use absolute y-positioning
+                        : (position.Z + (linearCmd.zPosition ?? 0))); // Use relative y-positioning
                 }
 
                 void UpdateArc(CircularInterpolationCmd circularCmd)
                 {
-                    Vector3 targetPosition = new Vector3(circularCmd.xPosition ?? position.X, circularCmd.yPosition ?? position.Y, circularCmd.zPosition ?? position.Z);
+                    Vector3 targetPosition = new Vector3(absolutePositioning ? (circularCmd.xPosition ?? position.X) : (position.X + (circularCmd.xPosition ?? 0)),
+                        absolutePositioning ? (circularCmd.yPosition ?? position.Y) : (position.Y + (circularCmd.yPosition ?? 0)),
+                        absolutePositioning ? (circularCmd.zPosition ?? position.Z) : (position.Z + (circularCmd.zPosition ?? 0)));
                     Vector3 center = new Vector3(position.X + circularCmd.xCenterRel ?? 0, position.Y + circularCmd.yCenterRel ?? 0, position.Z);
 
                     Vector3 vectorCP = position - center; // Vector from center to start position
@@ -329,8 +338,10 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             void ProcessPauseCmd(PauseCommand pauseCmd)
             {
+                NewVectorBlock();
                 _currentVB.ExposurePause = new VectorBlock.Types.ExposurePause();
                 _currentVB.ExposurePause.PauseInUs = (ulong)pauseCmd.duration * 1000;
+                NewVectorBlock();
             }
 
             void ProcessToolChangeCmd(ToolChangeCommand toolChangeCmd)
@@ -345,7 +356,17 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             void ProcessProgramLogicsCmd(ProgramLogicsCommand programLogicsCmd)
             {
+                switch (programLogicsCmd)
+                {
+                    case PositioningToggleCommand toggleCmd:
+                        TogglePositioning(toggleCmd);
+                        break;
+                }
 
+                void TogglePositioning(PositioningToggleCommand toggleCmd)
+                {
+                    absolutePositioning = toggleCmd.isAbsolute;
+                }
             }
 
             void ProcessMiscCmd(MiscCommand miscCmd)
