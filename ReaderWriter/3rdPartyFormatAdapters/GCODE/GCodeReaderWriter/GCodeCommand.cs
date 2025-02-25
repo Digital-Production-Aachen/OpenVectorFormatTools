@@ -257,7 +257,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
         public float? yCenterRel;
 
         // Direction of the circular interpolation
-        public bool isClockwise;
+        public readonly bool isClockwise;
 
         public CircularInterpolationCmd(PrepCode prepCode, int codeNumer, bool isClockwise, float? xPosition, float? yPosition, float? xCenterRel, float? yCenterRel, float? feedRate, float? acceleration, Dictionary<char, float> miscParams = null, string comment = null)
             : base(prepCode, codeNumer, xPosition, yPosition, null, feedRate, acceleration, miscParams, comment)
@@ -269,7 +269,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         public CircularInterpolationCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
         {
-            CheckDirection();
+            this.isClockwise = CheckDirection();
             InitParameterMap();
             if (commandParams != null)
             {
@@ -279,7 +279,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         public CircularInterpolationCmd(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null) : base(gCode, commandParams, comment)
         {
-            CheckDirection();
+            this.isClockwise = CheckDirection();
             InitParameterMap();
             if (commandParams != null)
             {
@@ -293,11 +293,11 @@ namespace OpenVectorFormat.GCodeReaderWriter
             parameterMap.Add('J', (float j) => yCenterRel = j);
         }
 
-        private void CheckDirection()
+        private bool CheckDirection()
         {
             if (this.gCode.codeNumber == 2 || this.gCode.codeNumber == 3)
             {
-                this.isClockwise = this.gCode.codeNumber == 2;
+                return this.gCode.codeNumber == 2;
             }
             else
             {
@@ -430,15 +430,31 @@ namespace OpenVectorFormat.GCodeReaderWriter
     public class PositioningToggleCommand : ProgramLogicsCommand
     {
         public readonly bool isAbsolute;
-
+        
+        public PositioningToggleCommand(PrepCode prepCode, int codeNumber, bool isAbsolute, string comment = null) : base(prepCode, codeNumber, null, comment)
+        {
+            this.isAbsolute = checkPositioning();
+        }
         public PositioningToggleCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
         {
-
+            this.isAbsolute = checkPositioning();
         }
 
         public PositioningToggleCommand(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null) : base(gCode, commandParams, comment)
         {
+            this.isAbsolute = checkPositioning();
+        }
 
+        private bool checkPositioning()
+        {
+            if (this.gCode.codeNumber == 90 || this.gCode.codeNumber == 91)
+            {
+                return this.gCode.codeNumber == 90;
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid code number for positioning toggle: {this.gCode.codeNumber} in line '{this}'");
+            }
         }
 
         public override string ToString()
@@ -446,9 +462,10 @@ namespace OpenVectorFormat.GCodeReaderWriter
             return base.ToString();
         }
     }
+
     public class BlockEndCmd : ProgramLogicsCommand
     {
-        public BlockEndCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, comment)
+        public BlockEndCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, null, comment)
         {
             InitParameterMap();
             if (commandParams != null)
