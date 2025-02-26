@@ -71,7 +71,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
         int toolNumber;
     }
 
-    public class GCodeCommand
+    public abstract class GCodeCommand
     {
         // The GCode of the command
         public readonly GCode gCode;
@@ -604,7 +604,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 {
                     return null;
                 }
-                return Activator.CreateInstance(typeof(MiscCommand), new Object[] { PrepCode.Comment, 0, commentString }) as GCodeCommand;
+                return Activator.CreateInstance(typeof(MiscCommand), new Object[] { PrepCode.Comment, 0, null, commentString }) as GCodeCommand;
             }
 
             string[] commandArr = commandString.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
