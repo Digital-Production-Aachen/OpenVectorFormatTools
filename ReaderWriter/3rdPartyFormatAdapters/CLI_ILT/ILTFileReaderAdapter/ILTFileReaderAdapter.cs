@@ -208,6 +208,11 @@ namespace OpenVectorFormat.ILTFileReaderAdapter
         {
             fileHandler.OpenFile(filename);
             jobfilename = Path.GetFileNameWithoutExtension(filename);
+
+            var ud_JobName = fileHandler.GetUserData("JobName");
+            if(ud_JobName.Length > 0)
+                jobfilename = ud_JobName;
+
             if (buildJob != null)
             {
                 ConvertILTStructure(progress);

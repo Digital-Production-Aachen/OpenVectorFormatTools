@@ -31,34 +31,39 @@ namespace OpenVectorFormat.ILTFileReader.Controller
     class readHelper
     {
         public static float[] readFloatArray(BinaryReader reader, long loc, int length) {
-            List<float> ret = new List<float>();
+            float[] ret = new float[length];
+            int byteCount = 4 * length;
+
+            int i = 0;
             lock (reader.BaseStream)
             {
                 if (reader.BaseStream.Position != loc)     //resync our filereader in case we've jumped vectorcoords or stuff, we don't want to have in ram
                     reader.BaseStream.Seek(loc, SeekOrigin.Begin);
 
-                while (reader.BaseStream.Position < length + loc) //save the location to prevent endless loop, because offset get's incremented, while loc shouldn't
+                while (reader.BaseStream.Position < byteCount + loc) //save the location to prevent endless loop, because offset get's incremented, while loc shouldn't
                 {
-                    ret.Add(reader.ReadSingle()); //Good Vartype name for computer scientists
+                    ret[i++] = (reader.ReadSingle()); //Good Vartype name for computer scientists
                 }
             }
-            return ret.ToArray();
+            return ret;
         }
 
         public static float[] readFloatArrayFromUshorts(BinaryReader reader, long loc, int length)
         {
-            List<float> ret = new List<float>();
+            float[] ret = new float[length];
+            int byteCount = 2 * length;
+            int i = 0;
             lock (reader.BaseStream)
             {
                 if (reader.BaseStream.Position != loc)     //resync our filereader in case we've jumped vectorcoords or stuff, we don't want to have in ram
                     reader.BaseStream.Seek(loc, SeekOrigin.Begin);
 
-                while (reader.BaseStream.Position < length + loc)
+                while (reader.BaseStream.Position < byteCount + loc)
                 {
-                    ret.Add(Convert.ToSingle(reader.ReadUInt16())); //Good Vartype name for computer scientists
+                    ret[i++] = (Convert.ToSingle(reader.ReadUInt16())); //Good Vartype name for computer scientists
                 }
             }
-            return ret.ToArray();
+            return ret;
         }
     }
 }

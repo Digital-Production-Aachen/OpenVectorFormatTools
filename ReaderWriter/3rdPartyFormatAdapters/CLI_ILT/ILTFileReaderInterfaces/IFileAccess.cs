@@ -41,5 +41,7 @@ namespace OpenVectorFormat.ILTFileReader
         /// Closes the file stream if one has been open.
         /// </summary>
         void CloseFile();
+
+        string GetUserData(string UID);
     }
 }
