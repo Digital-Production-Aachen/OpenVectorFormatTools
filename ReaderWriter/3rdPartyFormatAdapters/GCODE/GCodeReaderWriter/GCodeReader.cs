@@ -155,10 +155,10 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             this._filename = filename;
 
-            ParseGCodeFile();
+            ParseGCodeFile(progress);
         }
 
-        public void ParseGCodeFile()
+        public void ParseGCodeFile(IFileReaderWriterProgress progress = null)
         {
             MapField<int, MarkingParams> MPsMap = new MapField<int, MarkingParams>();
             Dictionary<MarkingParams, int> cachedMP = new Dictionary<MarkingParams, int>();
@@ -191,9 +191,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 }
             };
 
-            foreach (GCodeCommand currentGCodeCommand in gCodeCommands)
+            int gCodeCommandCount = gCodeCommands.Count;
+
+            for (int i = 0; i < gCodeCommandCount; i++)
             {
-                switch (currentGCodeCommand)
+               
+                switch (gCodeCommands[i])
                 {
                     case MovementCommand movementCmd:
                         ProcessMovementCmd(movementCmd);
@@ -216,6 +219,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 }
 
                 VBlocked = false;
+
+                int percentComplete = (i + 1) * 100 / gCodeCommandCount;
+                progress?.Update("Command " + i + " of ", percentComplete);
             }
 
             NewWorkPlane();
