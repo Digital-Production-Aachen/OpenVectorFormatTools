@@ -170,6 +170,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             float angle = 0f;
             bool absolutePositioning = true;
 
+            // Load command lines from file and transfer to list of GCodeCommand objects.
             GCodeCommandList gCodeCommands = new GCodeCommandList(File.ReadAllLines(_filename));
 
             bool VBlocked = true;
@@ -198,6 +199,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                
                 switch (gCodeCommands[i])
                 {
+                    // Process command according to the command-type
                     case MovementCommand movementCmd:
                         ProcessMovementCmd(movementCmd);
                         break;
@@ -218,17 +220,22 @@ namespace OpenVectorFormat.GCodeReaderWriter
                         break;
                 }
 
+                // Reset locking state for new vector blocks
                 VBlocked = false;
 
+                // Update progress
                 int percentComplete = (i + 1) * 100 / gCodeCommandCount;
                 progress?.Update("Command " + i + " of ", percentComplete);
             }
 
+            // Save last work plane to job and merge marking params
             NewWorkPlane();
             job.MarkingParamsMap.MergeFromWithRemap(MPsMap, out var keyMapping);
-            foreach (var vectorBlock in addedVectorBlocks) // update all vector block marking param keys after merge
+            // Update all vector block marking param keys after merge
+            foreach (var vectorBlock in addedVectorBlocks) 
                 vectorBlock.MarkingParamsKey = keyMapping[vectorBlock.MarkingParamsKey];
 
+            // Add part info to job
             Part part = new Part();
             part.GeometryInfo = new Part.Types.GeometryInfo()
             {
@@ -240,6 +247,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             void ProcessMovementCmd(MovementCommand movementCmd)
             {
+                // Check if layer has changed
                 if (movementCmd.zPosition != null && movementCmd.zPosition != position.Z)
                 {
                     NewWorkPlane();
@@ -254,10 +262,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
                         break;
                 }
 
+                // Update current position after movement
                 UpdatePosition(movementCmd);
 
                 void UpdateLineSequence(LinearInterpolationCmd linearCmd)
                 {
+                    // Update speed first to check if marking params changed and new vector block is needed
                     UpdateSpeed(linearCmd.isOperation, linearCmd.feedRate);
 
                     if (_currentVB.LineSequence3D == null)
@@ -277,9 +287,11 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
                 void UpdateArc(CircularInterpolationCmd circularCmd)
                 {
+                    // Create neccessary variables for conversion of G-Code arc definition to OVF arc definition
                     Vector3 targetPosition = new Vector3(absolutePositioning ? (circularCmd.xPosition ?? position.X) : (position.X + (circularCmd.xPosition ?? 0)),
                         absolutePositioning ? (circularCmd.yPosition ?? position.Y) : (position.Y + (circularCmd.yPosition ?? 0)),
                         absolutePositioning ? (circularCmd.zPosition ?? position.Z) : (position.Z + (circularCmd.zPosition ?? 0)));
+
                     Vector3 center = new Vector3(position.X + circularCmd.xCenterRel ?? 0, position.Y + circularCmd.yCenterRel ?? 0, position.Z);
 
                     Vector3 vectorCP = position - center; // Vector from center to start position
@@ -289,6 +301,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     float angleAbs = (float)Math.Acos(dotProduct) * (180.0f / (float)Math.PI);
                     angle = (circularCmd.isClockwise ? angleAbs : -angleAbs);
 
+                    // Check if angle has changed, so marking params changed and new vector block is needed
                     if (angle != _currentVB.Arcs3D.Angle && _currentVB.Arcs3D != null)
                     {
                         if (_currentVB.Arcs3D.Angle != 0 && !VBlocked)
@@ -297,7 +310,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
                         }
                     }
 
-                    UpdateSpeed(true, circularCmd.feedRate); // Update Speed in between to complete all checks for new VBs before adding centers. Update speed after angle to not write a possible new speed to the old VB
+                    /* Update Speed inbetween to complete all checks for new vector blocks before adding centers. 
+                       Update speed after angle to not write a new speed to an old vector block. */
+                    UpdateSpeed(true, circularCmd.feedRate);
 
                     if (_currentVB.Arcs3D == null)
                     {
@@ -317,7 +332,8 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
                 void UpdateSpeed(bool isOperation, float? newSpeed)
                 {
-                    if(isOperation)
+                    // Check if machine movement is travel or operation move and assign speed accordingly
+                    if (isOperation)
                     {
                         if (currentMP.LaserSpeedInMmPerS != 0 && newSpeed != null && currentMP.LaserSpeedInMmPerS != newSpeed)
                         {
@@ -344,9 +360,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             void ProcessPauseCmd(PauseCommand pauseCmd)
             {
+                // Save current vector block and create new vector block for pause
                 NewVectorBlock();
                 _currentVB.ExposurePause = new VectorBlock.Types.ExposurePause();
                 _currentVB.ExposurePause.PauseInUs = (ulong)pauseCmd.duration * 1000;
+
+                // Save pause vector block and create new vector block for next command
                 NewVectorBlock();
             }
 
@@ -382,11 +401,15 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             void UpdatePosition(MovementCommand movementCmd)
             {
+                /* Update position with coordinates given in movement command.
+                   If a coordinate is not given, keep the current corrdinate value. */
                 position = new Vector3(movementCmd.xPosition ?? position.X, movementCmd.yPosition ?? position.Y, movementCmd.zPosition ?? position.Z);
             }
 
             int NewMarkingParams()
             {
+                /* Try to get current marking params from cached params.
+                   If not found, create new key and add to cache */
                 if (cachedMP.TryGetValue(currentMP, out int key)) ;
                 else
                 {
@@ -395,6 +418,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     cachedMP.Add(currentMP, key);
                 }
 
+                // Create new marking params for next vector block
                 currentMP = new MarkingParams();
 
                 return key;
@@ -402,11 +426,13 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             void NewVectorBlock()
             {
+                // Update current vector block with current marking params and add vector block to current work plane
                 _currentVB.MarkingParamsKey = NewMarkingParams();
                 _currentWP.VectorBlocks.Add(_currentVB);
                 _currentWP.NumBlocks++;
                 addedVectorBlocks.Add(_currentVB);
 
+                // Create new vector block
                 _currentVB = new VectorBlock()
                 {
                     MetaData = new VectorBlock.Types.VectorBlockMetaData
@@ -415,15 +441,19 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     }
                 };
 
+                // Lock vector block to prevent creating mulitple new vector blocks for one command
                 VBlocked = true;
             }
 
             void NewWorkPlane()
             {
+                // Update current work plane with current vector block and z-position
                 NewVectorBlock();
                 _currentWP.ZPosInMm = position.Z;
                 job.WorkPlanes.Add(_currentWP);
                 job.NumWorkPlanes++;
+
+                // Create new work plane
                 _currentWP = new WorkPlane
                 {
                     WorkPlaneNumber = job.NumWorkPlanes
