@@ -170,11 +170,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
             float angle = 0f;
             bool absolutePositioning = true;
 
+            bool VBlocked = true;
+            bool VBempty = true;
+            int MPKey = 0;
+
             // Load command lines from file and transfer to list of GCodeCommand objects.
             GCodeCommandList gCodeCommands = new GCodeCommandList(File.ReadAllLines(_filename));
-
-            bool VBlocked = true;
-            int MPKey = 0;
 
             _currentWP = new WorkPlane
             {
@@ -193,10 +194,10 @@ namespace OpenVectorFormat.GCodeReaderWriter
             };
 
             int gCodeCommandCount = gCodeCommands.Count;
+            int percentComplete = 0;
 
             for (int i = 0; i < gCodeCommandCount; i++)
             {
-               
                 switch (gCodeCommands[i])
                 {
                     // Process command according to the command-type
@@ -224,22 +225,25 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 VBlocked = false;
 
                 // Update progress
-                int percentComplete = (i + 1) * 100 / gCodeCommandCount;
-                progress?.Update("Command " + i + " of ", percentComplete);
+                if (percentComplete != (int) (i + 1) * 100 / gCodeCommandCount)
+                {
+                    percentComplete = (i + 1) * 100 / gCodeCommandCount;
+                    progress?.Update("Command " + i + " of " + gCodeCommandCount, percentComplete);
+                }
             }
 
             // Save last work plane to job and merge marking params
             NewWorkPlane();
             job.MarkingParamsMap.MergeFromWithRemap(MPsMap, out var keyMapping);
             // Update all vector block marking param keys after merge
-            foreach (var vectorBlock in addedVectorBlocks) 
+            foreach (var vectorBlock in addedVectorBlocks)
                 vectorBlock.MarkingParamsKey = keyMapping[vectorBlock.MarkingParamsKey];
 
             // Add part info to job
             Part part = new Part();
             part.GeometryInfo = new Part.Types.GeometryInfo()
             {
-                BuildHeightInMm = position.Z
+                BuildHeightInMm = Math.Round(Convert.ToDouble(position.Z), 2)
             };
             job.PartsMap.Add(0, part);
 
@@ -248,7 +252,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             void ProcessMovementCmd(MovementCommand movementCmd)
             {
                 // Check if layer has changed
-                if (movementCmd.zPosition != null && movementCmd.zPosition != position.Z)
+                if (movementCmd.zPosition != null && movementCmd.zPosition != position.Z && !VBempty)   //[0].LineSequence3D.Points.Count == 0 && _currentWP.VectorBlocks[0].Arcs3D.Centers.Count == 0)
                 {
                     NewWorkPlane();
                 }
@@ -262,8 +266,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
                         break;
                 }
 
-                // Update current position after movement
+                // Update current position after movement & indicate that the vectorblocks are not empty
                 UpdatePosition(movementCmd);
+                VBempty = false;
 
                 void UpdateLineSequence(LinearInterpolationCmd linearCmd)
                 {
@@ -335,9 +340,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     // Check if machine movement is travel or operation move and assign speed accordingly
                     if (isOperation)
                     {
-                        if (currentMP.LaserSpeedInMmPerS != 0 && newSpeed != null && currentMP.LaserSpeedInMmPerS != newSpeed)
+                        if (newSpeed != null && currentMP.LaserSpeedInMmPerS != newSpeed)
                         {
-                            if (!VBlocked)
+                            if (currentMP.LaserSpeedInMmPerS != 0 && !VBlocked)
                             {
                                 NewVectorBlock();
                             }
@@ -346,9 +351,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     }
                     else
                     {
-                        if (currentMP.JumpSpeedInMmS != 0 && newSpeed != null && currentMP.JumpSpeedInMmS != newSpeed)
+                        if (newSpeed != null && currentMP.JumpSpeedInMmS != newSpeed)
                         {
-                            if (!VBlocked)
+                            if (currentMP.JumpSpeedInMmS != 0 && !VBlocked)
                             {
                                 NewVectorBlock();
                             }
@@ -443,6 +448,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
                 // Lock vector block to prevent creating mulitple new vector blocks for one command
                 VBlocked = true;
+                VBempty = true;
             }
 
             void NewWorkPlane()
