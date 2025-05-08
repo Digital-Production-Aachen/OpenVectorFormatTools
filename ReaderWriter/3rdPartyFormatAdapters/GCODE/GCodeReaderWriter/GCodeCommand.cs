@@ -129,14 +129,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         public override string ToString()
         {
-            /*
-            string outString = gCode.ToString();
-            foreach (var param in miscParams)
-            {
-                outString += $" {param.Key}{param.Value}";
-            }
-            return outString;
-            */
            return this.gCode.ToString();
         }
     }
@@ -545,7 +537,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     public class GCodeCommandList : List<GCodeCommand>
     {
-        private readonly Dictionary<int, Type> _gCodeTranslations = new Dictionary<int, Type>
+        private readonly Dictionary<int, System.Type> _gCodeTranslations = new Dictionary<int, System.Type>
         {
             {0, typeof(LinearInterpolationCmd)},
             {1, typeof(LinearInterpolationCmd)},
@@ -554,9 +546,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
             {4, typeof(PauseCommand)},
         };
 
-        private Dictionary<int, Type> _mCodeTranslations = new Dictionary<int, Type>();
+        private Dictionary<int, System.Type> _mCodeTranslations = new Dictionary<int, System.Type>();
 
-        private Dictionary<int, Type> _tCodeTranslations = new Dictionary<int, Type>();
+        private Dictionary<int, System.Type> _tCodeTranslations = new Dictionary<int, System.Type>();
 
         public GCodeCommandList(string[] commandLines)
         {
@@ -612,7 +604,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             commandChar = char.ToUpper(commandArr[0][0]);
 
-            if (!Enum.TryParse(commandChar.ToString(), out PrepCode prepCode))
+            if (!System.Enum.TryParse(commandChar.ToString(), out PrepCode prepCode))
                 throw new ArgumentException($"Invalid preparatory function code: {commandChar} in line '{serializedCmdLine}'");
 
             string commandNumber = commandArr[0].Substring(1);
@@ -637,7 +629,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 }
             }
 
-            if (_gCodeTranslations.TryGetValue(codeNumber, out Type gCodeClassType))
+            if (_gCodeTranslations.TryGetValue(codeNumber, out System.Type gCodeClassType))
             {
                 return Activator.CreateInstance(gCodeClassType, new Object[] { prepCode, codeNumber, commandParams, commentString }) as GCodeCommand;
             }
