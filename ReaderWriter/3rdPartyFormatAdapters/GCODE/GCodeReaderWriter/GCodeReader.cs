@@ -190,6 +190,10 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 MetaData = new VectorBlock.Types.VectorBlockMetaData
                 {
                     PartKey = 0
+                },
+                LpbfMetadata = new VectorBlock.Types.LPBFMetadata
+                {
+                    StructureType = VectorBlock.Types.StructureType.Part
                 }
             };
 
@@ -198,6 +202,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             for (int i = 0; i < gCodeCommandCount; i++)
             {
+                //commandChanges = commandStateTracker.UpdateState(gCodeCommands[i]);
                 switch (gCodeCommands[i])
                 {
                     // Process command according to the command-type
@@ -234,10 +239,11 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             // Save last work plane to job and merge marking params
             NewWorkPlane();
-            job.MarkingParamsMap.MergeFromWithRemap(MPsMap, out var keyMapping);
+            //job.MarkingParamsMap.MergeFromWithRemap(MPsMap, out var keyMapping);
+            job.MarkingParamsMap.MergeFrom(MPsMap);
             // Update all vector block marking param keys after merge
-            foreach (var vectorBlock in addedVectorBlocks)
-                vectorBlock.MarkingParamsKey = keyMapping[vectorBlock.MarkingParamsKey];
+            //foreach (var vectorBlock in addedVectorBlocks)
+            //    vectorBlock.MarkingParamsKey = keyMapping[vectorBlock.MarkingParamsKey];
 
             // Add part info to job
             Part part = new Part();
@@ -252,7 +258,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             void ProcessMovementCmd(MovementCommand movementCmd)
             {
                 // Check if layer has changed
-                if (movementCmd.zPosition != null && movementCmd.zPosition != position.Z && !VBempty)   //[0].LineSequence3D.Points.Count == 0 && _currentWP.VectorBlocks[0].Arcs3D.Centers.Count == 0)
+                if (movementCmd.zPosition != null && movementCmd.zPosition != position.Z && !VBempty)   //[0].LineSequence.Points.Count == 0 && _currentWP.VectorBlocks[0].Arcs.Centers.Count == 0)
                 {
                     NewWorkPlane();
                 }
@@ -275,41 +281,37 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     // Update speed first to check if marking params changed and new vector block is needed
                     UpdateSpeed(linearCmd.isOperation, linearCmd.feedRate);
 
-                    if (_currentVB.LineSequence3D == null)
+                    if (_currentVB.LineSequence == null)
                     {
-                        _currentVB.LineSequence3D = new VectorBlock.Types.LineSequence3D();
+                        _currentVB.LineSequence = new VectorBlock.Types.LineSequence();
                     }
-                    _currentVB.LineSequence3D.Points.Add(absolutePositioning 
+                    _currentVB.LineSequence.Points.Add(absolutePositioning 
                         ? (linearCmd.xPosition ?? position.X) // Use absolute x-positioning
                         : (position.X + (linearCmd.xPosition ?? 0))); // Use relative xpositioning
-                    _currentVB.LineSequence3D.Points.Add(absolutePositioning
+                    _currentVB.LineSequence.Points.Add(absolutePositioning
                         ? (linearCmd.yPosition ?? position.Y) // Use absolute y-positioning
                         : (position.Y + (linearCmd.yPosition ?? 0))); // Use relative y-positioning
-                    _currentVB.LineSequence3D.Points.Add(absolutePositioning
-                        ? (linearCmd.zPosition ?? position.Z) // Use absolute y-positioning
-                        : (position.Z + (linearCmd.zPosition ?? 0))); // Use relative y-positioning
                 }
 
                 void UpdateArc(CircularInterpolationCmd circularCmd)
                 {
                     // Create neccessary variables for conversion of G-Code arc definition to OVF arc definition
-                    Vector3 targetPosition = new Vector3(absolutePositioning ? (circularCmd.xPosition ?? position.X) : (position.X + (circularCmd.xPosition ?? 0)),
-                        absolutePositioning ? (circularCmd.yPosition ?? position.Y) : (position.Y + (circularCmd.yPosition ?? 0)),
-                        absolutePositioning ? (circularCmd.zPosition ?? position.Z) : (position.Z + (circularCmd.zPosition ?? 0)));
+                    Vector2 targetPosition = new Vector2(absolutePositioning ? (circularCmd.xPosition ?? position.X) : (position.X + (circularCmd.xPosition ?? 0)),
+                        absolutePositioning ? (circularCmd.yPosition ?? position.Y) : (position.Y + (circularCmd.yPosition ?? 0)));
 
-                    Vector3 center = new Vector3(position.X + circularCmd.xCenterRel ?? 0, position.Y + circularCmd.yCenterRel ?? 0, position.Z);
+                    Vector2 center = new Vector2(position.X + circularCmd.xCenterRel ?? 0, position.Y + circularCmd.yCenterRel ?? 0);
 
-                    Vector3 vectorCP = position - center; // Vector from center to start position
-                    Vector3 vectorCT = targetPosition - center; // Vector from center to target position
+                    Vector2 vectorCP = new Vector2(position.X - center.X, position.Y - center.Y); // Vector from center to start position
+                    Vector2 vectorCT = targetPosition - center; // Vector from center to target position
 
-                    float dotProduct = Vector3.Dot(Vector3.Normalize(vectorCP), Vector3.Normalize(vectorCT));
+                    float dotProduct = Vector2.Dot(Vector2.Normalize(vectorCP), Vector2.Normalize(vectorCT));
                     float angleAbs = (float)Math.Acos(dotProduct) * (180.0f / (float)Math.PI);
                     angle = (circularCmd.isClockwise ? angleAbs : -angleAbs);
 
                     // Check if angle has changed, so marking params changed and new vector block is needed
-                    if (angle != _currentVB.Arcs3D.Angle && _currentVB.Arcs3D != null)
+                    if (angle != _currentVB.Arcs.Angle && _currentVB.Arcs != null)
                     {
-                        if (_currentVB.Arcs3D.Angle != 0 && !VBlocked)
+                        if (_currentVB.Arcs.Angle != 0 && !VBlocked)
                         {
                             NewVectorBlock();
                         }
@@ -319,20 +321,18 @@ namespace OpenVectorFormat.GCodeReaderWriter
                        Update speed after angle to not write a new speed to an old vector block. */
                     UpdateSpeed(true, circularCmd.feedRate);
 
-                    if (_currentVB.Arcs3D == null)
+                    if (_currentVB.Arcs == null)
                     {
-                        _currentVB.Arcs3D = new VectorBlock.Types.Arcs3D
+                        _currentVB.Arcs = new VectorBlock.Types.Arcs
                         {
                             Angle = angle,
 
                             StartDx = position.X,
-                            StartDy = position.Y,
-                            StartDz = position.Z
+                            StartDy = position.Y
                         };
                     }
-                    _currentVB.Arcs3D.Centers.Add(position.X + circularCmd.xCenterRel ?? position.X);
-                    _currentVB.Arcs3D.Centers.Add(position.Y + circularCmd.yCenterRel ?? position.Y);
-                    _currentVB.Arcs3D.Centers.Add(position.Z);
+                    _currentVB.Arcs.Centers.Add(position.X + circularCmd.xCenterRel ?? position.X);
+                    _currentVB.Arcs.Centers.Add(position.Y + circularCmd.yCenterRel ?? position.Y);
                 }
 
                 void UpdateSpeed(bool isOperation, float? newSpeed)
@@ -443,6 +443,10 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     MetaData = new VectorBlock.Types.VectorBlockMetaData
                     {
                         PartKey = 0
+                    },
+                    LpbfMetadata = new VectorBlock.Types.LPBFMetadata
+                    {
+                        StructureType = VectorBlock.Types.StructureType.Part
                     }
                 };
 
