@@ -72,7 +72,7 @@ namespace GCodeReaderWriter
             {
                 for (int i_vectorblock = 0; i_vectorblock < workPlane.VectorBlocks.Count; i_vectorblock++)
                 {
-                    _addVectorBlock(workPlane.VectorBlocks[i_vectorblock]);
+                    AddVectorBlock(workPlane.VectorBlocks[i_vectorblock]);
                 }
             }
         }
@@ -80,7 +80,7 @@ namespace GCodeReaderWriter
         /// <inheritdoc/>
         public override void AppendVectorBlock(VectorBlock block)
         {
-            _addVectorBlock(block);
+            AddVectorBlock(block);
         }
 
         /// <inheritdoc/>
@@ -92,7 +92,7 @@ namespace GCodeReaderWriter
             }
         }
 
-        public void _addVectorBlock(VectorBlock block)
+        public void AddVectorBlock(VectorBlock block)
         {
             for (ulong i = 0; i < block.Repeats + 1; i++)
             {
