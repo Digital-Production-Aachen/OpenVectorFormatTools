@@ -63,7 +63,7 @@ namespace OpenVectorFormat.ILTFileReader.Model
             set;
         }
 
-        public ILTFileReader.IUserData UserData
+        public ILTFileReader.UserData[] UserData
         {
             get;
             set;

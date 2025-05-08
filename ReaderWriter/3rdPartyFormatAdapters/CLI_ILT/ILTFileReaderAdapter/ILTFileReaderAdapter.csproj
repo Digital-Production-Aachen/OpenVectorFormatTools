@@ -20,12 +20,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\..\..\icon.png" Pack="true" PackagePath="\"/>
+    <None Include="..\..\..\..\icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\AbstractReaderWriter\AbstractReaderWriter.csproj" />
     <ProjectReference Include="..\ILTFileReaderInterfaces\ILTFileReaderInterfaces.csproj" />
+    <ProjectReference Include="..\iltFileReader\ILTFileReader.csproj" />
   </ItemGroup>
 
 </Project>

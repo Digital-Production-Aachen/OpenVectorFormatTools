@@ -44,7 +44,7 @@ namespace OpenVectorFormat.ILTFileReader.Controller
         //    public int toInt;
         //}
         private IList<IPart> parts;
-        private IList<IUserData> userData;
+        private IList<UserData> userData;
         private Header header;
         private StreamReader sR;
         private BinaryReader bR;
@@ -55,7 +55,7 @@ namespace OpenVectorFormat.ILTFileReader.Controller
         public SliFileAccess()
         {
             this.parts = new List<IPart>();
-            this.userData = new List<IUserData>();
+            this.userData = new List<UserData>();
             this.header = new Header();
         }
         public void OpenFile(string filePath)
@@ -167,6 +167,11 @@ namespace OpenVectorFormat.ILTFileReader.Controller
 
             }
             return layers;
+        }
+
+        public string GetUserData(string UID)
+        {
+            return "";
         }
     }
 }

@@ -78,8 +78,19 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             string[] testCommands = File.ReadAllLines(fileName.FullName);
 
             GCodeCommandList gCodeCommandList = new GCodeCommandList(testCommands);
-            Assert.AreEqual(19335, gCodeCommandList.OfType<LinearInterpolationCmd>().ToList().Count);
-            Assert.AreEqual(185, gCodeCommandList.OfType<MiscCommand>().ToList().Count);
+            Assert.AreEqual(19331, gCodeCommandList.OfType<LinearInterpolationCmd>().ToList().Count);
+            Assert.AreEqual(183, gCodeCommandList.OfType<MiscCommand>().ToList().Count);
+        }
+
+        [DynamicData("GCodeFiles")]
+        [TestMethod]
+        public void TestGCodeFilesAddParams(FileInfo fileName)
+        {
+            var targetFile = new FileInfo(Path.GetTempFileName() + ".ovf");
+            var converter = SetupConverter();
+
+            converter.ConvertAddParams(fileName, targetFile, new FileReaderWriterFactory.FileReaderWriterProgress());
+            CheckJob(targetFile);
         }
 
         [DynamicData("GCodeFiles")]

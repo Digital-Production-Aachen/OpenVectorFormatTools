@@ -32,6 +32,7 @@ using System.Linq;
 using OpenVectorFormat.AbstractReaderWriter;
 using OpenVectorFormat.ASPFileReaderWriter;
 using OpenVectorFormat.GCodeReaderWriter;
+using OpenVectorFormat.ILTFileReader;
 
 namespace OpenVectorFormat.FileReaderWriterFactory
 {

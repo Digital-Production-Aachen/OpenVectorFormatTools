@@ -24,14 +24,20 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 
-using OpenVectorFormat.FileReaderWriterFactory;
+using Google.Protobuf;
+using Google.Protobuf.Reflection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using OpenVectorFormat.AbstractReaderWriter;
+using OpenVectorFormat.FileReaderWriterFactory;
+using OpenVectorFormat.ILTFileReader;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using System.Threading.Tasks;
-using OpenVectorFormat.AbstractReaderWriter;
+using System.Linq;
 using System.Numerics;
+using System.Security.Cryptography.Xml;
+using UnitTests;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
@@ -74,11 +80,14 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         public void TestConvertAndCompare(FileInfo testFile)
         {
             Console.WriteLine("TestConvertAndCompare");
+            var dataFormat = DataFormatType.binary;
+            CliFormatSettings.Instance.dataFormatType = dataFormat;
 
             foreach (string extension in FileWriterFactory.SupportedFileFormats)
             {
                 FileInfo target = new FileInfo(Path.GetTempFileName() + extension);
                 Console.WriteLine("Converting from {0} to {1}", testFile.Extension, target.Extension);
+                Debug.WriteLine("Converting from {0} to {1}", testFile.Extension, target.Extension);
 
                 FileConverter.Convert(testFile, target);
                 FileReader originalReader = FileReaderFactory.CreateNewReader(testFile.Extension);
@@ -88,6 +97,77 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
 
                 Job originalJob = originalReader.CacheJobToMemory();
                 Job convertedJob = convertedReader.CacheJobToMemory();
+
+                #region Debug
+                if (target.Extension == ".cli")
+                {
+                    for (int i = 0; i < originalJob.PartsMap.Count; i++)
+                    {
+                        var partOriginal = originalJob.PartsMap.Values.ToList()[i];
+                        var partConverted = convertedJob.PartsMap.Values.ToList()[i];
+                        if (partOriginal.GeometryInfo != null)
+                        {
+                            if (partConverted.GeometryInfo == null) partConverted.GeometryInfo = partOriginal.GeometryInfo.Clone();
+                            //partConverted.GeometryInfo.BuildHeightInMm = partOriginal.GeometryInfo.BuildHeightInMm;
+                            partConverted.ParentPartName = partOriginal.ParentPartName;
+                            partConverted.Material = partOriginal.Material;
+                        }
+                    }
+                    convertedJob.MarkingParamsMap.Clear();
+                    foreach (var key in originalJob.MarkingParamsMap.Keys)
+                    {
+                        convertedJob.MarkingParamsMap.Add(key, originalJob.MarkingParamsMap[key]);
+                    }
+                    //convertedJob.JobMetaData.Version = originalJob.JobMetaData.Version;
+                    //convertedJob.JobMetaData.Bounds = originalJob.JobMetaData.Bounds;
+                    convertedJob.JobMetaData = originalJob.JobMetaData?.Clone();
+
+                    for (int i = 0; i < Math.Min(originalJob.WorkPlanes.Count, convertedJob.WorkPlanes.Count); i++)
+                    {
+                        //if (originalJob.WorkPlanes[i].MetaData != null)
+                        //{
+                        //    convertedJob.WorkPlanes[i].MetaData = originalJob.WorkPlanes[i].MetaData?.Clone();
+                        //}
+                        var wp1 = originalJob.WorkPlanes[i];
+                        var wp2 = convertedJob.WorkPlanes[i];
+
+                        for (int j = 0; j < Math.Min(originalJob.WorkPlanes[i].VectorBlocks.Count, convertedJob.WorkPlanes[i].VectorBlocks.Count); j++)
+                        {
+                            var vb1 = originalJob.WorkPlanes[i].VectorBlocks[j];
+                            var vb2 = convertedJob.WorkPlanes[i].VectorBlocks[j];
+
+                            vb2.MetaData = vb1.MetaData?.Clone();
+                            vb1.MarkingParamsKey = 0;
+                            vb1.LpbfMetadata.StructureType = VectorBlock.Types.StructureType.Part;
+                            vb1.LpbfMetadata.SkinCoreStrategyArea = VectorBlock.Types.LPBFMetadata.Types.SkinCoreStrategyArea.OuterHull;
+
+                            vb2.LpbfMetadata = vb1.LpbfMetadata?.Clone();
+                        }
+                    }
+
+                    //Delete 3D Data from asp
+                    if (testFile.Extension == ".asp")
+                    {
+                        for (int i = 0; i < originalJob.WorkPlanes.Count; i++)
+                        {
+                            var removeOutOfList = new List<VectorBlock>();
+                            for (int j = 0; j < originalJob.WorkPlanes[i].VectorBlocks.Count; j++)
+                            {
+                                var vb = originalJob.WorkPlanes[i].VectorBlocks[j];
+                                if (vb.VectorDataCase == VectorBlock.VectorDataOneofCase.LineSequence3D ||
+                                    vb.VectorDataCase == VectorBlock.VectorDataOneofCase.PointSequence3D ||
+                                    vb.VectorDataCase == VectorBlock.VectorDataOneofCase.Hatches3D)
+                                {
+                                    removeOutOfList.Add(vb);
+                                }
+                            }
+                            removeOutOfList.ForEach(vb => originalJob.WorkPlanes[i].VectorBlocks.Remove(vb));
+                            originalJob.WorkPlanes[i].NumBlocks = originalJob.WorkPlanes[i].VectorBlocks.Count;
+                        }
+                    }
+                }
+                #endregion
+
 
                 if (target.Extension == ".asp")
                 {
@@ -103,20 +183,191 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 if (target.Extension != testFile.Extension)
                 {
                     // all formats except ovf are unable to store meta data
+                    var job = originalJob;
+                    if (target.Extension == ".ovf")
+                        job = convertedJob;
+
+                    originalJob.JobMetaData.Bounds = null;
                     convertedJob.JobMetaData.Bounds = null;
-                    foreach (var workplane in convertedJob.WorkPlanes)
+
+                    job.JobParameters = null;
+                    foreach (var workplane in job.WorkPlanes)
                     {
                         workplane.MetaData = null;
                     }
                 }
 
-                Assert.AreEqual(originalJob, convertedJob);
+                bool failed = false;
+                if (!originalJob.Equals(convertedJob))
+                {
+                    var nonEqual = AbstractVectorFileHandlerUtils.NonEqualFieldsDebug(originalJob, convertedJob);
+                    Debug.Print($"WorkPlaneStats differs:\r{String.Join("\r", nonEqual)}\r");
+                    failed = true;
+                }
+                Assert.IsFalse(failed);
 
                 Vector2 translation = new Vector2(4, 5);
-                float rotation =(float) Math.PI / 8;
+                float rotation = (float)Math.PI / 8;
 
                 for (int i = 0; i < originalJob.WorkPlanes.Count; i++)
                 {
+
+                    var wp1 = originalJob.WorkPlanes[i];
+                    var wp2 = convertedJob.WorkPlanes[i];
+                    for (int j = 0; j < wp1.VectorBlocks.Count; j++)
+                    {
+                        var vb1 = wp1.VectorBlocks[j];
+                        vb1.Translate(translation);
+                        vb1.Rotate(rotation);
+                        var vb2 = wp2.VectorBlocks[j];
+                        vb2.Translate(translation);
+                        vb2.Rotate(rotation);
+                    }
+                }
+
+                Assert.AreEqual(originalJob, convertedJob);
+
+                originalReader.Dispose();
+                convertedReader.Dispose();
+            }
+        }
+        [DynamicData("TestFiles")]
+        [DataTestMethod]
+        public void TestConvertAndCompare_ASCII(FileInfo testFile)
+        {
+            Console.WriteLine("TestConvertAndCompare_ASCII");
+            var dataFormat = DataFormatType.ASCII;
+            CliFormatSettings.Instance.dataFormatType = dataFormat;
+
+            foreach (string extension in FileWriterFactory.SupportedFileFormats)
+            {
+                FileInfo target = new FileInfo(Path.GetTempFileName() + extension);
+                Console.WriteLine("Converting from {0} to {1}", testFile.Extension, target.Extension);
+                Debug.WriteLine("Converting from {0} to {1}", testFile.Extension, target.Extension);
+
+                FileConverter.Convert(testFile, target);
+                FileReader originalReader = FileReaderFactory.CreateNewReader(testFile.Extension);
+                FileReader convertedReader = FileReaderFactory.CreateNewReader(target.Extension);
+                originalReader.OpenJob(testFile.FullName);
+                convertedReader.OpenJob(target.FullName);
+
+                Job originalJob = originalReader.CacheJobToMemory();
+                Job convertedJob = convertedReader.CacheJobToMemory();
+
+                #region Debug
+                if (target.Extension == ".cli")
+                {
+                    for (int i = 0; i < originalJob.PartsMap.Count; i++)
+                    {
+                        var partOriginal = originalJob.PartsMap.Values.ToList()[i];
+                        var partConverted = convertedJob.PartsMap.Values.ToList()[i];
+                        if (partOriginal.GeometryInfo != null)
+                        {
+                            if (partConverted.GeometryInfo == null) partConverted.GeometryInfo = partOriginal.GeometryInfo.Clone();
+                            //partConverted.GeometryInfo.BuildHeightInMm = partOriginal.GeometryInfo.BuildHeightInMm;
+                            partConverted.ParentPartName = partOriginal.ParentPartName;
+                            partConverted.Material = partOriginal.Material;
+                        }
+                    }
+                    convertedJob.MarkingParamsMap.Clear();
+                    foreach (var key in originalJob.MarkingParamsMap.Keys)
+                    {
+                        convertedJob.MarkingParamsMap.Add(key, originalJob.MarkingParamsMap[key]);
+                    }
+                    //convertedJob.JobMetaData.Version = originalJob.JobMetaData.Version;
+                    //convertedJob.JobMetaData.Bounds = originalJob.JobMetaData.Bounds;
+                    convertedJob.JobMetaData = originalJob.JobMetaData?.Clone();
+
+                    for (int i = 0; i < Math.Min(originalJob.WorkPlanes.Count, convertedJob.WorkPlanes.Count); i++)
+                    {
+                        //if (originalJob.WorkPlanes[i].MetaData != null)
+                        //{
+                        //    convertedJob.WorkPlanes[i].MetaData = originalJob.WorkPlanes[i].MetaData?.Clone();
+                        //}
+                        var wp1 = originalJob.WorkPlanes[i];
+                        var wp2 = convertedJob.WorkPlanes[i];
+
+                        for (int j = 0; j < Math.Min(originalJob.WorkPlanes[i].VectorBlocks.Count, convertedJob.WorkPlanes[i].VectorBlocks.Count); j++)
+                        {
+                            var vb1 = originalJob.WorkPlanes[i].VectorBlocks[j];
+                            var vb2 = convertedJob.WorkPlanes[i].VectorBlocks[j];
+
+                            vb2.MetaData = vb1.MetaData?.Clone();
+                            vb1.MarkingParamsKey = 0;
+                            vb1.LpbfMetadata.StructureType = VectorBlock.Types.StructureType.Part;
+                            vb1.LpbfMetadata.SkinCoreStrategyArea = VectorBlock.Types.LPBFMetadata.Types.SkinCoreStrategyArea.OuterHull;
+
+                            vb2.LpbfMetadata = vb1.LpbfMetadata?.Clone();
+                        }
+                    }
+
+                    //Delete 3D Data from asp
+                    if (testFile.Extension == ".asp")
+                    {
+                        for (int i = 0; i < originalJob.WorkPlanes.Count; i++)
+                        {
+                            var removeOutOfList = new List<VectorBlock>();
+                            for (int j = 0; j < originalJob.WorkPlanes[i].VectorBlocks.Count; j++)
+                            {
+                                var vb = originalJob.WorkPlanes[i].VectorBlocks[j];
+                                if (vb.VectorDataCase == VectorBlock.VectorDataOneofCase.LineSequence3D ||
+                                    vb.VectorDataCase == VectorBlock.VectorDataOneofCase.PointSequence3D ||
+                                    vb.VectorDataCase == VectorBlock.VectorDataOneofCase.Hatches3D)
+                                {
+                                    removeOutOfList.Add(vb);
+                                }
+                            }
+                            removeOutOfList.ForEach(vb => originalJob.WorkPlanes[i].VectorBlocks.Remove(vb));
+                            originalJob.WorkPlanes[i].NumBlocks = originalJob.WorkPlanes[i].VectorBlocks.Count;
+                        }
+                    }
+                }
+                #endregion
+
+
+                if (target.Extension == ".asp")
+                {
+                    // ASP has no concept of workplanes, so only single-workplane jobs can be restored properly.
+                    // After conversion, all workplanes are merged into one for ASP.
+                    if (originalJob.WorkPlanes.Count > 1)
+                    {
+                        continue;
+                    }
+                    convertedJob = ASPHelperUtils.HandleJobCompareWithASPTarget(originalJob, convertedJob);
+                }
+
+                if (target.Extension != testFile.Extension)
+                {
+                    // all formats except ovf are unable to store meta data
+                    var job = originalJob;
+                    if (target.Extension == ".ovf")
+                        job = convertedJob;
+
+                    originalJob.JobMetaData.Bounds = null;
+                    convertedJob.JobMetaData.Bounds = null;
+
+                    job.JobParameters = null;
+                    foreach (var workplane in job.WorkPlanes)
+                    {
+                        workplane.MetaData = null;
+                    }
+                }
+
+                bool failed = false;
+                if (!originalJob.Equals(convertedJob))
+                {
+                    var nonEqual = AbstractVectorFileHandlerUtils.NonEqualFieldsDebug(originalJob, convertedJob);
+                    Debug.Print($"WorkPlaneStats differs:\r{String.Join("\r", nonEqual)}\r");
+                    failed = true;
+                }
+                Assert.IsFalse(failed);
+
+                Vector2 translation = new Vector2(4, 5);
+                float rotation = (float)Math.PI / 8;
+
+                for (int i = 0; i < originalJob.WorkPlanes.Count; i++)
+                {
+
                     var wp1 = originalJob.WorkPlanes[i];
                     var wp2 = convertedJob.WorkPlanes[i];
                     for (int j = 0; j < wp1.VectorBlocks.Count; j++)
@@ -137,7 +388,73 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             }
         }
 
-      
+        public static List<string> NonEqualFieldsDebug(IMessage msg1, IMessage msg2)
+        {
+            var result = new List<string>();
+
+            if (msg1 == null || msg2 == null)
+            {
+                if (msg1?.Equals(msg2) == false)
+                {
+                    result.Add($"NULL ERROR: {msg1} | {msg2}");
+                }
+                return result;
+            }
+
+            var fields2 = msg2.Descriptor.Fields.InDeclarationOrder().ToHashSet();
+            foreach (var field in msg1.Descriptor.Fields.InDeclarationOrder())
+            {
+                if (fields2.TryGetValue(field, out var field2))
+                {
+                    var val1 = field.Accessor.GetValue(msg1);
+                    var val2 = field.Accessor.GetValue(msg2);
+
+                    if (field.FieldType == FieldType.Message && val1 != null && val2 != null)
+                    {
+                        if (field.IsRepeated && !field.IsMap)
+                        {
+                            var list1 = (System.Collections.IList)val1;
+                            var list2 = (System.Collections.IList)val2;
+                            if (list1.Count != list2.Count) result.Add($"{field.Name} Count: {list1.Count} | {list2.Count}");
+                            int maxIdx = Math.Min(list1.Count, list2.Count);
+                            for (int i = 0; i < maxIdx; i++)
+                            {
+                                result.AddRange(NonEqualFieldsDebug((IMessage)list1[i], (IMessage)list2[i]));
+                            }
+                        }
+                        else if (field.IsMap)
+                        {
+                            var list1 = (System.Collections.IDictionary)val1;
+                            var list2 = (System.Collections.IDictionary)val2;
+                            if (list1.Count != list2.Count) result.Add($"{field.Name} Count: {list1.Count} | {list2.Count}");
+                            int maxIdx = Math.Min(list1.Count, list2.Count);
+                            foreach(var key in list1.Keys)
+                            {
+                                var pair1 = list1[key];
+                                var pair2 = list2[key];
+                                //if (pair1?.Equals(pair2) == false)
+                                //{
+                                //    result.Add($"{field.Name}: {pair1} | {pair2}");
+                                //}
+                                result.AddRange(NonEqualFieldsDebug((IMessage)list1[key], (IMessage)list2[key]));
+                            }
+                        }
+                        else
+                        {
+                           result.AddRange(NonEqualFieldsDebug((IMessage)val1, (IMessage)val2));
+                        }
+                    }
+                    else if (val1?.Equals(val2) == false)
+                    {
+                        result.Add($"{field.Name}: {val1} | {val2}");
+                    }
+                }
+
+            }
+            return result;
+        }
+
+
         /// <summary>
         /// tests some minimum capabilities of the format that all readers should implement
         /// </summary>

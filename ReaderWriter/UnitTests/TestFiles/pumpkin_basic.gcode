@@ -9,13 +9,7 @@ M109 S200 ; wait for extruder temp
 G28 W ; home all without mesh bed level
 G80 ; mesh bed leveling
 G92 E0.0 ; reset extruder distance position
-G1 Y-3.0 F1000.0 ; go outside print area
-G1 X60.0 E9.0 F1000.0 ; intro line
-G1 X100.0 E21.5 F1000.0 ; intro line
-G92 E0.0 ; reset extruder distance position
 G92 E0
-G92 E0
-G1 F2100 E-0.8
 M107
 G0 F3600 X109.987 Y94.501 Z0.2
 G1 F2100 E0

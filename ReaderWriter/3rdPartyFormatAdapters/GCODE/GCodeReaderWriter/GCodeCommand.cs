@@ -71,7 +71,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
         int toolNumber;
     }
 
-    public class GCodeCommand
+    public abstract class GCodeCommand
     {
         // The GCode of the command
         public readonly GCode gCode;
@@ -240,7 +240,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
             else
             {
-                throw new ArgumentException($"Invalid code number for linear interpolation: {this.gCode.codeNumber} in line '{this.ToString()}'");
+                throw new ArgumentException($"Invalid code number for linear interpolation: {this.gCode.codeNumber} in line '{this}'");
             }
         }
 
@@ -257,7 +257,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
         public float? yCenterRel;
 
         // Direction of the circular interpolation
-        public bool isClockwise;
+        public readonly bool isClockwise;
 
         public CircularInterpolationCmd(PrepCode prepCode, int codeNumer, bool isClockwise, float? xPosition, float? yPosition, float? xCenterRel, float? yCenterRel, float? feedRate, float? acceleration, Dictionary<char, float> miscParams = null, string comment = null)
             : base(prepCode, codeNumer, xPosition, yPosition, null, feedRate, acceleration, miscParams, comment)
@@ -269,7 +269,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         public CircularInterpolationCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
         {
-            CheckDirection();
+            this.isClockwise = CheckDirection();
             InitParameterMap();
             if (commandParams != null)
             {
@@ -279,7 +279,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         public CircularInterpolationCmd(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null) : base(gCode, commandParams, comment)
         {
-            CheckDirection();
+            this.isClockwise = CheckDirection();
             InitParameterMap();
             if (commandParams != null)
             {
@@ -293,15 +293,15 @@ namespace OpenVectorFormat.GCodeReaderWriter
             parameterMap.Add('J', (float j) => yCenterRel = j);
         }
 
-        private void CheckDirection()
+        private bool CheckDirection()
         {
             if (this.gCode.codeNumber == 2 || this.gCode.codeNumber == 3)
             {
-                this.isClockwise = this.gCode.codeNumber == 2;
+                return this.gCode.codeNumber == 2;
             }
             else
             {
-                throw new ArgumentException($"Invalid code number for circular interpolation: {this.gCode.codeNumber} in line '{this.ToString()}'");
+                throw new ArgumentException($"Invalid code number for circular interpolation: {this.gCode.codeNumber} in line '{this}'");
             }
         }
 
@@ -348,6 +348,11 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 ParseParams(commandParams);
             }
         }
+        private new void InitParameterMap()
+        {
+            parameterMap.Add('P', (float p) => duration = p);
+            parameterMap.Add('F', (float f) => duration = f);
+        }
 
         public override string ToString()
         {
@@ -381,9 +386,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     public class MonitoringCommand : GCodeCommand
     {
-        public MonitoringCommand(PrepCode prepCode, int codeNumber, string comment = null) : base(prepCode, codeNumber, null, comment)
-        {
-        }
         public MonitoringCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
         {
             InitParameterMap();
@@ -399,11 +401,8 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
     }
 
-    public class ProgramLogicsCommand : GCodeCommand
+    public abstract class ProgramLogicsCommand : GCodeCommand
     {
-        public ProgramLogicsCommand(PrepCode prepCode, int codeNumber, string comment = null) : base(prepCode, codeNumber, null, comment)
-        {
-        }
         public ProgramLogicsCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
         {
             InitParameterMap();
@@ -428,12 +427,45 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
     }
 
+    public class PositioningToggleCommand : ProgramLogicsCommand
+    {
+        public readonly bool isAbsolute;
+        
+        public PositioningToggleCommand(PrepCode prepCode, int codeNumber, bool isAbsolute, string comment = null) : base(prepCode, codeNumber, null, comment)
+        {
+            this.isAbsolute = checkPositioning();
+        }
+        public PositioningToggleCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
+        {
+            this.isAbsolute = checkPositioning();
+        }
+
+        public PositioningToggleCommand(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null) : base(gCode, commandParams, comment)
+        {
+            this.isAbsolute = checkPositioning();
+        }
+
+        private bool checkPositioning()
+        {
+            if (this.gCode.codeNumber == 90 || this.gCode.codeNumber == 91)
+            {
+                return this.gCode.codeNumber == 90;
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid code number for positioning toggle: {this.gCode.codeNumber} in line '{this}'");
+            }
+        }
+
+        public override string ToString()
+        {
+            return base.ToString();
+        }
+    }
+
     public class BlockEndCmd : ProgramLogicsCommand
     {
-        public BlockEndCmd(PrepCode prepCode, int codeNumber, string comment = null) : base(prepCode, codeNumber, comment)
-        {
-        }
-        public BlockEndCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, comment)
+        public BlockEndCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, null, comment)
         {
             InitParameterMap();
             if (commandParams != null)
@@ -460,10 +492,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     public class ProgramEndCmd : ProgramLogicsCommand
     {
-        public ProgramEndCmd(PrepCode prepCode, int codeNumber, string comment = null) : base(prepCode, codeNumber, comment)
-        {
-        }
-
         public ProgramEndCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
         {
             InitParameterMap();
@@ -490,10 +518,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
     public class MiscCommand : GCodeCommand
     {
-        public MiscCommand(PrepCode prepCode, int codeNumber, string comment = null) : base(prepCode, codeNumber, null, comment)
-        {
-        }
-
         public MiscCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) :base(prepCode, codeNumber, commandParams, comment)
         {
             this.miscParams = commandParams;
@@ -580,7 +604,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 {
                     return null;
                 }
-                return Activator.CreateInstance(typeof(MiscCommand), new Object[] { PrepCode.Comment, 0, commentString }) as GCodeCommand;
+                return Activator.CreateInstance(typeof(MiscCommand), new Object[] { PrepCode.Comment, 0, null, commentString }) as GCodeCommand;
             }
 
             string[] commandArr = commandString.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -612,7 +636,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     throw new ArgumentException($"Invalid command parameter format: {commandParam} in line '{serializedCmdLine}'. Command parameters must be of format <char><float>");
                 }
             }
-            Console.WriteLine(string.Join(Environment.NewLine, commandParams));
+
             if (_gCodeTranslations.TryGetValue(codeNumber, out Type gCodeClassType))
             {
                 return Activator.CreateInstance(gCodeClassType, new Object[] { prepCode, codeNumber, commandParams, commentString }) as GCodeCommand;
