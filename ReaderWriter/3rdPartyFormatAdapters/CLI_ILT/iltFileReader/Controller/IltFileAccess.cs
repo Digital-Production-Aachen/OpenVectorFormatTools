@@ -200,5 +200,9 @@ namespace OpenVectorFormat.ILTFileReader.Controller
             file.Close();
         }
 
+        public string GetUserData(string UID)
+        {
+            return "";
+        }
     }
 }

@@ -46,7 +46,7 @@ namespace OpenVectorFormat.ILTFileReader.Model
             set;
         }
 
-        abstract public float[] Coordinates
+        abstract public Span<float> Coordinates
         {
             get;
         }

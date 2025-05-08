@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ReaderWriter\AbstractReaderWriter\AbstractReaderWriter.csproj" />
+    <ProjectReference Include="..\..\..\AbstractReaderWriter\AbstractReaderWriter.csproj" />
   </ItemGroup>
 
 </Project>

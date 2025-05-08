@@ -31,6 +31,8 @@ using System.Collections.Generic;
 using System.Linq;
 using OpenVectorFormat.AbstractReaderWriter;
 using OpenVectorFormat.ASPFileReaderWriter;
+using OpenVectorFormat.GCodeReaderWriter;
+using OpenVectorFormat.ILTFileReader;
 
 namespace OpenVectorFormat.FileReaderWriterFactory
 {
@@ -55,6 +57,10 @@ namespace OpenVectorFormat.FileReaderWriterFactory
             {
                 newFileReader = new ASPFileReaderWriter.ASPFileReader();
             }
+            else if (GCodeReader.SupportedFileFormats.Contains(extension, StringComparer.OrdinalIgnoreCase))
+            {
+                newFileReader = new GCodeReaderWriter.GCodeReader();
+            }
             else
             {
                 throw new ArgumentException("format " + extension + " is not supported");
@@ -70,6 +76,7 @@ namespace OpenVectorFormat.FileReaderWriterFactory
                 formats.AddRange(IltFileAccess.SupportedFileFormats);
                 formats.AddRange(CliFileAccess.SupportedFileFormats);
                 formats.AddRange(ASPFileReaderWriter.ASPFileReader.SupportedFileFormats);
+                formats.AddRange(GCodeReader.SupportedFileFormats);
                 return formats;
             }
         }

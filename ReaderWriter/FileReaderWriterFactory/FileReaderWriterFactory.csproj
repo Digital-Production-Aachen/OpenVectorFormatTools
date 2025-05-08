@@ -28,6 +28,7 @@
     <ProjectReference Include="..\3rdPartyFormatAdapters\CLI_ILT\ILTFileReaderAdapter\ILTFileReaderAdapter.csproj" />
     <ProjectReference Include="..\3rdPartyFormatAdapters\CLI_ILT\ILTFileReaderInterfaces\ILTFileReaderInterfaces.csproj" />
     <ProjectReference Include="..\3rdPartyFormatAdapters\CLI_ILT\iltFileReader\ILTFileReader.csproj" />
+    <ProjectReference Include="..\3rdPartyFormatAdapters\GCODE\GCodeReaderWriter\GCodeReaderWriter.csproj" />
     <ProjectReference Include="..\OVFReaderWriter\OVFReaderWriter.csproj" />
   </ItemGroup>
 

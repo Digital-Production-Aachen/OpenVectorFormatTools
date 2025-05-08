@@ -26,11 +26,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using OpenVectorFormat.GCodeReaderWriter;
 using System.IO;
-using OpenVectorFormat.ASPFileReaderWriter;
+using OpenVectorFormat.FileReaderWriterFactory;
+using OpenVectorFormat.Plausibility;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
@@ -39,52 +38,118 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
     {
         public static DirectoryInfo dir = new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "TestFiles"));
 
+
+        // Consider moving this to GCodeWriter
         [DynamicData("GCodeFiles")]
         [TestMethod]
-        public void TestGCodeFiles(FileInfo fileName)
+        public void TestGCodeFile(FileInfo fileName)
         {
-            var gCodeReader = new GCodeReader();
+            string[] fileContent = File.ReadAllLines(fileName.FullName);
+            bool isContentValid = IsValidGCode(fileContent);
+            Assert.IsTrue(isContentValid);
 
-            string testCommandLinear = File.ReadAllLines(fileName.FullName)[19];
-            GCodeState gCodeState = new GCodeState(testCommandLinear);
+            static bool IsValidGCode(string[] commandLines)
+            {
+                foreach (string commandLine in commandLines)
+                {
+                    string commandString = commandLine.Split(';')[0].Trim();
+                    if (string.IsNullOrEmpty(commandString))
+                    {
+                        continue;
+                    }
+                    string[] commandParts = commandString.Split(' ');
 
-            LinearInterpolationCmd assertCmd = new LinearInterpolationCmd(PrepCode.G, 0, new Dictionary<char, float> { { 'F', 1800 }, { 'X', 110.414f }, { 'Y', 94.025f }, { 'E', 0.02127f } });
-            Assert.AreEqual(gCodeState.gCodeCommand.gCode, assertCmd.gCode );
-            Assert.AreEqual(gCodeState.gCodeCommand.GetType(), assertCmd.GetType());
-
-            object[] stateUpdates = gCodeState.Update(File.ReadAllLines(fileName.FullName)[22]);
-
-            Assert.IsNotNull(stateUpdates[0]);
-            Assert.IsNull(stateUpdates[1]);
-            Assert.IsNull(stateUpdates[2]);
+                    foreach (string commandPart in commandParts)
+                    {
+                        if (!char.IsLetter(commandPart[0]) || (commandPart.Length>1 && !float.TryParse(commandPart.Substring(1), out _)))
+                        {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
         }
 
         [DynamicData("GCodeFiles")]
         [TestMethod]
-        public void TestGCodeGrouping(FileInfo fileName)
+        public void TestGCodeToObject(FileInfo fileName)
         {
             string[] testCommands = File.ReadAllLines(fileName.FullName);
-            GCodeReader gCodeReader = new GCodeReader();
 
             GCodeCommandList gCodeCommandList = new GCodeCommandList(testCommands);
+            Assert.AreEqual(19331, gCodeCommandList.OfType<LinearInterpolationCmd>().ToList().Count);
+            Assert.AreEqual(183, gCodeCommandList.OfType<MiscCommand>().ToList().Count);
+        }
 
-            for (int i = 0; i < 30; i++)
+        [DynamicData("GCodeFiles")]
+        [TestMethod]
+        public void TestGCodeFilesAddParams(FileInfo fileName)
+        {
+            var targetFile = new FileInfo(Path.GetTempFileName() + ".ovf");
+            var converter = SetupConverter();
+
+            converter.ConvertAddParams(fileName, targetFile, new FileReaderWriterFactory.FileReaderWriterProgress());
+            CheckJob(targetFile);
+        }
+
+        [DynamicData("GCodeFiles")]
+        [TestMethod]
+        public void TestGCodeAddParamsToMemory(FileInfo fileName)
+        {
+            var converter = SetupConverter();
+
+            var job = converter.ConvertAddParams(fileName, new FileReaderWriterFactory.FileReaderWriterProgress());
+            CheckJob(job);
+        }
+
+        private FileReaderWriterFactory.FileConverter SetupConverter()
+        {
+            FileReaderWriterFactory.FileConverter converter = new FileReaderWriterFactory.FileConverter();
+            converter.SupportPostfix = "_support";
+            converter.FallbackContouringParams = new MarkingParams() { LaserSpeedInMmPerS = 100, LaserPowerInW = 0 };
+            converter.FallbackHatchingParams = new MarkingParams() { LaserSpeedInMmPerS = 100, LaserPowerInW = 0 };
+            converter.FallbackSupportContouringParams = new MarkingParams() { LaserSpeedInMmPerS = 100, LaserPowerInW = 0 };
+            converter.FallbackSupportHatchingParams = new MarkingParams() { LaserSpeedInMmPerS = 100, LaserPowerInW = 0 };
+            return converter;
+        }
+
+        private void CheckJob(FileInfo testFile)
+        {
+            using (var reader = FileReaderWriterFactory.FileReaderFactory.CreateNewReader(testFile.Extension))
             {
-                Console.WriteLine(gCodeCommandList[i].GetType());
-                //Console.WriteLine(gCodeCommandList[i].ToString());
+                reader.OpenJob(testFile.FullName, new FileReaderWriterFactory.FileReaderWriterProgress());
+                var job = reader.CacheJobToMemory();
+
+                CheckJob(job);
             }
+        }
 
-            IEnumerable<IGrouping<Type, GCodeCommand>> gCodeTypeGrouping = gCodeCommandList.GroupBy(gCodeCommand => gCodeCommand.GetType()).ToList();
-            Console.WriteLine(gCodeTypeGrouping.ToString());
+        private void CheckJob(Job job)
+        {
+            CheckerConfig config = new CheckerConfig
+            {
+                CheckLineSequencesClosed = CheckAction.DONTCHECK,
+                CheckMarkingParamsKeys = CheckAction.CHECKERROR,
+                CheckPartKeys = CheckAction.CHECKERROR,
+                CheckPatchKeys = CheckAction.DONTCHECK,
+                CheckVectorBlocksNonEmpty = CheckAction.CHECKERROR,
+                CheckWorkPlanesNonEmpty = CheckAction.CHECKERROR,
 
-            Assert.AreEqual(3, gCodeTypeGrouping.Count());
+                ErrorHandling = ErrorHandlingMode.THROWEXCEPTION
+            };
+
+            CheckerResult checkResult = PlausibilityChecker.CheckJob(job, config).GetAwaiter().GetResult();
+            Assert.AreEqual(OverallResult.ALLSUCCEDED, checkResult.Result);
+            Assert.AreEqual(0, checkResult.Errors.Count);
+            Assert.AreEqual(0, checkResult.Warnings.Count);
         }
 
         public static List<object[]> GCodeFiles
         {
             get
             {
-                FileInfo[] testFiles = dir.GetFiles("*.gcode"); //getting all .cli files
+                FileInfo[] testFiles = dir.GetFiles("*.gcode"); //getting all .gcode files
                 List<object[]> files = new List<object[]>(testFiles.Length);
                 for (int i = 0; i < testFiles.Length; i++)
                 {
