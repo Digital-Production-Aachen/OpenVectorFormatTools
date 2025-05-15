@@ -197,43 +197,53 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 }
             };
 
-            int gCodeCommandCount = gCodeCommands.Count;
+            //int gCodeCommandCount = gCodeCommands.Count;
             int percentComplete = 0;
 
-            for (int i = 0; i < gCodeCommandCount; i++)
+            using (StreamReader sr = new StreamReader(_filename))
             {
-                //commandChanges = commandStateTracker.UpdateState(gCodeCommands[i]);
-                switch (gCodeCommands[i])
-                {
-                    // Process command according to the command-type
-                    case MovementCommand movementCmd:
-                        ProcessMovementCmd(movementCmd);
-                        break;
-                    case PauseCommand pauseCmd:
-                        ProcessPauseCmd(pauseCmd);
-                        break;
-                    case ToolChangeCommand toolChangeCmd:
-                        ProcessToolChangeCmd(toolChangeCmd);
-                        break;
-                    case MonitoringCommand monitoringCmd:
-                        ProcessMonitoringCmd(monitoringCmd);
-                        break;
-                    case ProgramLogicsCommand programLogicsCmd:
-                        ProcessProgramLogicsCmd(programLogicsCmd);
-                        break;
-                    case MiscCommand miscCmd:
-                        ProcessMiscCmd(miscCmd);
-                        break;
-                }
+                string line;
+                GCodeConverter gCodeConverter = new GCodeConverter();
 
-                // Reset locking state for new vector blocks
-                VBlocked = false;
-
-                // Update progress
-                if (percentComplete != (int) (i + 1) * 100 / gCodeCommandCount)
+                while ((line = sr.ReadLine()) != null)
                 {
-                    percentComplete = (i + 1) * 100 / gCodeCommandCount;
-                    progress?.Update("Command " + i + " of " + gCodeCommandCount, percentComplete);
+                    object command = gCodeConverter.ParseLine(line);
+
+                    //commandChanges = commandStateTracker.UpdateState(gCodeCommands[i]);
+                    switch (command)
+                    {
+                        // Process command according to the command-type
+                        case MovementCommand movementCmd:
+                            ProcessMovementCmd(movementCmd);
+                            break;
+                        case PauseCommand pauseCmd:
+                            ProcessPauseCmd(pauseCmd);
+                            break;
+                        case ToolChangeCommand toolChangeCmd:
+                            ProcessToolChangeCmd(toolChangeCmd);
+                            break;
+                        case MonitoringCommand monitoringCmd:
+                            ProcessMonitoringCmd(monitoringCmd);
+                            break;
+                        case ProgramLogicsCommand programLogicsCmd:
+                            ProcessProgramLogicsCmd(programLogicsCmd);
+                            break;
+                        case MiscCommand miscCmd:
+                            ProcessMiscCmd(miscCmd);
+                            break;
+                    }
+
+                    // Reset locking state for new vector blocks
+                    VBlocked = false;
+
+                    // Update progress
+                    /*
+                    if (percentComplete != (int)(i + 1) * 100 / gCodeCommandCount)
+                    {
+                        percentComplete = (i + 1) * 100 / gCodeCommandCount;
+                        progress?.Update("Command " + i + " of " + gCodeCommandCount, percentComplete);
+                    }
+                    */
                 }
             }
 

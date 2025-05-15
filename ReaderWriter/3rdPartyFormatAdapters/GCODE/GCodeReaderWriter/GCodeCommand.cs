@@ -535,6 +535,82 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
     }
 
+    public class GCodeConverter
+    {
+        private readonly Dictionary<int, System.Type> _gCodeTranslations = new Dictionary<int, System.Type>
+        {
+            {0, typeof(LinearInterpolationCmd)},
+            {1, typeof(LinearInterpolationCmd)},
+            {2, typeof(CircularInterpolationCmd)},
+            {3, typeof(CircularInterpolationCmd)},
+            {4, typeof(PauseCommand)},
+        };
+
+        private Dictionary<int, System.Type> _mCodeTranslations = new Dictionary<int, System.Type>();
+
+        private Dictionary<int, System.Type> _tCodeTranslations = new Dictionary<int, System.Type>();
+
+        public GCodeConverter()
+        {
+            // Set culture info, so that floats are parsed correctly
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+        }
+
+        public GCodeCommand ParseLine(string serializedCmdLine)
+        {
+            string[] commentSplit = serializedCmdLine.Split(';');
+            string commandString = commentSplit[0].Trim();
+            string commentString = (commentSplit.Length > 1) ? commentSplit[1].Trim() : null;
+
+            if (string.IsNullOrEmpty(commandString))
+            {
+                if (string.IsNullOrEmpty(commentString))
+                {
+                    return null;
+                }
+                return Activator.CreateInstance(typeof(MiscCommand), new Object[] { PrepCode.Comment, 0, null, commentString }) as GCodeCommand;
+            }
+
+            string[] commandArr = commandString.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            char commandChar;
+
+            commandChar = char.ToUpper(commandArr[0][0]);
+
+            if (!System.Enum.TryParse(commandChar.ToString(), out PrepCode prepCode))
+                throw new ArgumentException($"Invalid preparatory function code: {commandChar} in line '{serializedCmdLine}'");
+
+            string commandNumber = commandArr[0].Substring(1);
+            if (!int.TryParse(commandNumber, out int codeNumber))
+                throw new ArgumentException($"Invalid number format: {commandNumber} in line '{serializedCmdLine}'");
+
+            Dictionary<char, float> commandParams = new Dictionary<char, float>();
+
+            foreach (var commandParam in commandArr.Skip(1))
+            {
+                if (float.TryParse(commandParam.Substring(1), out float paramValue))
+                {
+                    commandParams[commandParam[0]] = paramValue;
+                }
+                else if (commandParam.Length == 1)
+                {
+                    commandParams[commandParam[0]] = 0;
+                }
+                else
+                {
+                    throw new ArgumentException($"Invalid command parameter format: {commandParam} in line '{serializedCmdLine}'. Command parameters must be of format <char><float>");
+                }
+            }
+
+            if (_gCodeTranslations.TryGetValue(codeNumber, out System.Type gCodeClassType))
+            {
+                return Activator.CreateInstance(gCodeClassType, new Object[] { prepCode, codeNumber, commandParams, commentString }) as GCodeCommand;
+            }
+
+            return Activator.CreateInstance(typeof(MiscCommand), new Object[] { prepCode, codeNumber, commandParams, commentString }) as GCodeCommand;
+        }
+    }
+
     public class GCodeCommandList : List<GCodeCommand>
     {
         private readonly Dictionary<int, System.Type> _gCodeTranslations = new Dictionary<int, System.Type>
