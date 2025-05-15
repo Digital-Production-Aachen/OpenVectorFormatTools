@@ -85,7 +85,9 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
 
             foreach (string extension in FileWriterFactory.SupportedFileFormats)
             {
-                FileInfo target = new FileInfo(Path.GetTempFileName() + extension);
+                using TempDir tempDir = new TempDir();
+                string filename = Path.Combine(tempDir, testFile.Name);
+                FileInfo target = new FileInfo(filename + extension);
                 Console.WriteLine("Converting from {0} to {1}", testFile.Extension, target.Extension);
                 Debug.WriteLine("Converting from {0} to {1}", testFile.Extension, target.Extension);
 
