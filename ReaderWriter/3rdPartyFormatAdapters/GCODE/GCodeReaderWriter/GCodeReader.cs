@@ -291,14 +291,16 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     // Update speed first to check if marking params changed and new vector block is needed
                     UpdateSpeed(linearCmd.isOperation, linearCmd.feedRate);
 
-                    if (_currentVB.LineSequence == null)
+                    if (_currentVB.LineSequenceParaAdapt == null)
                     {
-                        _currentVB.LineSequence = new VectorBlock.Types.LineSequence();
+                        _currentVB.LineSequenceParaAdapt = new VectorBlock.Types.LineSequenceParaAdapt
+                        {   
+                        };
                     }
-                    _currentVB.LineSequence.Points.Add(absolutePositioning 
+                    _currentVB.LineSequenceParaAdapt.PointsWithParas.Add(absolutePositioning 
                         ? (linearCmd.xPosition ?? position.X) // Use absolute x-positioning
                         : (position.X + (linearCmd.xPosition ?? 0))); // Use relative xpositioning
-                    _currentVB.LineSequence.Points.Add(absolutePositioning
+                    _currentVB.LineSequenceParaAdapt.PointsWithParas.Add(absolutePositioning
                         ? (linearCmd.yPosition ?? position.Y) // Use absolute y-positioning
                         : (position.Y + (linearCmd.yPosition ?? 0))); // Use relative y-positioning
                 }
