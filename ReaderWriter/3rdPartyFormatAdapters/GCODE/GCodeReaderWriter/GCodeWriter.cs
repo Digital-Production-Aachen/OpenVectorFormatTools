@@ -39,15 +39,16 @@ namespace OpenVectorFormat.GCodeReaderWriter
 {
     public class GCodeWriter : FileWriter
     {
-        private IFileReaderWriterProgress progress;
-        private string filename;
+        private IFileReaderWriterProgress _progress;
+        private string _filename;
         private StreamWriter _fs;
 
 
         public override Job JobShell { get { return _jobShell; } }
         private Job _jobShell;
         float[] _lastPt = null;
-        float[] _currentZ = null;
+        float _currentZ;
+
 
 
         private NumberFormatInfo _nfi = new NumberFormatInfo();
@@ -65,16 +66,40 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         public new static List<string> SupportedFileFormats { get; } = new List<string>() { ".gcode" };
 
+
+        public void ProcessOVFtoGCode(OVFFileReader ovfReader, string gcodeOutputPath)
+        {
+            Job job = ovfReader.CacheJobToMemory();
+
+            if (job == null)
+                throw new InvalidOperationException("Failed to load job from OVF file.");
+            if (job.NumWorkPlanes <= 0)
+                throw new InvalidOperationException("No WorkPlanes found in job.");
+
+            this.SimpleJobWrite(job, gcodeOutputPath);
+        }
+
+
+
         public override void AppendWorkPlane(WorkPlane workPlane)
         {
-            _currentZ = new float[] { workPlane.ZPosInMm };
-            _writeGoPlaneZ(_currentZ);
+            _currentZ = workPlane.ZPosInMm;
 
-            for (uint i = 0; i < workPlane.Repeats + 1; i++)
+            for (uint repeatIndex = 0; repeatIndex < workPlane.Repeats + 1; repeatIndex++)
             {
-                for (int i_vectorblock = 0; i_vectorblock < workPlane.VectorBlocks.Count; i_vectorblock++)
+                for (int blockIndex = 0; blockIndex < workPlane.VectorBlocks.Count; blockIndex++)
                 {
-                    AddVectorBlock(workPlane.VectorBlocks[i_vectorblock]);
+                    VectorBlock block = workPlane.VectorBlocks[blockIndex];
+
+                    bool isFirstBlockInPlane = (repeatIndex == 0 && blockIndex == 0);
+
+                    bool injectZ = isFirstBlockInPlane &&
+                           (block.VectorDataCase == VectorBlock.VectorDataOneofCase.PointSequence ||
+                            block.VectorDataCase == VectorBlock.VectorDataOneofCase.Hatches ||
+                            block.VectorDataCase == VectorBlock.VectorDataOneofCase.Arcs ||
+                            block.VectorDataCase == VectorBlock.VectorDataOneofCase.LineSequence);
+
+                    AddVectorBlock(block, injectZ);
                 }
             }
         }
@@ -82,7 +107,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
         /// <inheritdoc/>
         public override void AppendVectorBlock(VectorBlock block)
         {
-            AddVectorBlock(block);
+            AddVectorBlock(block, false);
         }
 
         /// <inheritdoc/>
@@ -94,7 +119,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-        public void AddVectorBlock(VectorBlock block)
+        private void AddVectorBlock(VectorBlock block, bool injectZ)
         {
             for (ulong i = 0; i < block.Repeats + 1; i++)
             {
@@ -123,15 +148,15 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     case VectorBlock.VectorDataOneofCase.PointSequence3D:
                         {
                             float[] newPt;
-                            for (int i_point = 0; i_point < block.PointSequence3D.Points.Count; i_point += 3)
+                            for (int pointIndex = 0; pointIndex < block.PointSequence3D.Points.Count; pointIndex += 3)
                             {
-                                newPt = new float[3] { block.PointSequence3D.Points[i_point], block.PointSequence3D.Points[i_point + 1], block.PointSequence3D.Points[i_point + 2] };
+                                newPt = new float[3] { block.PointSequence3D.Points[pointIndex], block.PointSequence3D.Points[pointIndex + 1], block.PointSequence3D.Points[pointIndex + 2] };
 
-                                Console.WriteLine($"Point3D: X={newPt[0]}, Y={newPt[1]}, Z={newPt[2]}");
+                                Console.WriteLine($"PointSequence3D: X={newPt[0]}, Y={newPt[1]}, Z={newPt[2]}");
 
                                 if (_lastPt == null || !newPt.SequenceEqual(_lastPt))
                                 {
-                                    _writeGoPoint(newPt);
+                                    WriteGoPoint(newPt);
                                 }
                             }
                             break;
@@ -139,67 +164,67 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     case VectorBlock.VectorDataOneofCase.PointSequence:
                         {
                             float[] newPt;
-                            for (int i_point = 0; i_point < block.PointSequence.Points.Count; i_point += 2)
+                            for (int pointIndex = 0; pointIndex < block.PointSequence.Points.Count; pointIndex += 2)
                             {
-                                newPt = new float[2] { block.PointSequence.Points[i_point], block.PointSequence.Points[i_point + 1] };
-
-                                Console.WriteLine($"[PointSequence] X={newPt[0]} Y={newPt[1]}");
+                                if (injectZ && pointIndex == 0)
+                                {
+                                    newPt = new float[3] { block.PointSequence.Points[pointIndex], block.PointSequence.Points[pointIndex + 1], _currentZ };
+                                    Console.WriteLine($"[PointSequence with Z] X={newPt[0]} Y={newPt[1]} Z={newPt[2]}");
+                                }
+                                else
+                                {
+                                    newPt = new float[2] { block.PointSequence.Points[pointIndex], block.PointSequence.Points[pointIndex + 1] };
+                                    Console.WriteLine($"[PointSequence] X={newPt[0]} Y={newPt[1]}");
+                                }
 
                                 if (_lastPt == null || !newPt.SequenceEqual(_lastPt))
                                 {
-                                    _writeGoPoint(newPt);
+                                    WriteGoPoint(newPt);
                                 }
                             }
                             break;
                         }
-
-
-
-
-
                     case VectorBlock.VectorDataOneofCase.Hatches3D:
                         {
                             float[] startPt;
                             float[] endPt;
 
-                            for (int i_hatch_point = 0; i_hatch_point < block.Hatches3D.Points.Count; i_hatch_point += 6)
+                            for (int pointIndex = 0; pointIndex < block.Hatches3D.Points.Count; pointIndex += 6)
                             {
-                                startPt = new float[3] { block.Hatches3D.Points[i_hatch_point], block.Hatches3D.Points[i_hatch_point + 1], block.Hatches3D.Points[i_hatch_point + 2] };
-                                endPt = new float[3] { block.Hatches3D.Points[i_hatch_point + 3], block.Hatches3D.Points[i_hatch_point + 4], block.Hatches3D.Points[i_hatch_point + 5] };
+                                startPt = new float[3] { block.Hatches3D.Points[pointIndex], block.Hatches3D.Points[pointIndex + 1], block.Hatches3D.Points[pointIndex + 2] };
+                                endPt = new float[3] { block.Hatches3D.Points[pointIndex + 3], block.Hatches3D.Points[pointIndex + 4], block.Hatches3D.Points[pointIndex + 5] };
 
                                 Console.WriteLine($"[Hatches3D] Start: X={startPt[0]} Y={startPt[1]} Z={startPt[2]} | End: X={endPt[0]} Y={endPt[1]} Z={endPt[2]}");
 
-                                _writeGoPoint(startPt);
-                                _writeGoLine(endPt);
+                                WriteGoPoint(startPt);
+                                WriteGoLine(endPt);
                             }
                             break;
-
                         }
-
                     case VectorBlock.VectorDataOneofCase.Hatches:
                         {
                             float[] startPt;
                             float[] endPt;
 
-                            for (int i_hatch_point = 0; i_hatch_point < block.Hatches.Points.Count; i_hatch_point += 4)
+                            for (int pointIndex = 0; pointIndex < block.Hatches.Points.Count; pointIndex += 4)
                             {
-                                startPt = new float[2] { block.Hatches.Points[i_hatch_point], block.Hatches.Points[i_hatch_point + 1] };
-                                endPt = new float[2] { block.Hatches.Points[i_hatch_point + 2], block.Hatches.Points[i_hatch_point + 3] };
+                                if (injectZ && pointIndex == 0)
+                                {
+                                    startPt = new float[3] { block.Hatches.Points[pointIndex], block.Hatches.Points[pointIndex + 1], _currentZ };
+                                }
+                                else
+                                {
+                                    startPt = new float[2] { block.Hatches.Points[pointIndex], block.Hatches.Points[pointIndex + 1] };
+                                }
 
-                                Console.WriteLine($"[Hatches] Start: X={startPt[0]} Y={startPt[1]} | End: X={endPt[0]} Y={endPt[1]}");
+                                endPt = new float[2] { block.Hatches.Points[pointIndex + 2], block.Hatches.Points[pointIndex + 3] };
 
-                                _writeGoPoint(startPt);
-                                _writeGoLine(endPt);
+                                // Console.WriteLine($"[Hatches] Start: X={startPt[0]} Y={startPt[1]} | End: X={endPt[0]} Y={endPt[1]}");
+                                WriteGoPoint(startPt);
+                                WriteGoLine(endPt);
                             }
                             break;
-
                         }
-
-
-
-
-
-
                     case VectorBlock.VectorDataOneofCase.Arcs:
                         {
                             double angle = block.Arcs.Angle;
@@ -208,32 +233,22 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
                             float[] arcCenters;
 
-                            for (int i_arc_center = 0; i_arc_center < block.Arcs.Centers.Count; i_arc_center += 2)
+                            for (int centerIndex = 0; centerIndex < block.Arcs.Centers.Count; centerIndex += 2)
                             {
-                                arcCenters = new float[2] { block.Arcs.Centers[i_arc_center], block.Arcs.Centers[i_arc_center + 1] };
+                                arcCenters = new float[2] { block.Arcs.Centers[centerIndex], block.Arcs.Centers[centerIndex + 1] };
 
                                 Console.WriteLine($"[Arcs] Center: X={arcCenters[0]} Y={arcCenters[1]} Angle={angle} StartOffset: ({startPointX}, {startPointY})");
 
-                                _writeGoArc(arcCenters, startPointX, startPointY, angle);
+                                WriteGoArc(arcCenters, startPointX, startPointY, angle);
                             }
                             break;
                         }
-
                     case VectorBlock.VectorDataOneofCase.ExposurePause:
                         {
                             ulong newPause = block.ExposurePause.PauseInUs;
                             _fs.WriteLine("G4 P" + newPause.ToString(_nfi));
                             break;
                         }
-
-
-
-
-
-
-
-
-
                     case VectorBlock.VectorDataOneofCase.LineSequence3D:
                         {
                             float[] newPt;
@@ -241,50 +256,53 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
                             Console.WriteLine($"[LineSequence3D] Start: X={newPt[0]} Y={newPt[1]} Z={newPt[2]}");
 
-
                             if (_lastPt == null || !newPt.SequenceEqual(_lastPt))
                             {
-                                _writeGoPoint(newPt);
+                                WriteGoPoint(newPt);
                             }
 
-                            for (int i_lineSeq = 3; i_lineSeq < block.LineSequence3D.Points.Count; i_lineSeq += 3)
+                            for (int lineIndex = 3; lineIndex < block.LineSequence3D.Points.Count; lineIndex += 3)
                             {
-                                newPt = new float[3] { block.LineSequence3D.Points[i_lineSeq], block.LineSequence3D.Points[i_lineSeq + 1], block.LineSequence3D.Points[i_lineSeq + 2] };
+                                newPt = new float[3] { block.LineSequence3D.Points[lineIndex], block.LineSequence3D.Points[lineIndex + 1], block.LineSequence3D.Points[lineIndex + 2] };
 
                                 Console.WriteLine($"[LineSequence3D] LineTo: X={newPt[0]} Y={newPt[1]} Z={newPt[2]}");
 
 
-                                _writeGoLine(newPt);
+                                WriteGoLine(newPt);
                             }
                             break;
                         }
                     case VectorBlock.VectorDataOneofCase.LineSequence:
                         {
                             float[] newPt;
-                            newPt = new float[2] { block.LineSequence.Points[0], block.LineSequence.Points[1] };
 
-                            Console.WriteLine($"[LineSequence] Start: X={newPt[0]} Y={newPt[1]}");
-
+                            if (injectZ)
+                            {
+                                newPt = new float[3] { block.LineSequence.Points[0], block.LineSequence.Points[1], _currentZ };
+                                Console.WriteLine($"[LineSequence] Start: X={newPt[0]} Y={newPt[1]} Z={newPt[2]}");
+                            }
+                            else
+                            {
+                                newPt = new float[2] { block.LineSequence.Points[0], block.LineSequence.Points[1], };
+                                Console.WriteLine($"[LineSequence] Start: X={newPt[0]} Y={newPt[1]}");
+                            }
 
                             if (_lastPt == null || !newPt.SequenceEqual(_lastPt))
                             {
-                                _writeGoPoint(newPt);
+                                WriteGoPoint(newPt);
                             }
 
-                            for (int i_lineSeq = 2; i_lineSeq < block.LineSequence.Points.Count; i_lineSeq += 2)
+                            for (int lineIndex = 2; lineIndex < block.LineSequence.Points.Count; lineIndex += 2)
                             {
-                                newPt = new float[2] { block.LineSequence.Points[i_lineSeq], block.LineSequence.Points[i_lineSeq + 1] };
+                                newPt = new float[2] { block.LineSequence.Points[lineIndex], block.LineSequence.Points[lineIndex + 1] };
 
                                 Console.WriteLine($"[LineSequence] LineTo: X={newPt[0]} Y={newPt[1]}");
 
 
-                                _writeGoLine(newPt);
+                                WriteGoLine(newPt);
                             }
                             break;
                         }
-
-
-
 
                     default:
                         {
@@ -297,7 +315,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
 
 
-        private void _writeGoArc(float[] arcCenters, float startPointX, float startPointY, double angle)
+        private void WriteGoArc(float[] arcCenters, float startPointX, float startPointY, double angle)
         {
             double I = arcCenters[0] - startPointX;
             double J = arcCenters[1] - startPointY;
@@ -345,24 +363,24 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             return angle;
         }
-        private void _writeGoPlaneZ(float[] pt)
+        private void WriteGoPlaneZ(float[] pt)
         {
             Console.WriteLine($"[GCodeWriter] Writing Z postion of Work Plane : Z={pt[0]}");
             _fs.WriteLine("G0 Z{0}", pt[0].ToString(_nfi));
             _lastPt = pt;
         }
 
-        private void _writeGoPoint(float[] pt)
+        private void WriteGoPoint(float[] pt)
         {
             if (pt.Length == 3)
             {
-                Console.WriteLine($"[GCodeWriter] Writing 3D point: X={pt[0]} Y={pt[1]} Z={pt[2]}");
+                //Console.WriteLine($"[GCodeWriter] Writing 3D point: X={pt[0]} Y={pt[1]} Z={pt[2]}");
                 _fs.WriteLine("G0 X{0} Y{1} Z{2}", pt[0].ToString(_nfi), pt[1].ToString(_nfi), pt[2].ToString(_nfi));
                 _lastPt = pt;
             }
             else if (pt.Length == 2)
             {
-                Console.WriteLine($"[GCodeWriter] Writing 2D point: X={pt[0]} Y={pt[1]}");
+                //Console.WriteLine($"[GCodeWriter] Writing 2D point: X={pt[0]} Y={pt[1]}");
                 _fs.WriteLine("G0 X{0} Y{1}", pt[0].ToString(_nfi), pt[1].ToString(_nfi));
                 _lastPt = pt;
             }
@@ -372,17 +390,17 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-        private void _writeGoLine(float[] pt)
+        private void WriteGoLine(float[] pt)
         {
             if (pt.Length == 3)
             {
-                Console.WriteLine($"[GCodeWriter] Writing 3D point: X={pt[0]} Y={pt[1]} Z={pt[2]}");
+                //Console.WriteLine($"[GCodeWriter] Writing 3D point: X={pt[0]} Y={pt[1]} Z={pt[2]}");
                 _fs.WriteLine("G1 X{0} Y{1} Z{2}", pt[0].ToString(_nfi), pt[1].ToString(_nfi), pt[2].ToString(_nfi));
                 _lastPt = pt;
             }
             else if (pt.Length == 2)
             {
-                Console.WriteLine($"[GCodeWriter] Writing 2D point: X={pt[0]} Y={pt[1]}");
+                //Console.WriteLine($"[GCodeWriter] Writing 2D point: X={pt[0]} Y={pt[1]}");
                 _fs.WriteLine("G1 X{0} Y{1}", pt[0].ToString(_nfi), pt[1].ToString(_nfi));
                 _lastPt = pt;
             }
@@ -399,13 +417,21 @@ namespace OpenVectorFormat.GCodeReaderWriter
             CheckConsistence(job.NumWorkPlanes, job.WorkPlanes.Count);
             for (int i = 0; i < job.NumWorkPlanes; i++)
             {
-                CheckConsistence(job.WorkPlanes[i].NumBlocks, job.WorkPlanes[i].VectorBlocks.Count);
+                int expected = job.WorkPlanes[i].NumBlocks;
+                int actual = job.WorkPlanes[i].VectorBlocks.Count;
+
+                if (expected != actual)
+                {
+                    //CheckConsistence(job.WorkPlanes[i].NumBlocks, job.WorkPlanes[i].VectorBlocks.Count);
+                    Console.WriteLine($"[DEBUG] Inconsistency detected in WorkPlane {i}: Expected {expected}, Actual {actual}");
+                    throw new IOException("inconsistence in file detected");
+                }
             }
             _jobShell = job;
             _fileOperationInProgress = FileWriteOperation.CompleteWrite;
             _fs = new StreamWriter(filename);
-            this.filename = filename;
-            this.progress = progress;
+            this._filename = filename;
+            this._progress = progress;
             foreach (WorkPlane wp in job.WorkPlanes)
             {
                 AppendWorkPlane(wp);
@@ -422,8 +448,8 @@ namespace OpenVectorFormat.GCodeReaderWriter
             _jobShell = jobShell;
             _fileOperationInProgress = FileWriteOperation.PartialWrite;
             _fs = new StreamWriter(filename);
-            this.filename = filename;
-            this.progress = progress;
+            this._filename = filename;
+            this._progress = progress;
         }
 
         private void CheckConsistence(int number1, int number2)
@@ -436,3 +462,4 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
     }
 }
+

@@ -22,7 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -35,23 +35,32 @@ using OpenVectorFormat;
 using OpenVectorFormat.OVFReaderWriter;
 using OpenVectorFormat.ReaderWriter.UnitTests;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace UnitTests
 {
     [TestClass]
     public class GCodeWriterTest
     {
-        private string ovfFilePath = "C:\\Users\\sambi\\Source\\Repos\\OpenVectorFormatTools\\ReaderWriter\\UnitTests\\TestFiles\\bunny.ovf";
-        private string gcodeOutputPath = "C:\\Users\\sambi\\Documents\\temp\\output3.gcode";
+        private string ovfFilePath;
+        private string gcodeOutputPath;
         private OVFFileReader ovfReader;
         private GCodeWriter gcodeWriter;
 
         [TestInitialize]
         public void Setup()
         {
-            Assert.IsTrue(File.Exists(ovfFilePath), "OVF file not found");
+            var dir = new DirectoryInfo("TestFiles");
+            FileInfo[] files = dir.GetFiles("*.ovf");
+
+            Assert.IsTrue(files.Length > 0, "No OVF files found in TestFiles directory");
+
+            ovfFilePath = files[1].FullName;
+            gcodeOutputPath = Path.Combine(Path.GetTempPath(), "output_test.gcode");
 
             ovfReader = new OVFFileReader();
+            ovfReader.OpenJob(ovfFilePath);
+
             gcodeWriter = new GCodeWriter();
         }
 
@@ -59,82 +68,24 @@ namespace UnitTests
         [TestMethod]
         public void Test_OVF_To_GCode()
         {
-            ovfReader.OpenJob(ovfFilePath);
-            Job job = ovfReader.JobShell;
+            gcodeWriter.ProcessOVFtoGCode(ovfReader, gcodeOutputPath);
+            Assert.IsTrue(File.Exists(gcodeOutputPath), "G-code output file was not created");
 
-            Assert.IsNotNull(job, "Job is null");
-            Assert.IsTrue(job.NumWorkPlanes > 0, "No WorkPlanes in the OVF");
+            string[] lines = File.ReadAllLines(gcodeOutputPath);
+            Assert.IsTrue(lines.Length > 0, "Output file is empty");
 
-            List<WorkPlaneData> workPlanesData = new List<WorkPlaneData>();
+            var job = ovfReader.CacheJobToMemory();
+            int numberWorkplanes = job.NumWorkPlanes;
+            int numberZCoordinate = lines.Count(line => line.Contains("Z") && Regex.IsMatch(line, @"Z[-+]?\d+(\.\d+)?"));
 
-            for (int i = 0; i < job.NumWorkPlanes; i++)
-            {
-                var workPlane = ovfReader.GetWorkPlane(i);
-                Assert.IsNotNull(workPlane, $"WorkPlane {i} is null");
+            Console.WriteLine($"[INFO] WorkPlanes: {numberWorkplanes}, Z commands found in G-code: {numberZCoordinate}");
+            Assert.AreEqual(numberWorkplanes, numberZCoordinate, $"Expected {numberWorkplanes} Z commands (WorkPlanes), but found {numberZCoordinate}.");
 
+            string firstLine = lines[0].Trim();
+            string expectedFirstLine = "G0 X-18.0231 Y-4.8820124 Z3";
 
-                job.WorkPlanes.Add(workPlane);
-
-                List<VectorBlockData> vectorBlocksData = new List<VectorBlockData>();
-
-
-                for (int j = 0; j < workPlane.NumBlocks; j++)
-                {
-                    var vectorBlock = ovfReader.GetVectorBlock(i, j);
-                    Assert.IsNotNull(vectorBlock, $"VectorBlock {j} in WorkPlane {i}not null");
-
-
-                    vectorBlocksData.Add(new VectorBlockData
-                    {
-                        BlockIndex = j,
-                        BlockData = vectorBlock.ToString()
-                    });
-
-                    Console.WriteLine($"Processed VectorBlock {j} in WorkPlane {i}");
-                }
-
-
-
-
-
-
-                workPlanesData.Add(new WorkPlaneData
-                {
-                    WorkPlaneIndex = i,
-                    NumBlocks = workPlane.NumBlocks,
-                    VectorBlocks = vectorBlocksData
-                });
-
-                Console.WriteLine($"WorkPlane {i} with {workPlane.NumBlocks} VectorBlocks added to job.");
-            }
-
-            Console.WriteLine($"job.NumWorkPlanes = {job.NumWorkPlanes}");
-            Console.WriteLine($"job.WorkPlanes.Count = {job.WorkPlanes.Count}");
-
-            gcodeWriter.SimpleJobWrite(job, gcodeOutputPath);
-
-            Assert.IsTrue(File.Exists(gcodeOutputPath), "GCode file not created");
-            Assert.IsTrue(new FileInfo(gcodeOutputPath).Length > 0, "GCode file is empty");
-
-            Console.WriteLine("GCode successfully saved to: " + gcodeOutputPath);
-
-
-            //try
-            //{
-            //    Console.WriteLine($"job.NumWorkPlanes = {job.NumWorkPlanes}");
-            //    Console.WriteLine($"job.WorkPlanes.Count = {job.WorkPlanes.Count}");
-
-            //    gcodeWriter.SimpleJobWrite(job, gcodeOutputPath);
-
-            //    Assert.IsTrue(File.Exists(gcodeOutputPath), "GCode file not created");
-            //    Assert.IsTrue(new FileInfo(gcodeOutputPath).Length > 0, "GCode file is empty");
-
-            //    Console.WriteLine("GCode successfully saved to: " + gcodeOutputPath);
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine($"Saving error: {ex.Message}");
-            //}
+            Console.WriteLine($"[INFO] First line: \"{firstLine}\"");
+            Assert.AreEqual(expectedFirstLine, firstLine, $"First G-code line mismatch. Expected \"{expectedFirstLine}\", but got \"{firstLine}\".");
         }
 
         [TestCleanup]
@@ -142,21 +93,6 @@ namespace UnitTests
         {
             ovfReader?.Dispose();
             gcodeWriter?.Dispose();
-
-
-        }
-
-        public class WorkPlaneData
-        {
-            public int WorkPlaneIndex { get; set; }
-            public int NumBlocks { get; set; }
-            public List<VectorBlockData> VectorBlocks { get; set; }
-        }
-
-        public class VectorBlockData
-        {
-            public int BlockIndex { get; set; }
-            public string BlockData { get; set; }
         }
     }
 }
