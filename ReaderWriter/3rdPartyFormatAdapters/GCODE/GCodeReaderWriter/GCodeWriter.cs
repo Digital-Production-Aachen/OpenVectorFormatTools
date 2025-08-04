@@ -32,8 +32,10 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+//using GCodeReaderWriter;
+using OpenVectorFormat.OVFReaderWriter;
 
-namespace GCodeReaderWriter
+namespace OpenVectorFormat.GCodeReaderWriter
 {
     public class GCodeWriter : FileWriter
     {

@@ -31,7 +31,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OpenVectorFormat.AbstractReaderWriter;
 using OpenVectorFormat.GCodeReaderWriter;
 using OpenVectorFormat;
-using GCodeReaderWriter;
+//using GCodeReaderWriter;
 using OpenVectorFormat.OVFReaderWriter;
 using OpenVectorFormat.ReaderWriter.UnitTests;
 using System.IO;
@@ -41,8 +41,8 @@ namespace UnitTests
     [TestClass]
     public class GCodeWriterTest
     {
-        private string ovfFilePath = "\\bunny.ovf";
-        private string gcodeOutputPath = "\\output.gcode";
+        private string ovfFilePath = "C:\\Users\\sambi\\Source\\Repos\\OpenVectorFormatTools\\ReaderWriter\\UnitTests\\TestFiles\\bunny.ovf";
+        private string gcodeOutputPath = "C:\\Users\\sambi\\Documents\\temp\\output3.gcode";
         private OVFFileReader ovfReader;
         private GCodeWriter gcodeWriter;
 
@@ -50,10 +50,12 @@ namespace UnitTests
         public void Setup()
         {
             Assert.IsTrue(File.Exists(ovfFilePath), "OVF file not found");
+
             ovfReader = new OVFFileReader();
             gcodeWriter = new GCodeWriter();
         }
 
+        //[DynamicData("GCodeFiles")]
         [TestMethod]
         public void Test_OVF_To_GCode()
         {
