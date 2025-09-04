@@ -225,7 +225,7 @@ namespace GCodeReaderWriter.Commands
 
         public GCodeCommandList(string[] commandLines)
         {
-            // Set culture info, so that floats are parsed correctly
+            // Set culture info for correct float are parsing
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
