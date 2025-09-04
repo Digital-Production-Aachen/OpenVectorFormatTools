@@ -22,14 +22,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using OpenVectorFormat.GCodeReaderWriter;
 using System.IO;
 using OpenVectorFormat.FileReaderWriterFactory;
 using OpenVectorFormat.Plausibility;
+using GCodeReaderWriter.Commands;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
