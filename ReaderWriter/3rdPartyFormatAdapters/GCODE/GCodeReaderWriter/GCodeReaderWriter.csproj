@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\AbstractReaderWriter\AbstractReaderWriter.csproj" />
+    <ProjectReference Include="..\..\..\OVFReaderWriter\OVFReaderWriter.csproj" />
   </ItemGroup>
 
 </Project>
