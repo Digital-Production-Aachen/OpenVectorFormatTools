@@ -461,9 +461,4 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
     }
-<<<<<<< HEAD
 }
-=======
-}
-
->>>>>>> gcode_writer
