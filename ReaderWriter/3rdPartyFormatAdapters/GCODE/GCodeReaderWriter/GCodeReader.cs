@@ -32,6 +32,7 @@ using System.Numerics;
 using Google.Protobuf.Collections;
 using OVFDefinition;
 using System.Diagnostics;
+using GCodeReaderWriter.Commands;
 
 namespace OpenVectorFormat.GCodeReaderWriter
 {
@@ -288,14 +289,19 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
                 void UpdateLineSequence(LinearInterpolationCmd linearCmd)
                 {
-                    // Update speed first to check if marking params changed and new vector block is needed
-                    UpdateSpeed(linearCmd.isOperation, linearCmd.feedRate);
+                    // Check if linearCmd is a jump command and create new vector block if true
+                    if (!linearCmd.isOperation)
+                    {
+                        var lastJumpSpeed = currentMP.JumpSpeedInMmS;
+                        NewVectorBlock();
+                        currentMP.JumpSpeedInMmS = linearCmd.feedRate ?? lastJumpSpeed;
+                    }
 
+                    // Update or create new LineSequenceParaAdapt
                     if (_currentVB.LineSequenceParaAdapt == null)
                     {
-                        _currentVB.LineSequenceParaAdapt = new VectorBlock.Types.LineSequenceParaAdapt
-                        {   
-                        };
+                        _currentVB.LineSequenceParaAdapt = new VectorBlock.Types.LineSequenceParaAdapt();
+                        _currentVB.LineSequenceParaAdapt.Parameter.Add(VectorBlock.Types.LineSequenceParaAdapt.Types.AdaptedParameter.LaserSpeedInMmPerS);
                     }
                     _currentVB.LineSequenceParaAdapt.PointsWithParas.Add(absolutePositioning 
                         ? (linearCmd.xPosition ?? position.X) // Use absolute x-positioning
@@ -303,6 +309,8 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     _currentVB.LineSequenceParaAdapt.PointsWithParas.Add(absolutePositioning
                         ? (linearCmd.yPosition ?? position.Y) // Use absolute y-positioning
                         : (position.Y + (linearCmd.yPosition ?? 0))); // Use relative y-positioning
+                    _currentVB.LineSequenceParaAdapt.PointsWithParas.Add(linearCmd.feedRate // Use feedrate from command 
+                        ?? _currentVB.LineSequenceParaAdapt.PointsWithParas[_currentVB.LineSequenceParaAdapt.PointsWithParas.Count-3]); // Use last saved speed if command does not define a new feedrate
                 }
 
                 void UpdateArc(CircularInterpolationCmd circularCmd)
@@ -346,33 +354,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     _currentVB.Arcs.Centers.Add(position.X + circularCmd.xCenterRel ?? position.X);
                     _currentVB.Arcs.Centers.Add(position.Y + circularCmd.yCenterRel ?? position.Y);
                 }
-
-                void UpdateSpeed(bool isOperation, float? newSpeed)
-                {
-                    // Check if machine movement is travel or operation move and assign speed accordingly
-                    if (isOperation)
-                    {
-                        if (newSpeed != null && currentMP.LaserSpeedInMmPerS != newSpeed)
-                        {
-                            if (currentMP.LaserSpeedInMmPerS != 0 && !VBlocked)
-                            {
-                                NewVectorBlock();
-                            }
-                            currentMP.LaserSpeedInMmPerS = (float)newSpeed;
-                        }
-                    }
-                    else
-                    {
-                        if (newSpeed != null && currentMP.JumpSpeedInMmS != newSpeed)
-                        {
-                            if (currentMP.JumpSpeedInMmS != 0 && !VBlocked)
-                            {
-                                NewVectorBlock();
-                            }
-                            currentMP.JumpSpeedInMmS = (float)newSpeed;
-                        }
-                    }   
-                }
             }
 
             void ProcessPauseCmd(PauseCommand pauseCmd)
@@ -414,6 +395,33 @@ namespace OpenVectorFormat.GCodeReaderWriter
             void ProcessMiscCmd(MiscCommand miscCmd)
             {
 
+            }
+
+            void UpdateSpeed(bool isOperation, float? newSpeed)
+            {
+                // Check if machine movement is travel or operation move and assign speed accordingly
+                if (isOperation)
+                {
+                    if (newSpeed != null && currentMP.LaserSpeedInMmPerS != newSpeed)
+                    {
+                        if (currentMP.LaserSpeedInMmPerS != 0 && !VBlocked)
+                        {
+                            NewVectorBlock();
+                        }
+                        currentMP.LaserSpeedInMmPerS = (float)newSpeed;
+                    }
+                }
+                else
+                {
+                    if (newSpeed != null && currentMP.JumpSpeedInMmS != newSpeed)
+                    {
+                        if (currentMP.JumpSpeedInMmS != 0 && !VBlocked)
+                        {
+                            NewVectorBlock();
+                        }
+                        currentMP.JumpSpeedInMmS = (float)newSpeed;
+                    }
+                }
             }
 
             void UpdatePosition(MovementCommand movementCmd)
