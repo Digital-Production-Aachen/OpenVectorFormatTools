@@ -200,6 +200,8 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             //int gCodeCommandCount = gCodeCommands.Count;
             int percentComplete = 0;
+            int numLines = File.ReadLines(_filename).Count();
+            int numProcessedLines = 0;
 
             using (StreamReader sr = new StreamReader(_filename))
             {
@@ -238,13 +240,13 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     VBlocked = false;
 
                     // Update progress
-                    /*
-                    if (percentComplete != (int)(i + 1) * 100 / gCodeCommandCount)
+                    if (percentComplete != (int)(numProcessedLines + 1) * 100 / numLines)
                     {
-                        percentComplete = (i + 1) * 100 / gCodeCommandCount;
-                        progress?.Update("Command " + i + " of " + gCodeCommandCount, percentComplete);
+                        percentComplete = (numProcessedLines + 1) * 100 / numLines;
+                        progress?.Update("Command " + numProcessedLines + " of " + numLines + " processed.", percentComplete);
                     }
-                    */
+
+                    numProcessedLines++;
                 }
             }
 
@@ -292,8 +294,19 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     // Check if linearCmd is a jump command and create new vector block if true
                     if (!linearCmd.isOperation)
                     {
-                        var lastJumpSpeed = currentMP.JumpSpeedInMmS;
-                        NewVectorBlock();
+                        float lastJumpSpeed = 0.0f;
+                        try
+                        {
+                            lastJumpSpeed = currentMP.JumpSpeedInMmS;
+                        }
+                        catch
+                        {
+
+                        }
+                        if(!VBlocked)
+                        {
+                            NewVectorBlock();
+                        }
                         currentMP.JumpSpeedInMmS = linearCmd.feedRate ?? lastJumpSpeed;
                     }
 
@@ -303,14 +316,20 @@ namespace OpenVectorFormat.GCodeReaderWriter
                         _currentVB.LineSequenceParaAdapt = new VectorBlock.Types.LineSequenceParaAdapt();
                         _currentVB.LineSequenceParaAdapt.Parameter.Add(VectorBlock.Types.LineSequenceParaAdapt.Types.AdaptedParameter.LaserSpeedInMmPerS);
                     }
-                    _currentVB.LineSequenceParaAdapt.PointsWithParas.Add(absolutePositioning 
+                    _currentVB.LineSequenceParaAdapt.PointsWithParas.Add(
+                        absolutePositioning 
                         ? (linearCmd.xPosition ?? position.X) // Use absolute x-positioning
                         : (position.X + (linearCmd.xPosition ?? 0))); // Use relative xpositioning
-                    _currentVB.LineSequenceParaAdapt.PointsWithParas.Add(absolutePositioning
+                    _currentVB.LineSequenceParaAdapt.PointsWithParas.Add(
+                        absolutePositioning
                         ? (linearCmd.yPosition ?? position.Y) // Use absolute y-positioning
                         : (position.Y + (linearCmd.yPosition ?? 0))); // Use relative y-positioning
-                    _currentVB.LineSequenceParaAdapt.PointsWithParas.Add(linearCmd.feedRate // Use feedrate from command 
-                        ?? _currentVB.LineSequenceParaAdapt.PointsWithParas[_currentVB.LineSequenceParaAdapt.PointsWithParas.Count-3]); // Use last saved speed if command does not define a new feedrate
+                    _currentVB.LineSequenceParaAdapt.PointsWithParas.Add(
+                         linearCmd.feedRate
+                         ?? (_currentVB.LineSequenceParaAdapt.PointsWithParas.Count >= 3
+                         ? _currentVB.LineSequenceParaAdapt.PointsWithParas[_currentVB.LineSequenceParaAdapt.PointsWithParas.Count - 3]
+                         : 0f) // Default to 0 if not enough previous points
+                 );
                 }
 
                 void UpdateArc(CircularInterpolationCmd circularCmd)
@@ -452,10 +471,13 @@ namespace OpenVectorFormat.GCodeReaderWriter
             void NewVectorBlock()
             {
                 // Update current vector block with current marking params and add vector block to current work plane
-                _currentVB.MarkingParamsKey = NewMarkingParams();
-                _currentWP.VectorBlocks.Add(_currentVB);
-                _currentWP.NumBlocks++;
-                addedVectorBlocks.Add(_currentVB);
+                if (!VBempty)
+                {
+                    _currentVB.MarkingParamsKey = NewMarkingParams();
+                    _currentWP.VectorBlocks.Add(_currentVB);
+                    _currentWP.NumBlocks++;
+                    addedVectorBlocks.Add(_currentVB);
+                }
 
                 // Create new vector block
                 _currentVB = new VectorBlock()
