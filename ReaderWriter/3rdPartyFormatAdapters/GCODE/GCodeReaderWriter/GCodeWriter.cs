@@ -32,7 +32,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
-using OpenVectorFormat.GCodeReaderWriter;
+//using GCodeReaderWriter;
 using OpenVectorFormat.OVFReaderWriter;
 
 namespace OpenVectorFormat.GCodeReaderWriter
@@ -461,4 +461,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
     }
+<<<<<<< HEAD
 }
+=======
+}
+
+>>>>>>> gcode_writer
