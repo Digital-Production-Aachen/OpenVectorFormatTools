@@ -108,6 +108,11 @@ jobs:
       uses: actions/checkout@v3
       with:
         submodules: true
+    
+    - name: Setup Dotnet sdk
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
 
     - name: Set env
       run: |
@@ -120,6 +125,6 @@ jobs:
     - name: Push container
       run: | 
         echo ${{secrets.DOCKER_HUB_DEPLOY_KEY}} | docker login --username ${{secrets.DOCKER_HUB_USER}} --password-stdin
-        docker push digitalproductionaachen/ovf-grpc:$RELEASE_VERSION
-        docker tag digitalproductionaachen/ovf-grpc:$RELEASE_VERSION digitalproductionaachen/ovf-grpc:latest
-        docker push digitalproductionaachen/ovf-grpc:latest
+        #docker push digitalproductionaachen/ovf-grpc:$RELEASE_VERSION
+        #docker tag digitalproductionaachen/ovf-grpc:$RELEASE_VERSION #digitalproductionaachen/ovf-grpc:latest
+        #docker push digitalproductionaachen/ovf-grpc:latest
