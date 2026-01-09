@@ -39,6 +39,8 @@ using UnitTests;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
+    // These tests need a running instance of the grpc server, or will fail.
+    // Run FileReaderWriterFactoryGRPCWrapper project first.
     [TestClass]
     public class TestGRPCWrapper
     {
