@@ -172,7 +172,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
                     if (command != null)
                     {
-                        HandleCommand(command);
+                        ParseCommandObject(command);
                         _vbLocked = false;
                     }
 
@@ -206,12 +206,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
             _cacheState = CacheState.CompleteJobCached;
         }
 
-        protected void HandleCommand(GCodeCommand command)
+        protected void ParseCommandObject(GCodeCommand command)
         {
             switch (command)
             {
-                case LinearInterpolationCmd linear: HandleLinear(linear); break;
-                case CircularInterpolationCmd circular: HandleCircular(circular); break;
+                case LinearInterpolationCmd linear: ParseLinear(linear); break;
+                case CircularInterpolationCmd circular: ParseCircular(circular); break;
                 case PauseCommand pause: HandlePause(pause); break;
                 case PositioningToggleCommand toggle: HandleToggle(toggle); break;
                 case ToolChangeCommand toolChange: HandleToolChange(toolChange); break;
@@ -220,9 +220,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-        // Comand handler decide how to interpret the gcode commands.
+        // Comand parsers decide how to interpret the gcode commands.
         // Override these in a subclass to change the interpretation, e.g. for different machine types or to support more gcode commands.
-        protected void HandleLinear(LinearInterpolationCmd cmd)
+        protected void ParseLinear(LinearInterpolationCmd cmd)
         {
             if (cmd.zPosition.HasValue && cmd.zPosition.Value != _position.Z && !_vbEmpty)
                 NewWorkPlane();
@@ -255,7 +255,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             _vbEmpty = false;
         }
 
-        protected void HandleCircular(CircularInterpolationCmd cmd)
+        protected void ParseCircular(CircularInterpolationCmd cmd)
         {
             if (cmd.zPosition.HasValue && cmd.zPosition.Value != _position.Z && !_vbEmpty)
                 NewWorkPlane();
@@ -301,7 +301,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             _vbEmpty = false;
         }
 
-        protected void HandlePause(PauseCommand cmd)
+        protected void ParsePause(PauseCommand cmd)
         {
             NewVectorBlock();
             _currentVB.ExposurePause = new VectorBlock.Types.ExposurePause
@@ -312,22 +312,22 @@ namespace OpenVectorFormat.GCodeReaderWriter
             NewVectorBlock();
         }
 
-        protected void HandleToggle(PositioningToggleCommand cmd)
+        protected void ParseToggle(PositioningToggleCommand cmd)
         {
             _absolutePositioning = cmd.isAbsolute;
         }
 
-        protected void HandleToolChange(ToolChangeCommand cmd)
+        protected void ParseToolChange(ToolChangeCommand cmd)
         {
             return;
         }
 
-        protected void HandleMonitoring(MonitoringCommand cmd)
+        protected void ParseMonitoring(MonitoringCommand cmd)
         {
             return;
         }
 
-        protected void HandleMisc(MiscCommand cmd)
+        protected void ParseMisc(MiscCommand cmd)
         {
             return;
         }
