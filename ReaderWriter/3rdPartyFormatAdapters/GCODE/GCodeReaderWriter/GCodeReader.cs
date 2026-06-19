@@ -212,11 +212,11 @@ namespace OpenVectorFormat.GCodeReaderWriter
             {
                 case LinearInterpolationCmd linear: ParseLinear(linear); break;
                 case CircularInterpolationCmd circular: ParseCircular(circular); break;
-                case PauseCommand pause: HandlePause(pause); break;
-                case PositioningToggleCommand toggle: HandleToggle(toggle); break;
-                case ToolChangeCommand toolChange: HandleToolChange(toolChange); break;
-                case MonitoringCommand monitor: HandleMonitoring(monitor); break;
-                case MiscCommand misc: HandleMisc(misc); break;
+                case PauseCommand pause: ParsePause(pause); break;
+                case PositioningToggleCommand toggle: ParseToggle(toggle); break;
+                case ToolChangeCommand toolChange: ParseToolChange(toolChange); break;
+                case MonitoringCommand monitor: ParseMonitoring(monitor); break;
+                case MiscCommand misc: ParseMisc(misc); break;
             }
         }
 
