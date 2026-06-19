@@ -22,9 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
-﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace GCodeReaderWriter.Commands
 {
@@ -32,23 +30,17 @@ namespace GCodeReaderWriter.Commands
     {
         public ToolParams toolParams;
 
-        public ToolChangeCommand(PrepCode prepCode, int codeNumber, ToolParams toolParams, string comment = null) : base(prepCode, codeNumber, null, comment)
+        public ToolChangeCommand(PrepCode prepCode, int codeNumber, ToolParams toolParams, string comment = null)
+            : base(prepCode, codeNumber, null, comment)
         {
             this.toolParams = toolParams;
         }
 
-        public ToolChangeCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
+        public ToolChangeCommand(PrepCode prepCode, int codeNumber,
+                                 Dictionary<char, float> commandParams = null, string comment = null)
+            : base(prepCode, codeNumber, commandParams, comment)
         {
-            InitParameterMap();
-            if (commandParams != null)
-            {
-                ParseParams(commandParams);
-            }
-        }
-
-        public override string ToString()
-        {
-            return base.ToString();
+            ParseParams(commandParams);
         }
     }
 }

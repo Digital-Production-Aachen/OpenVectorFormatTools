@@ -22,35 +22,25 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace GCodeReaderWriter.Commands
 {
     public abstract class ProgramLogicsCommand : GCodeCommand
     {
-        public ProgramLogicsCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
+        public ProgramLogicsCommand(PrepCode prepCode, int codeNumber,
+                                    Dictionary<char, float> commandParams = null, string comment = null)
+            : base(prepCode, codeNumber, commandParams, comment)
         {
-            InitParameterMap();
-            if (commandParams != null)
-            {
-                ParseParams(commandParams);
-            }
+            ParseParams(commandParams);
         }
 
-        public ProgramLogicsCommand(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null) : base(gCode, commandParams, comment)
+        public ProgramLogicsCommand(GCode gCode,
+                                    Dictionary<char, float> commandParams = null, string comment = null)
+            : base(gCode, commandParams, comment)
         {
-            InitParameterMap();
-            if (commandParams != null)
-            {
-                ParseParams(commandParams);
-            }
-        }
-
-        public override string ToString()
-        {
-            return base.ToString();
+            ParseParams(commandParams);
         }
     }
 
@@ -58,88 +48,48 @@ namespace GCodeReaderWriter.Commands
     {
         public readonly bool isAbsolute;
 
-        public PositioningToggleCommand(PrepCode prepCode, int codeNumber, bool isAbsolute, string comment = null) : base(prepCode, codeNumber, null, comment)
+        public PositioningToggleCommand(PrepCode prepCode, int codeNumber,
+                                        Dictionary<char, float> commandParams = null, string comment = null)
+            : base(prepCode, codeNumber, commandParams, comment)
         {
-            this.isAbsolute = checkPositioning();
-        }
-        public PositioningToggleCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
-        {
-            isAbsolute = checkPositioning();
+            isAbsolute = CheckPositioning();
         }
 
-        public PositioningToggleCommand(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null) : base(gCode, commandParams, comment)
+        public PositioningToggleCommand(GCode gCode,
+                                        Dictionary<char, float> commandParams = null, string comment = null)
+            : base(gCode, commandParams, comment)
         {
-            isAbsolute = checkPositioning();
+            isAbsolute = CheckPositioning();
         }
 
-        private bool checkPositioning()
+        private bool CheckPositioning()
         {
             if (gCode.codeNumber == 90 || gCode.codeNumber == 91)
-            {
                 return gCode.codeNumber == 90;
-            }
-            else
-            {
-                throw new ArgumentException($"Invalid code number for positioning toggle: {gCode.codeNumber} in line '{this}'");
-            }
-        }
-
-        public override string ToString()
-        {
-            return base.ToString();
+            throw new ArgumentException(
+                $"Invalid code number for positioning toggle: {gCode.codeNumber} in line '{this}'");
         }
     }
 
     public class BlockEndCmd : ProgramLogicsCommand
     {
-        public BlockEndCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, null, comment)
-        {
-            InitParameterMap();
-            if (commandParams != null)
-            {
-                ParseParams(commandParams);
-            }
-        }
+        public BlockEndCmd(PrepCode prepCode, int codeNumber,
+                           Dictionary<char, float> commandParams = null, string comment = null)
+            : base(prepCode, codeNumber, commandParams, comment) { }
 
-        public BlockEndCmd(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null) : base(gCode, commandParams, comment)
-        {
-            InitParameterMap();
-            if (commandParams != null)
-            {
-                ParseParams(commandParams);
-            }
-        }
-
-
-        public override string ToString()
-        {
-            return base.ToString();
-        }
+        public BlockEndCmd(GCode gCode,
+                           Dictionary<char, float> commandParams = null, string comment = null)
+            : base(gCode, commandParams, comment) { }
     }
 
     public class ProgramEndCmd : ProgramLogicsCommand
     {
-        public ProgramEndCmd(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null) : base(prepCode, codeNumber, commandParams, comment)
-        {
-            InitParameterMap();
-            if (commandParams != null)
-            {
-                ParseParams(commandParams);
-            }
-        }
+        public ProgramEndCmd(PrepCode prepCode, int codeNumber,
+                             Dictionary<char, float> commandParams = null, string comment = null)
+            : base(prepCode, codeNumber, commandParams, comment) { }
 
-        public ProgramEndCmd(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null) : base(gCode, commandParams, comment)
-        {
-            InitParameterMap();
-            if (commandParams != null)
-            {
-                ParseParams(commandParams);
-            }
-        }
-
-        public override string ToString()
-        {
-            return base.ToString();
-        }
+        public ProgramEndCmd(GCode gCode,
+                             Dictionary<char, float> commandParams = null, string comment = null)
+            : base(gCode, commandParams, comment) { }
     }
 }

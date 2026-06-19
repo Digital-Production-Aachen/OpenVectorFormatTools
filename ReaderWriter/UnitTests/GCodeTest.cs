@@ -73,13 +73,18 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
 
         [DynamicData("GCodeFiles")]
         [TestMethod]
-        public void TestGCodeToObject(FileInfo fileName)
+        public void TestGCodeToObject(FileInfo testFile)
         {
-            string[] testCommands = File.ReadAllLines(fileName.FullName);
+            string[] testCommands = File.ReadAllLines(testFile.FullName);
 
-            GCodeCommandList gCodeCommandList = new GCodeCommandList(testCommands);
-            Assert.AreEqual(19331, gCodeCommandList.OfType<LinearInterpolationCmd>().ToList().Count);
-            Assert.AreEqual(183, gCodeCommandList.OfType<MiscCommand>().ToList().Count);
+            using (var reader = FileReaderWriterFactory.FileReaderFactory.CreateNewReader(testFile.Extension))
+            {
+                reader.OpenJob(testFile.FullName, new FileReaderWriterFactory.FileReaderWriterProgress());
+                var job = reader.CacheJobToMemory();
+
+                Assert.AreEqual(job.VectorCount(), 3407+15924); // G0 +  G1 commands
+            }
+
         }
 
         [DynamicData("GCodeFiles")]
