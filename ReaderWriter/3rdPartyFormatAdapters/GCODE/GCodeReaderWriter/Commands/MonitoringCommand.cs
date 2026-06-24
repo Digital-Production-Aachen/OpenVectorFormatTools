@@ -35,7 +35,5 @@ namespace GCodeReaderWriter.Commands
         {
             ParseParams(commandParams);
         }
-
-        public override string ToString() => gCode.ToString() + ToStringSuffix();
     }
 }
