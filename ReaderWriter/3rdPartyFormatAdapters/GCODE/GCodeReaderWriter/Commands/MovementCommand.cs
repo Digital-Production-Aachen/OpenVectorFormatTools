@@ -73,8 +73,8 @@ namespace GCodeReaderWriter.Commands
             parameterMap.Add('F', f => feedRate = f);
         }
 
-        public override string ToString()
-            => base.ToString()
+        protected override string BuildStringFromParams()
+            => base.BuildStringFromParams()
              + (feedRate.HasValue ? $" F{feedRate}" : "")
              + (xPosition.HasValue ? $" X{xPosition}" : "")
              + (yPosition.HasValue ? $" Y{yPosition}" : "")
@@ -168,8 +168,8 @@ namespace GCodeReaderWriter.Commands
                 $"Invalid code number for circular interpolation: {gCode.codeNumber} in line '{this}'");
         }
 
-        public override string ToString()
-            => base.ToString()
+        protected override string BuildStringFromParams()
+            => base.BuildStringFromParams()
              + (xCenterRel.HasValue ? $" I{xCenterRel}" : "")
              + (yCenterRel.HasValue ? $" J{yCenterRel}" : "");
     }

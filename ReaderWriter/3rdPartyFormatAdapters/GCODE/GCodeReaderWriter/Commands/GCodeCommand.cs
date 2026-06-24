@@ -98,7 +98,18 @@ namespace GCodeReaderWriter.Commands
             miscParams = commandParams;
         }
 
-        public override string ToString() => gCode.ToString();
+        protected string BuildStringSuffix()
+        {
+            return string.Join(" ", miscParams.Keys.Select(k => $"{k}{miscParams[k]}")) + (comment != null ? $" ; {comment}" : ""); ;
+        }
+
+        protected virtual string BuildStringFromParams()
+        {
+            return string.Join(" ", recordedParams.Select(k => $"{k}{miscParams[k]}"));
+        }
+
+        public override string ToString() => gCode.ToString() + BuildStringFromParams() + BuildStringSuffix();
+
     }
 
     public class GCodeConverter

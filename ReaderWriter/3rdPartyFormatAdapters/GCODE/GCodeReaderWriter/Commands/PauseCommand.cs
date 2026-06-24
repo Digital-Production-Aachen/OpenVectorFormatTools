@@ -57,5 +57,9 @@ namespace GCodeReaderWriter.Commands
             parameterMap.Add('P', p => duration = (int)p);              // in milliseconds
             parameterMap.Add('S', s => duration = (int)(s * 1000f));    // seconds → ms
         }
+
+        protected override string BuildStringFromParams()
+            => base.BuildStringFromParams()
+             + $" P{duration}";
     }
 }

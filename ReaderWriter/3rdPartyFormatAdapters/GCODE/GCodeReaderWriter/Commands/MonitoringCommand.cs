@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 using System.Collections.Generic;
+using System.Linq;
 
 namespace GCodeReaderWriter.Commands
 {
@@ -34,5 +35,7 @@ namespace GCodeReaderWriter.Commands
         {
             ParseParams(commandParams);
         }
+
+        public override string ToString() => gCode.ToString() + ToStringSuffix();
     }
 }
