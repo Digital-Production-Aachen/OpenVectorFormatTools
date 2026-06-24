@@ -124,24 +124,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
             for (ulong i = 0; i < block.Repeats + 1; i++)
             {
                 MarkingParams newParams = new MarkingParams();
-                //if (block.MarkingParamsKey != 0 || _jobShell.MarkingParamsMap.Count != 0)
-                //{
-                //    newParams = _jobShell.MarkingParamsMap[block.MarkingParamsKey];
-                //    if (_lastWrittenParams == null ||
-                //        _lastWrittenParams.JumpDelayInUs != newParams.JumpDelayInUs)
-                //    {
-                //        _fs.WriteLine("M"
-                //            + newParams.JumpDelayInUs.ToString(_nfi)); // change for M
-                //    }
-                //    if (_lastWrittenParams == null ||
-                //        _lastWrittenParams.JumpDelayInUs != newParams.JumpDelayInUs)
-                //    {
-                //        _fs.WriteLine("T" 
-                //            + newParams.JumpDelayInUs.ToString(_nfi)); // change for T
-                //    }
-
-                //    _lastWrittenParams = newParams;
-                //}
 
                 switch (block.VectorDataCase)
                 {
@@ -334,10 +316,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
             double endX = arcCenters[0] + radius * Math.Cos(angleFinal);
             double endY = arcCenters[1] + radius * Math.Sin(angleFinal);
 
-
-
-
-
             if (angle > 0)
             {
                 _fs.WriteLine("G2 X{0} Y{1} I{2} J{3}", endX.ToString(_nfi), endY.ToString(_nfi), I.ToString(_nfi), J.ToString(_nfi));
@@ -409,8 +387,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 throw new InvalidDataException("Point needs to contain 2 or 3 values");
             }
         }
-
-
 
         public override void SimpleJobWrite(Job job, string filename, IFileReaderWriterProgress progress = null)
         {
