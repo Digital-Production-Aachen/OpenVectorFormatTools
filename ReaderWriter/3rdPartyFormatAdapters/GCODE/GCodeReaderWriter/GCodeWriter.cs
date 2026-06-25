@@ -126,8 +126,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
                             {
                                 newPt = new float[3] { block.PointSequence3D.Points[pointIndex], block.PointSequence3D.Points[pointIndex + 1], block.PointSequence3D.Points[pointIndex + 2] };
 
-                                Console.WriteLine($"PointSequence3D: X={newPt[0]}, Y={newPt[1]}, Z={newPt[2]}");
-
                                 if (_lastPt == null || !newPt.SequenceEqual(_lastPt))
                                 {
                                     WriteGoPoint(newPt);
@@ -143,12 +141,10 @@ namespace OpenVectorFormat.GCodeReaderWriter
                                 if (injectZ && pointIndex == 0)
                                 {
                                     newPt = new float[3] { block.PointSequence.Points[pointIndex], block.PointSequence.Points[pointIndex + 1], _currentZ };
-                                    Console.WriteLine($"[PointSequence with Z] X={newPt[0]} Y={newPt[1]} Z={newPt[2]}");
                                 }
                                 else
                                 {
                                     newPt = new float[2] { block.PointSequence.Points[pointIndex], block.PointSequence.Points[pointIndex + 1] };
-                                    Console.WriteLine($"[PointSequence] X={newPt[0]} Y={newPt[1]}");
                                 }
 
                                 if (_lastPt == null || !newPt.SequenceEqual(_lastPt))
@@ -167,8 +163,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
                             {
                                 startPt = new float[3] { block.Hatches3D.Points[pointIndex], block.Hatches3D.Points[pointIndex + 1], block.Hatches3D.Points[pointIndex + 2] };
                                 endPt = new float[3] { block.Hatches3D.Points[pointIndex + 3], block.Hatches3D.Points[pointIndex + 4], block.Hatches3D.Points[pointIndex + 5] };
-
-                                Console.WriteLine($"[Hatches3D] Start: X={startPt[0]} Y={startPt[1]} Z={startPt[2]} | End: X={endPt[0]} Y={endPt[1]} Z={endPt[2]}");
 
                                 WriteGoPoint(startPt);
                                 WriteGoLine(endPt);
@@ -193,7 +187,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
                                 endPt = new float[2] { block.Hatches.Points[pointIndex + 2], block.Hatches.Points[pointIndex + 3] };
 
-                                // Console.WriteLine($"[Hatches] Start: X={startPt[0]} Y={startPt[1]} | End: X={endPt[0]} Y={endPt[1]}");
                                 WriteGoPoint(startPt);
                                 WriteGoLine(endPt);
                             }
@@ -211,8 +204,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
                             {
                                 arcCenters = new float[2] { block.Arcs.Centers[centerIndex], block.Arcs.Centers[centerIndex + 1] };
 
-                                Console.WriteLine($"[Arcs] Center: X={arcCenters[0]} Y={arcCenters[1]} Angle={angle} StartOffset: ({startPointX}, {startPointY})");
-
                                 WriteGoArc(arcCenters, startPointX, startPointY, angle);
                             }
                             break;
@@ -228,8 +219,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
                             float[] newPt;
                             newPt = new float[3] { block.LineSequence3D.Points[0], block.LineSequence3D.Points[1], block.LineSequence3D.Points[2] };
 
-                            Console.WriteLine($"[LineSequence3D] Start: X={newPt[0]} Y={newPt[1]} Z={newPt[2]}");
-
                             if (_lastPt == null || !newPt.SequenceEqual(_lastPt))
                             {
                                 WriteGoPoint(newPt);
@@ -238,9 +227,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
                             for (int lineIndex = 3; lineIndex < block.LineSequence3D.Points.Count; lineIndex += 3)
                             {
                                 newPt = new float[3] { block.LineSequence3D.Points[lineIndex], block.LineSequence3D.Points[lineIndex + 1], block.LineSequence3D.Points[lineIndex + 2] };
-
-                                Console.WriteLine($"[LineSequence3D] LineTo: X={newPt[0]} Y={newPt[1]} Z={newPt[2]}");
-
 
                                 WriteGoLine(newPt);
                             }
@@ -253,12 +239,10 @@ namespace OpenVectorFormat.GCodeReaderWriter
                             if (injectZ)
                             {
                                 newPt = new float[3] { block.LineSequence.Points[0], block.LineSequence.Points[1], _currentZ };
-                                Console.WriteLine($"[LineSequence] Start: X={newPt[0]} Y={newPt[1]} Z={newPt[2]}");
                             }
                             else
                             {
                                 newPt = new float[2] { block.LineSequence.Points[0], block.LineSequence.Points[1], };
-                                Console.WriteLine($"[LineSequence] Start: X={newPt[0]} Y={newPt[1]}");
                             }
 
                             if (_lastPt == null || !newPt.SequenceEqual(_lastPt))
@@ -269,9 +253,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
                             for (int lineIndex = 2; lineIndex < block.LineSequence.Points.Count; lineIndex += 2)
                             {
                                 newPt = new float[2] { block.LineSequence.Points[lineIndex], block.LineSequence.Points[lineIndex + 1] };
-
-                                Console.WriteLine($"[LineSequence] LineTo: X={newPt[0]} Y={newPt[1]}");
-
 
                                 WriteGoLine(newPt);
                             }
@@ -330,7 +311,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
         private void WriteGoPlaneZ(float[] pt)
         {
-            Console.WriteLine($"[GCodeWriter] Writing Z postion of Work Plane : Z={pt[0]}");
             _fs.WriteLine("G0 Z{0}", pt[0].ToString(_nfi));
             _lastPt = pt;
         }
@@ -339,13 +319,11 @@ namespace OpenVectorFormat.GCodeReaderWriter
         {
             if (pt.Length == 3)
             {
-                //Console.WriteLine($"[GCodeWriter] Writing 3D point: X={pt[0]} Y={pt[1]} Z={pt[2]}");
                 _fs.WriteLine("G0 X{0} Y{1} Z{2}", pt[0].ToString(_nfi), pt[1].ToString(_nfi), pt[2].ToString(_nfi));
                 _lastPt = pt;
             }
             else if (pt.Length == 2)
             {
-                //Console.WriteLine($"[GCodeWriter] Writing 2D point: X={pt[0]} Y={pt[1]}");
                 _fs.WriteLine("G0 X{0} Y{1}", pt[0].ToString(_nfi), pt[1].ToString(_nfi));
                 _lastPt = pt;
             }
@@ -359,13 +337,11 @@ namespace OpenVectorFormat.GCodeReaderWriter
         {
             if (pt.Length == 3)
             {
-                //Console.WriteLine($"[GCodeWriter] Writing 3D point: X={pt[0]} Y={pt[1]} Z={pt[2]}");
                 _fs.WriteLine("G1 X{0} Y{1} Z{2}", pt[0].ToString(_nfi), pt[1].ToString(_nfi), pt[2].ToString(_nfi));
                 _lastPt = pt;
             }
             else if (pt.Length == 2)
             {
-                //Console.WriteLine($"[GCodeWriter] Writing 2D point: X={pt[0]} Y={pt[1]}");
                 _fs.WriteLine("G1 X{0} Y{1}", pt[0].ToString(_nfi), pt[1].ToString(_nfi));
                 _lastPt = pt;
             }
@@ -385,9 +361,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
                 if (expected != actual)
                 {
-                    //CheckConsistence(job.WorkPlanes[i].NumBlocks, job.WorkPlanes[i].VectorBlocks.Count);
-                    Console.WriteLine($"[DEBUG] Inconsistency detected in WorkPlane {i}: Expected {expected}, Actual {actual}");
-                    throw new IOException("inconsistence in file detected");
+                    throw new IOException($"Inconsistency detected in WorkPlane {i}: Expected {expected}, Actual {actual}");
                 }
             }
             _jobShell = job;
