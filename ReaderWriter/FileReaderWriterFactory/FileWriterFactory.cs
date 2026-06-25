@@ -53,6 +53,10 @@ namespace OpenVectorFormat.FileReaderWriterFactory
             {
                 newFileWriter = new CLIWriterAdapter();
             }
+            else if (GCodeReaderWriter.GCodeWriter.SupportedFileFormats.Contains(extension, StringComparer.OrdinalIgnoreCase))
+            {
+                newFileWriter = new GCodeReaderWriter.GCodeWriter();
+            }
             else
             {
                 throw new ArgumentException("format " + extension + " is not supported");
@@ -67,6 +71,7 @@ namespace OpenVectorFormat.FileReaderWriterFactory
                 formats.AddRange(OVFReaderWriter.OVFFileWriter.SupportedFileFormats);
                 formats.AddRange(ASPFileReaderWriter.ASPFileWriter.SupportedFileFormats);
                 formats.AddRange(CLIWriterAdapter.SupportedFileFormats);
+                formats.AddRange(GCodeReaderWriter.GCodeWriter.SupportedFileFormats);
                 return formats;
             }
         }
