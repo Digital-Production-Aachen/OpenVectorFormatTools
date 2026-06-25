@@ -39,17 +39,16 @@ namespace OpenVectorFormat.GCodeReaderWriter
 {
     public class GCodeWriter : FileWriter
     {
+        public new static List<string> SupportedFileFormats { get; } = new List<string> { ".gcode", ".gco" };
+
         private IFileReaderWriterProgress _progress;
         private string _filename;
         private StreamWriter _fs;
-
 
         public override Job JobShell { get { return _jobShell; } }
         private Job _jobShell;
         float[] _lastPt = null;
         float _currentZ;
-
-
 
         private NumberFormatInfo _nfi = new NumberFormatInfo();
 
@@ -64,9 +63,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         private MarkingParams _lastWrittenParams = null;
 
-        public new static List<string> SupportedFileFormats { get; } = new List<string>() { ".gcode" };
-
-
         public void ProcessOVFtoGCode(OVFFileReader ovfReader, string gcodeOutputPath)
         {
             Job job = ovfReader.CacheJobToMemory();
@@ -78,8 +74,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
             this.SimpleJobWrite(job, gcodeOutputPath);
         }
-
-
 
         public override void AppendWorkPlane(WorkPlane workPlane)
         {
@@ -104,13 +98,11 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-        /// <inheritdoc/>
         public override void AppendVectorBlock(VectorBlock block)
         {
             AddVectorBlock(block, false);
         }
 
-        /// <inheritdoc/>
         public override void Dispose()
         {
             if (_fileOperationInProgress != FileWriteOperation.None)
@@ -293,10 +285,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 }
             }
         }
-
-
-
-
         private void WriteGoArc(float[] arcCenters, float startPointX, float startPointY, double angle)
         {
             double I = arcCenters[0] - startPointX;
@@ -329,7 +317,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 throw new InvalidDataException("Point needs to contain 2 or 3 values");
             }
         }
-
         double NormalizeAngleDegrees(double angle)
         {
             angle = angle % (2 * Math.PI);
@@ -415,10 +402,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
             _fs.Close();
             _fileOperationInProgress = FileWriteOperation.None;
         }
-
-
-
-        /// <inheritdoc/>
         public override void StartWritePartial(Job jobShell, string filename, IFileReaderWriterProgress progress = null)
         {
             _jobShell = jobShell;
@@ -427,7 +410,6 @@ namespace OpenVectorFormat.GCodeReaderWriter
             this._filename = filename;
             this._progress = progress;
         }
-
         private void CheckConsistence(int number1, int number2)
         {
             if (number1 != number2)
