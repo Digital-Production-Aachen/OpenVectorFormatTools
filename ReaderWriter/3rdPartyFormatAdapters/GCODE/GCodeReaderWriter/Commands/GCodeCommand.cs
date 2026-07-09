@@ -26,6 +26,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using static System.FormattableString;
 
 namespace GCodeReaderWriter.Commands
 {
@@ -100,7 +101,7 @@ namespace GCodeReaderWriter.Commands
 
         protected string BuildStringSuffix()
         {
-            return string.Join(" ", miscParams.Keys.Select(k => $"{k}{miscParams[k]}")) + (comment != null ? $" ; {comment}" : ""); ;
+            return string.Join(" ", miscParams.Keys.Select(k => Invariant($"{k}{miscParams[k]}"))) + (comment != null ? $" ; {comment}" : "");
         }
 
         protected virtual string BuildStringFromParams()

@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 using System;
 using System.Collections.Generic;
+using static System.FormattableString;
 
 namespace GCodeReaderWriter.Commands
 {
@@ -75,10 +76,10 @@ namespace GCodeReaderWriter.Commands
 
         protected override string BuildStringFromParams()
             => base.BuildStringFromParams()
-             + (feedRate.HasValue ? $" F{feedRate}" : "")
-             + (xPosition.HasValue ? $" X{xPosition}" : "")
-             + (yPosition.HasValue ? $" Y{yPosition}" : "")
-             + (zPosition.HasValue ? $" Z{zPosition}" : "");
+             + (feedRate.HasValue ? Invariant($" F{feedRate}") : "")
+             + (xPosition.HasValue ? Invariant($" X{xPosition}") : "")
+             + (yPosition.HasValue ? Invariant($" Y{yPosition}") : "")
+             + (zPosition.HasValue ? Invariant($" Z{zPosition}") : "");
     }
 
     public class LinearInterpolationCmd : MovementCommand
@@ -170,7 +171,7 @@ namespace GCodeReaderWriter.Commands
 
         protected override string BuildStringFromParams()
             => base.BuildStringFromParams()
-             + (xCenterRel.HasValue ? $" I{xCenterRel}" : "")
-             + (yCenterRel.HasValue ? $" J{yCenterRel}" : "");
+             + (xCenterRel.HasValue ? Invariant($" I{xCenterRel}") : "")
+             + (yCenterRel.HasValue ? Invariant($" J{yCenterRel}") : "");
     }
 }
