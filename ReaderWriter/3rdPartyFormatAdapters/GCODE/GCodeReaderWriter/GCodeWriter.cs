@@ -22,18 +22,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
+using GCodeReaderWriter.Commands;
 using OpenVectorFormat;
 using OpenVectorFormat.AbstractReaderWriter;
+using OpenVectorFormat.OVFReaderWriter;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
-//using GCodeReaderWriter;
-using OpenVectorFormat.OVFReaderWriter;
 
 namespace OpenVectorFormat.GCodeReaderWriter
 {
@@ -50,11 +46,13 @@ namespace OpenVectorFormat.GCodeReaderWriter
         float[] _lastPt = null;
         float _currentZ;
 
-        private NumberFormatInfo _nfi = new NumberFormatInfo();
+        private readonly OvfToGCodeCommandFactory _factory;
 
-        public GCodeWriter()
+        public GCodeWriter() : this(new OvfToGCodeCommandFactory()) { }
+
+        public GCodeWriter(OvfToGCodeCommandFactory factory)
         {
-            _nfi.NumberDecimalSeparator = ".";
+            _factory = factory ?? throw new ArgumentNullException(nameof(factory));
         }
 
         /// <inheritdoc/>
@@ -113,242 +111,31 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         private void AddVectorBlock(VectorBlock block, bool injectZ)
         {
+            var ctx = new GCodeWriterContext(_currentZ, injectZ);
             for (ulong i = 0; i < block.Repeats + 1; i++)
             {
-                MarkingParams newParams = new MarkingParams();
-
-                switch (block.VectorDataCase)
+                foreach (var cmd in _factory.CreateCommands(block, ctx))
                 {
-                    case VectorBlock.VectorDataOneofCase.PointSequence3D:
+                    if (cmd is LinearInterpolationCmd linCmd)
+                    {
+                        float[] target = MoveTarget(linCmd);
+                        if (!linCmd.isOperation)
                         {
-                            float[] newPt;
-                            for (int pointIndex = 0; pointIndex < block.PointSequence3D.Points.Count; pointIndex += 3)
-                            {
-                                newPt = new float[3] { block.PointSequence3D.Points[pointIndex], block.PointSequence3D.Points[pointIndex + 1], block.PointSequence3D.Points[pointIndex + 2] };
-
-                                if (_lastPt == null || !newPt.SequenceEqual(_lastPt))
-                                {
-                                    WriteGoPoint(newPt);
-                                }
-                            }
-                            break;
+                            if (_lastPt != null && target.SequenceEqual(_lastPt))
+                                continue;
                         }
-                    case VectorBlock.VectorDataOneofCase.PointSequence:
-                        {
-                            float[] newPt;
-                            for (int pointIndex = 0; pointIndex < block.PointSequence.Points.Count; pointIndex += 2)
-                            {
-                                if (injectZ && pointIndex == 0)
-                                {
-                                    newPt = new float[3] { block.PointSequence.Points[pointIndex], block.PointSequence.Points[pointIndex + 1], _currentZ };
-                                }
-                                else
-                                {
-                                    newPt = new float[2] { block.PointSequence.Points[pointIndex], block.PointSequence.Points[pointIndex + 1] };
-                                }
-
-                                if (_lastPt == null || !newPt.SequenceEqual(_lastPt))
-                                {
-                                    WriteGoPoint(newPt);
-                                }
-                            }
-                            break;
-                        }
-                    case VectorBlock.VectorDataOneofCase.Hatches3D:
-                        {
-                            float[] startPt;
-                            float[] endPt;
-
-                            for (int pointIndex = 0; pointIndex < block.Hatches3D.Points.Count; pointIndex += 6)
-                            {
-                                startPt = new float[3] { block.Hatches3D.Points[pointIndex], block.Hatches3D.Points[pointIndex + 1], block.Hatches3D.Points[pointIndex + 2] };
-                                endPt = new float[3] { block.Hatches3D.Points[pointIndex + 3], block.Hatches3D.Points[pointIndex + 4], block.Hatches3D.Points[pointIndex + 5] };
-
-                                WriteGoPoint(startPt);
-                                WriteGoLine(endPt);
-                            }
-                            break;
-                        }
-                    case VectorBlock.VectorDataOneofCase.Hatches:
-                        {
-                            float[] startPt;
-                            float[] endPt;
-
-                            for (int pointIndex = 0; pointIndex < block.Hatches.Points.Count; pointIndex += 4)
-                            {
-                                if (injectZ && pointIndex == 0)
-                                {
-                                    startPt = new float[3] { block.Hatches.Points[pointIndex], block.Hatches.Points[pointIndex + 1], _currentZ };
-                                }
-                                else
-                                {
-                                    startPt = new float[2] { block.Hatches.Points[pointIndex], block.Hatches.Points[pointIndex + 1] };
-                                }
-
-                                endPt = new float[2] { block.Hatches.Points[pointIndex + 2], block.Hatches.Points[pointIndex + 3] };
-
-                                WriteGoPoint(startPt);
-                                WriteGoLine(endPt);
-                            }
-                            break;
-                        }
-                    case VectorBlock.VectorDataOneofCase.Arcs:
-                        {
-                            double angle = block.Arcs.Angle;
-                            float startPointX = block.Arcs.StartDx;
-                            float startPointY = block.Arcs.StartDy;
-
-                            float[] arcCenters;
-
-                            for (int centerIndex = 0; centerIndex < block.Arcs.Centers.Count; centerIndex += 2)
-                            {
-                                arcCenters = new float[2] { block.Arcs.Centers[centerIndex], block.Arcs.Centers[centerIndex + 1] };
-
-                                WriteGoArc(arcCenters, startPointX, startPointY, angle);
-                            }
-                            break;
-                        }
-                    case VectorBlock.VectorDataOneofCase.ExposurePause:
-                        {
-                            ulong newPause = block.ExposurePause.PauseInUs;
-                            _fs.WriteLine("G4 P" + newPause.ToString(_nfi));
-                            break;
-                        }
-                    case VectorBlock.VectorDataOneofCase.LineSequence3D:
-                        {
-                            float[] newPt;
-                            newPt = new float[3] { block.LineSequence3D.Points[0], block.LineSequence3D.Points[1], block.LineSequence3D.Points[2] };
-
-                            if (_lastPt == null || !newPt.SequenceEqual(_lastPt))
-                            {
-                                WriteGoPoint(newPt);
-                            }
-
-                            for (int lineIndex = 3; lineIndex < block.LineSequence3D.Points.Count; lineIndex += 3)
-                            {
-                                newPt = new float[3] { block.LineSequence3D.Points[lineIndex], block.LineSequence3D.Points[lineIndex + 1], block.LineSequence3D.Points[lineIndex + 2] };
-
-                                WriteGoLine(newPt);
-                            }
-                            break;
-                        }
-                    case VectorBlock.VectorDataOneofCase.LineSequence:
-                        {
-                            float[] newPt;
-
-                            if (injectZ)
-                            {
-                                newPt = new float[3] { block.LineSequence.Points[0], block.LineSequence.Points[1], _currentZ };
-                            }
-                            else
-                            {
-                                newPt = new float[2] { block.LineSequence.Points[0], block.LineSequence.Points[1], };
-                            }
-
-                            if (_lastPt == null || !newPt.SequenceEqual(_lastPt))
-                            {
-                                WriteGoPoint(newPt);
-                            }
-
-                            for (int lineIndex = 2; lineIndex < block.LineSequence.Points.Count; lineIndex += 2)
-                            {
-                                newPt = new float[2] { block.LineSequence.Points[lineIndex], block.LineSequence.Points[lineIndex + 1] };
-
-                                WriteGoLine(newPt);
-                            }
-                            break;
-                        }
-
-                    default:
-                        {
-                            throw new NotImplementedException("DataType " + block.VectorDataCase.ToString() + " is invalid.");
-                        }
+                        _lastPt = target;
+                    }
+                    _fs.WriteLine(cmd.ToString());
                 }
             }
         }
-        private void WriteGoArc(float[] arcCenters, float startPointX, float startPointY, double angle)
+
+        private static float[] MoveTarget(LinearInterpolationCmd cmd)
         {
-            double I = arcCenters[0] - startPointX;
-            double J = arcCenters[1] - startPointY;
-
-            double deltaY = (double)startPointY - (double)arcCenters[1];
-            double deltaX = (double)startPointX - (double)arcCenters[0];
-            double radius = Math.Sqrt(Math.Pow(deltaX, 2) + Math.Pow(deltaY, 2));
-
-            double angleStart = Math.Atan2(deltaY, deltaX);
-            double angleFinal = angleStart - angle;
-
-
-            angleFinal = NormalizeAngleDegrees(angleFinal);
-
-
-            double endX = arcCenters[0] + radius * Math.Cos(angleFinal);
-            double endY = arcCenters[1] + radius * Math.Sin(angleFinal);
-
-            if (angle > 0)
-            {
-                _fs.WriteLine("G2 X{0} Y{1} I{2} J{3}", endX.ToString(_nfi), endY.ToString(_nfi), I.ToString(_nfi), J.ToString(_nfi));
-            }
-            else if (angle < 0)
-            {
-                _fs.WriteLine("G3 X{0} Y{1} I{2} J{3}", endX.ToString(_nfi), endY.ToString(_nfi), I.ToString(_nfi), J.ToString(_nfi));
-            }
-            else
-            {
-                throw new InvalidDataException("Point needs to contain 2 or 3 values");
-            }
-        }
-        double NormalizeAngleDegrees(double angle)
-        {
-            angle = angle % (2 * Math.PI);
-
-            if (angle > Math.PI)
-                angle -= 2 * Math.PI;
-            else if (angle <= -Math.PI)
-                angle += 2 * Math.PI;
-
-            return angle;
-        }
-        private void WriteGoPlaneZ(float[] pt)
-        {
-            _fs.WriteLine("G0 Z{0}", pt[0].ToString(_nfi));
-            _lastPt = pt;
-        }
-
-        private void WriteGoPoint(float[] pt)
-        {
-            if (pt.Length == 3)
-            {
-                _fs.WriteLine("G0 X{0} Y{1} Z{2}", pt[0].ToString(_nfi), pt[1].ToString(_nfi), pt[2].ToString(_nfi));
-                _lastPt = pt;
-            }
-            else if (pt.Length == 2)
-            {
-                _fs.WriteLine("G0 X{0} Y{1}", pt[0].ToString(_nfi), pt[1].ToString(_nfi));
-                _lastPt = pt;
-            }
-            else
-            {
-                throw new InvalidDataException("Point needs to contain 2 or 3 values");
-            }
-        }
-
-        private void WriteGoLine(float[] pt)
-        {
-            if (pt.Length == 3)
-            {
-                _fs.WriteLine("G1 X{0} Y{1} Z{2}", pt[0].ToString(_nfi), pt[1].ToString(_nfi), pt[2].ToString(_nfi));
-                _lastPt = pt;
-            }
-            else if (pt.Length == 2)
-            {
-                _fs.WriteLine("G1 X{0} Y{1}", pt[0].ToString(_nfi), pt[1].ToString(_nfi));
-                _lastPt = pt;
-            }
-            else
-            {
-                throw new InvalidDataException("Point needs to contain 2 or 3 values");
-            }
+            return cmd.zPosition.HasValue
+                ? new[] { cmd.xPosition.Value, cmd.yPosition.Value, cmd.zPosition.Value }
+                : new[] { cmd.xPosition.Value, cmd.yPosition.Value };
         }
 
         public override void SimpleJobWrite(Job job, string filename, IFileReaderWriterProgress progress = null)
