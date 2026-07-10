@@ -25,6 +25,7 @@
     <ProjectReference Include="..\3rdPartyFormatAdapters\ASP\ASPFileReaderWriter\ASPFileReaderWriter.csproj" />
     <ProjectReference Include="..\3rdPartyFormatAdapters\CLI_ILT\ILTFileReaderAdapter\ILTFileReaderAdapter.csproj" />
     <ProjectReference Include="..\3rdPartyFormatAdapters\CLI_ILT\iltFileReader\ILTFileReader.csproj" />
+    <ProjectReference Include="..\3rdPartyFormatAdapters\EOS\EOSReaderWriter\EOSReaderWriter.csproj" />
     <ProjectReference Include="..\AbstractReaderWriter\AbstractReaderWriter.csproj" />
     <ProjectReference Include="..\FileReaderWriterFactoryGRPCWrapper\FileReaderWriterFactoryGRPCWrapper.csproj" />
     <ProjectReference Include="..\FileReaderWriterFactory\FileReaderWriterFactory.csproj" />
