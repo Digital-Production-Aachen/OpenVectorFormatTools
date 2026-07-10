@@ -57,8 +57,10 @@ namespace GCodeReaderWriter.Commands
         int toolNumber;
     }
 
-    // Base class for all G/M/T code commands. Also used for unrecognized commands.
-    // Inherit from this class or it's child classes to extend the parseable commands and/or parameters for your GCode-flavor.
+    /// <summary>
+    /// Base class for all G/M/T code commands. Also used for unrecognized commands.
+    /// Inherit from this class or its child classes to extend the parseable commands and/or parameters for your GCode-flavor.
+    /// </summary>
     public abstract class GCodeCommand
     {
         public readonly GCode gCode;
@@ -72,8 +74,13 @@ namespace GCodeReaderWriter.Commands
 
         public GCodeCommand(GCode gCode, Dictionary<char, float> commandParams = null, string comment = null)
         {
+            // Contains parameters unknown to the command class.
+            // Each subclass adds more known parameters to the parameterMap, which are removed from this dictionary during parsing.
             miscParams = new Dictionary<char, float>();
+            // Contains parameters that are explicitely set in the GCode command line.
+            // Needs ovf extension to create an exact copy if gcode -> ovf -> gcode is performed.
             recordedParams = new List<char>();
+            // Contains mappings from GCode parameters to GCodeCommand properties, to be filled in by derived classes.
             parameterMap = new Dictionary<char, Action<float>>();
             this.gCode = gCode;
             this.comment = comment;
@@ -99,24 +106,31 @@ namespace GCodeReaderWriter.Commands
             miscParams = commandParams;
         }
 
+        // Build string suffix from unkown parameters and comment.
         protected string BuildStringSuffix()
         {
             return string.Join(" ", miscParams.Keys.Select(k => Invariant($"{k}{miscParams[k]}"))) + (comment != null ? $" ; {comment}" : "");
         }
 
+        // Build string from known parameters, in the order they were recorded. Overridable by subclasses to add additional known parameters.
         protected virtual string BuildStringFromParams()
         {
             return string.Join(" ", recordedParams.Select(k => $"{k}{miscParams[k]}"));
         }
 
+        // Override ToString to produce a GCode command line string with the correct format, including the preparatory function code, code number, parameters, and comment.
         public override string ToString() => gCode.ToString() + BuildStringFromParams() + BuildStringSuffix();
 
     }
 
+    /// <summary>
+    /// Converter class to parse a GCode command line string into a GCodeCommand object, or serialize a GCodeCommand object back into a GCode command line string.
+    /// </summary>
     public class GCodeConverter
     {
+        // Factories to map code numbers to GCodeCommand subclasses for each preparatory function code.
         private static readonly Dictionary<int, Func<PrepCode, int, Dictionary<char, float>, string, GCodeCommand>>
-            _gFactories = new Dictionary<int, Func<PrepCode, int, Dictionary<char, float>, string, GCodeCommand>>
+            _gFactory = new Dictionary<int, Func<PrepCode, int, Dictionary<char, float>, string, GCodeCommand>>
             {
                 { 0,  (p, n, prm, c) => new LinearInterpolationCmd(p, n, prm, c) },
                 { 1,  (p, n, prm, c) => new LinearInterpolationCmd(p, n, prm, c) },
@@ -128,12 +142,12 @@ namespace GCodeReaderWriter.Commands
             };
 
         private static readonly Dictionary<int, Func<PrepCode, int, Dictionary<char, float>, string, GCodeCommand>>
-            _mFactories = new Dictionary<int, Func<PrepCode, int, Dictionary<char, float>, string, GCodeCommand>>();
+            _mFactory = new Dictionary<int, Func<PrepCode, int, Dictionary<char, float>, string, GCodeCommand>>();
 
         private static readonly Dictionary<int, Func<PrepCode, int, Dictionary<char, float>, string, GCodeCommand>>
-            _tFactories = new Dictionary<int, Func<PrepCode, int, Dictionary<char, float>, string, GCodeCommand>>();
+            _tFactory = new Dictionary<int, Func<PrepCode, int, Dictionary<char, float>, string, GCodeCommand>>();
 
-        public GCodeCommand ParseLine(string serializedCmdLine)
+        public GCodeCommand ParseLineToCommandObject(string serializedCmdLine)
         {
             if (serializedCmdLine == null) return null;
 
@@ -159,37 +173,37 @@ namespace GCodeReaderWriter.Commands
                 throw new ArgumentException($"Invalid number format: {codeNumberStr} in line '{serializedCmdLine}'");
 
             var commandParams = new Dictionary<char, float>();
-            foreach (var word in tokens.Skip(1))
+            foreach (var token in tokens.Skip(1))
             {
-                if (word.Length == 0) continue;
-                char paramChar = char.ToUpperInvariant(word[0]);
+                if (token.Length == 0) continue;
+                char paramChar = char.ToUpperInvariant(token[0]);
 
-                if (word.Length == 1)
+                if (token.Length == 1)
                 {
                     commandParams[paramChar] = 0f;
                 }
-                else if (float.TryParse(word.Substring(1), NumberStyles.Float, CultureInfo.InvariantCulture, out float value))
+                else if (float.TryParse(token.Substring(1), NumberStyles.Float, CultureInfo.InvariantCulture, out float value))
                 {
                     commandParams[paramChar] = value;
                 }
                 else
                 {
                     throw new ArgumentException(
-                        $"Invalid command parameter format: {word} in line '{serializedCmdLine}'. " +
+                        $"Invalid command parameter format: {token} in line '{serializedCmdLine}'. " +
                         "Command parameters must be of format <char><float>.");
                 }
             }
 
-            Dictionary<int, Func<PrepCode, int, Dictionary<char, float>, string, GCodeCommand>> table;
+            Dictionary<int, Func<PrepCode, int, Dictionary<char, float>, string, GCodeCommand>> codeTable;
             switch (prepCode)
             {
-                case PrepCode.G: table = _gFactories; break;
-                case PrepCode.M: table = _mFactories; break;
-                case PrepCode.T: table = _tFactories; break;
-                default: table = null; break;
+                case PrepCode.G: codeTable = _gFactory; break;
+                case PrepCode.M: codeTable = _mFactory; break;
+                case PrepCode.T: codeTable = _tFactory; break;
+                default: codeTable = null; break;
             }
 
-            if (table != null && table.TryGetValue(codeNumber, out var factory))
+            if (codeTable != null && codeTable.TryGetValue(codeNumber, out var factory))
                 return factory(prepCode, codeNumber, commandParams, commentString);
 
             return new MiscCommand(prepCode, codeNumber, commandParams, commentString);

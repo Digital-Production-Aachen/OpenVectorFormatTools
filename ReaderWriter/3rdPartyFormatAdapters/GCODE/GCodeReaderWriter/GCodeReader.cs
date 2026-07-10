@@ -29,23 +29,24 @@ using OpenVectorFormat.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Numerics;
 
 namespace OpenVectorFormat.GCodeReaderWriter
 {
     public class GCodeReader : FileReader
     {
+        /// <inheritdoc/>
         public new static List<string> SupportedFileFormats { get; } = new List<string> { ".gcode", ".gco" };
 
         public Job job;
+        /// <inheritdoc/>
         public override CacheState CacheState => _cacheState;
 
         private CacheState _cacheState = CacheState.NotCached;
         private string _filename;
         private IFileReaderWriterProgress _progress;
 
-        // Parse-time state, set by ParseGCodeFile and read by helpers.
+        // Current reader states.
         private WorkPlane _currentWP;
         private VectorBlock _currentVB;
         private MarkingParams _currentMP;
@@ -57,6 +58,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
         private bool _vbLocked;
         private bool _vbEmpty;
 
+        /// <inheritdoc/>
         public override Job JobShell
         {
             get
@@ -68,6 +70,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
+        /// <inheritdoc/>
         public override Job CacheJobToMemory()
         {
             if (_cacheState == CacheState.CompleteJobCached) return job;
@@ -80,14 +83,18 @@ namespace OpenVectorFormat.GCodeReaderWriter
         }
 
         public override void CloseFile() => UnloadJobFromMemory();
+
+        /// <inheritdoc/>
         public override void Dispose() => UnloadJobFromMemory();
 
+        /// <inheritdoc/>
         public override VectorBlock GetVectorBlock(int i_workPlane, int i_vectorblock)
         {
             EnsureLoaded();
             return job.WorkPlanes[i_workPlane].VectorBlocks[i_vectorblock];
         }
 
+        /// <inheritdoc/>
         public override WorkPlane GetWorkPlane(int i_workPlane)
         {
             EnsureLoaded();
@@ -103,6 +110,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             return job.WorkPlanes[i_workPlane].CloneWithoutVectorData();
         }
 
+        /// <inheritdoc/>
         public override void OpenJob(string filename, IFileReaderWriterProgress progress = null)
         {
             _progress = progress;
@@ -126,6 +134,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             ParseGCodeFile(progress);
         }
 
+        /// <inheritdoc/>
         public override void UnloadJobFromMemory()
         {
             job = null;
@@ -162,7 +171,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                     GCodeCommand command;
                     try
                     {
-                        command = converter.ParseLine(line);
+                        command = converter.ParseLineToCommandObject(line);
                     }
                     catch (ArgumentException ex)
                     {
@@ -172,7 +181,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
                     if (command != null)
                     {
-                        ParseCommandObject(command);
+                        ParseCommandObjectToJob(command);
                         _vbLocked = false;
                     }
 
@@ -206,7 +215,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             _cacheState = CacheState.CompleteJobCached;
         }
 
-        protected void ParseCommandObject(GCodeCommand command)
+        protected virtual void ParseCommandObjectToJob(GCodeCommand command)
         {
             switch (command)
             {
@@ -222,7 +231,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
 
         // Comand parsers decide how to interpret the gcode commands.
         // Override these in a subclass to change the interpretation, e.g. for different machine types or to support more gcode commands.
-        protected void ParseLinear(LinearInterpolationCmd cmd)
+        protected virtual void ParseLinear(LinearInterpolationCmd cmd)
         {
             if (cmd.zPosition.HasValue && cmd.zPosition.Value != _position.Z && !_vbEmpty)
                 NewWorkPlane();
@@ -238,24 +247,29 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 UpdateSpeed(isOperation: true, newSpeed: cmd.feedRate);
             }
 
-            if (_currentVB.LineSequence == null)
-                _currentVB.LineSequence = new VectorBlock.Types.LineSequence();
+            // Z is only a workplane signal; a move without X/Y (pure-Z) adds no geometry.
+            if (cmd.xPosition.HasValue || cmd.yPosition.HasValue)
+            {
+                if (_currentVB.LineSequence == null)
+                    _currentVB.LineSequence = new VectorBlock.Types.LineSequence();
 
-            float x = _absolutePositioning
-                ? (cmd.xPosition ?? _position.X)
-                : (_position.X + (cmd.xPosition ?? 0f));
-            float y = _absolutePositioning
-                ? (cmd.yPosition ?? _position.Y)
-                : (_position.Y + (cmd.yPosition ?? 0f));
+                float x = _absolutePositioning
+                    ? (cmd.xPosition ?? _position.X)
+                    : (_position.X + (cmd.xPosition ?? 0f));
+                float y = _absolutePositioning
+                    ? (cmd.yPosition ?? _position.Y)
+                    : (_position.Y + (cmd.yPosition ?? 0f));
 
-            _currentVB.LineSequence.Points.Add(x);
-            _currentVB.LineSequence.Points.Add(y);
+                _currentVB.LineSequence.Points.Add(x);
+                _currentVB.LineSequence.Points.Add(y);
+
+                _vbEmpty = false;
+            }
 
             UpdatePosition(cmd);
-            _vbEmpty = false;
         }
 
-        protected void ParseCircular(CircularInterpolationCmd cmd)
+        protected virtual void ParseCircular(CircularInterpolationCmd cmd)
         {
             if (cmd.zPosition.HasValue && cmd.zPosition.Value != _position.Z && !_vbEmpty)
                 NewWorkPlane();
@@ -301,7 +315,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             _vbEmpty = false;
         }
 
-        protected void ParsePause(PauseCommand cmd)
+        protected virtual void ParsePause(PauseCommand cmd)
         {
             NewVectorBlock();
             _currentVB.ExposurePause = new VectorBlock.Types.ExposurePause
@@ -312,29 +326,29 @@ namespace OpenVectorFormat.GCodeReaderWriter
             NewVectorBlock();
         }
 
-        protected void ParseToggle(PositioningToggleCommand cmd)
+        protected virtual void ParseToggle(PositioningToggleCommand cmd)
         {
             _absolutePositioning = cmd.isAbsolute;
         }
 
-        protected void ParseToolChange(ToolChangeCommand cmd)
+        protected virtual void ParseToolChange(ToolChangeCommand cmd)
         {
             return;
         }
 
-        protected void ParseMonitoring(MonitoringCommand cmd)
+        protected virtual void ParseMonitoring(MonitoringCommand cmd)
         {
             return;
         }
 
-        protected void ParseMisc(MiscCommand cmd)
+        protected virtual void ParseMisc(MiscCommand cmd)
         {
             return;
         }
 
         // State helpers.
 
-        protected void UpdatePosition(MovementCommand cmd)
+        protected virtual void UpdatePosition(MovementCommand cmd)
         {
             _position = new Vector3(
                 cmd.xPosition ?? _position.X,
@@ -342,7 +356,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 cmd.zPosition ?? _position.Z);
         }
 
-        protected void UpdateSpeed(bool isOperation, float? newSpeed)
+        protected virtual void UpdateSpeed(bool isOperation, float? newSpeed)
         {
             if (newSpeed == null) return;
 
@@ -364,7 +378,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-        private int WriteCurrentMarkingParams()
+        protected virtual int WriteCurrentMarkingParams()
         {
             if (!_cachedMP.TryGetValue(_currentMP, out int key))
             {
@@ -376,8 +390,12 @@ namespace OpenVectorFormat.GCodeReaderWriter
             return key;
         }
 
-        private void NewVectorBlock()
+        /// <summary>
+        /// Creates new vector block and new <see cref="MarkingParams"/>.
+        /// </summary>
+        protected virtual void NewVectorBlock()
         {
+            // If the last vector block is not empty, write it to the current work plane and create a new marking params key.
             if (!_vbEmpty)
             {
                 _currentVB.MarkingParamsKey = WriteCurrentMarkingParams();
@@ -390,7 +408,10 @@ namespace OpenVectorFormat.GCodeReaderWriter
             _vbEmpty = true;
         }
 
-        private void NewWorkPlane()
+        /// <summary>
+        /// Creates new work plane and new <see cref="VectorBlock"/>.
+        /// </summary>
+        protected virtual void NewWorkPlane()
         {
             NewVectorBlock();
             _currentWP.ZPosInMm = _position.Z;
