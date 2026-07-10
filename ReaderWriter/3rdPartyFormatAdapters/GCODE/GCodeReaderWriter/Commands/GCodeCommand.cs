@@ -52,6 +52,9 @@ namespace GCodeReaderWriter.Commands
         public override string ToString() => $"{preparatoryFunctionCode}{codeNumber}";
     }
 
+    /// <summary>
+    /// Placeholder class for tool parameters. Extend this class to add specific tool parameters for your GCode-flavor.
+    /// </summary>
     public class ToolParams
     {
         int toolNumber;
@@ -77,9 +80,11 @@ namespace GCodeReaderWriter.Commands
             // Contains parameters unknown to the command class.
             // Each subclass adds more known parameters to the parameterMap, which are removed from this dictionary during parsing.
             miscParams = new Dictionary<char, float>();
+
             // Contains parameters that are explicitely set in the GCode command line.
             // Needs ovf extension to create an exact copy if gcode -> ovf -> gcode is performed.
             recordedParams = new List<char>();
+
             // Contains mappings from GCode parameters to GCodeCommand properties, to be filled in by derived classes.
             parameterMap = new Dictionary<char, Action<float>>();
             this.gCode = gCode;
@@ -89,6 +94,9 @@ namespace GCodeReaderWriter.Commands
         public GCodeCommand(PrepCode prepCode, int codeNumber, Dictionary<char, float> commandParams = null, string comment = null)
             : this(new GCode(prepCode, codeNumber), commandParams, comment) { }
 
+        /// <summary>
+        /// Parses dictionary of command parameters into known parameters and stores unknown parameters in miscParams.
+        /// </summary>
         protected void ParseParams(Dictionary<char, float> commandParams)
         {
             if (commandParams == null) return;
@@ -106,19 +114,21 @@ namespace GCodeReaderWriter.Commands
             miscParams = commandParams;
         }
 
-        // Build string suffix from unkown parameters and comment.
-        protected string BuildStringSuffix()
+        private string BuildStringSuffix()
         {
+            // Build string suffix from unkown parameters and comment.
             return string.Join(" ", miscParams.Keys.Select(k => Invariant($"{k}{miscParams[k]}"))) + (comment != null ? $" ; {comment}" : "");
         }
 
-        // Build string from known parameters, in the order they were recorded. Overridable by subclasses to add additional known parameters.
+        /// <summary>
+        /// Build parameter string from known parameters. Overridable by subclasses to add additional known parameters.
+        /// </summary>
         protected virtual string BuildStringFromParams()
         {
             return string.Join(" ", recordedParams.Select(k => $"{k}{miscParams[k]}"));
         }
 
-        // Override ToString to produce a GCode command line string with the correct format, including the preparatory function code, code number, parameters, and comment.
+        /// <inheritdoc />
         public override string ToString() => gCode.ToString() + BuildStringFromParams() + BuildStringSuffix();
 
     }
@@ -147,6 +157,9 @@ namespace GCodeReaderWriter.Commands
         private static readonly Dictionary<int, Func<PrepCode, int, Dictionary<char, float>, string, GCodeCommand>>
             _tFactory = new Dictionary<int, Func<PrepCode, int, Dictionary<char, float>, string, GCodeCommand>>();
 
+        /// <summary>
+        /// Parse single GCode command line string into a GCodeCommand object.
+        /// </summary>
         public GCodeCommand ParseLineToCommandObject(string serializedCmdLine)
         {
             if (serializedCmdLine == null) return null;

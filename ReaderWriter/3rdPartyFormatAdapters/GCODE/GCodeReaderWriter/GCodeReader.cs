@@ -82,6 +82,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             throw new InvalidDataException("No data loaded yet! Call OpenJobAsync first!");
         }
 
+        /// <inheritdoc/>
         public override void CloseFile() => UnloadJobFromMemory();
 
         /// <inheritdoc/>
@@ -101,6 +102,7 @@ namespace OpenVectorFormat.GCodeReaderWriter
             return job.WorkPlanes[i_workPlane];
         }
 
+        ///  <inheritdoc/>
         public override WorkPlane GetWorkPlaneShell(int i_workPlane)
         {
             EnsureLoaded();
@@ -215,6 +217,10 @@ namespace OpenVectorFormat.GCodeReaderWriter
             _cacheState = CacheState.CompleteJobCached;
         }
 
+        /// <summary>
+        /// Maps a GCodeCommand object to the appropriate parsing method and updates the job accordingly.
+        /// Add or override parser functions in a subclass to change the interpretation, e.g. for different machine types or to support more gcode commands.
+        /// </summary>
         protected virtual void ParseCommandObjectToJob(GCodeCommand command)
         {
             switch (command)
@@ -229,8 +235,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
-        // Comand parsers decide how to interpret the gcode commands.
-        // Override these in a subclass to change the interpretation, e.g. for different machine types or to support more gcode commands.
+        /// <summary>
+        /// Parses a linear interpolation command and creates a new vector block with the specified linear parameters if applicable.
+        /// </summary>
         protected virtual void ParseLinear(LinearInterpolationCmd cmd)
         {
             if (cmd.zPosition.HasValue && cmd.zPosition.Value != _position.Z && !_vbEmpty)
@@ -269,6 +276,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
             UpdatePosition(cmd);
         }
 
+        /// <summary>
+        /// Parses an arc command and creates a new vector block with the specified arc parameters if applicable.
+        /// </summary>
         protected virtual void ParseCircular(CircularInterpolationCmd cmd)
         {
             if (cmd.zPosition.HasValue && cmd.zPosition.Value != _position.Z && !_vbEmpty)
@@ -315,6 +325,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
             _vbEmpty = false;
         }
 
+        /// <summary>
+        /// Parses a pause command and creates a new vector block with the specified pause duration.
+        /// </summary>
         protected virtual void ParsePause(PauseCommand cmd)
         {
             NewVectorBlock();
@@ -326,28 +339,42 @@ namespace OpenVectorFormat.GCodeReaderWriter
             NewVectorBlock();
         }
 
+        /// <summary>
+        /// Parses a toggle command and updates the positioning mode.
+        /// </summary>
         protected virtual void ParseToggle(PositioningToggleCommand cmd)
         {
             _absolutePositioning = cmd.isAbsolute;
         }
 
+        /// <summary>
+        /// Parses a tool change command. To be implemented in subclasses if needed.
+        /// </summary>
         protected virtual void ParseToolChange(ToolChangeCommand cmd)
         {
             return;
         }
 
+        /// <summary>
+        /// Parses a tool change command. To be implemented in subclasses if needed.
+        /// </summary>
         protected virtual void ParseMonitoring(MonitoringCommand cmd)
         {
             return;
         }
 
+        /// <summary>
+        /// Parses a tool change command. To be implemented in subclasses if needed.
+        /// </summary>
         protected virtual void ParseMisc(MiscCommand cmd)
         {
             return;
         }
 
-        // State helpers.
-
+        /// <summary>
+        /// State helper: Updates the current position based on the movement command.
+        /// Retains the previous position values for any axis not specified in the command.
+        /// </summary>
         protected virtual void UpdatePosition(MovementCommand cmd)
         {
             _position = new Vector3(
@@ -356,6 +383,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
                 cmd.zPosition ?? _position.Z);
         }
 
+        /// <summary>
+        /// State helper: Updates the current speed based on the movement command.
+        /// </summary>
         protected virtual void UpdateSpeed(bool isOperation, float? newSpeed)
         {
             if (newSpeed == null) return;
@@ -378,6 +408,9 @@ namespace OpenVectorFormat.GCodeReaderWriter
             }
         }
 
+        /// <summary>
+        /// Writes current marking params to the map and returns the key.
+        /// </summary>
         protected virtual int WriteCurrentMarkingParams()
         {
             if (!_cachedMP.TryGetValue(_currentMP, out int key))
