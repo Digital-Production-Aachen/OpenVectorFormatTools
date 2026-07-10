@@ -80,7 +80,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         public void TestGCodeWriterOVFToGCode(FileInfo fileInfo)
         {
             var converter = SetupConverter();
-            FileInfo gCodeOutputPath = new FileInfo(Path.Combine(Path.GetTempPath(), "output_test.gcode"));
+            FileInfo gCodeOutputPath = new FileInfo(Path.Combine(Path.GetTempPath(), "writer_test.gcode"));
 
             FileReaderWriterFactory.FileConverter.Convert(fileInfo, gCodeOutputPath, new FileReaderWriterFactory.FileReaderWriterProgress());
 
@@ -253,7 +253,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         public void TestGCodeWriterHandlerOverride()
         {
             Job job = TestJob();
-            string outFile = Path.Combine(Path.GetTempPath());
+            string outFile = Path.Combine(Path.GetTempPath(), "override_test.gcode");
 
             // Test that the base writer does not include the marker but the overridden writer does.
             new GCodeWriter().SimpleJobWrite(job, outFile);
