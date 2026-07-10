@@ -24,12 +24,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 using GCodeReaderWriter.Commands;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using OpenVectorFormat.AbstractReaderWriter;
-using OpenVectorFormat.FileReaderWriterFactory;
 using OpenVectorFormat.GCodeReaderWriter;
 using OpenVectorFormat.OVFReaderWriter;
 using OpenVectorFormat.Plausibility;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -94,7 +91,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
 
             OVFFileReader testReader = new OVFFileReader
             {
-                AutomatedCachingThresholdBytes = 0 // forces partial reading
+                AutomatedCachingThresholdBytes = 0
             };
             testReader.OpenJob(fileInfo.FullName, new FileReaderWriterProgressDummy());
             Job testJob = testReader.CacheJobToMemory();
@@ -158,6 +155,8 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 }
                 string[] commandParts = commandString.Split(' ');
 
+                bool isMove = false;
+                bool hasSpatialCoord = false;
                 foreach (string commandPart in commandParts)
                 {
                     if (!char.IsLetter(commandPart[0]) || (commandPart.Length > 1 && !float.TryParse(commandPart.Substring(1), out _)))
@@ -165,8 +164,12 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                         return (IsValid: false, MovementCommandCount: movementCommandCount);
                     }
 
-                    if (movePattern.IsMatch(commandPart)) movementCommandCount++;
+                    if (movePattern.IsMatch(commandPart)) isMove = true;
+                    char code = char.ToUpperInvariant(commandPart[0]);
+                    if (code == 'X' || code == 'Y' || code == 'Z') hasSpatialCoord = true;
                 }
+
+                if (isMove && hasSpatialCoord) movementCommandCount++;
             }
             return (IsValid: true, MovementCommandCount: movementCommandCount);
         }
@@ -197,6 +200,81 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
                 }
                 return files;
             }
+        }
+
+        // Tests reader extension of example command by introducing a new subclass, overriding a Parse* handler.
+        private sealed class CountingGCodeReader : GCodeReader
+        {
+            public int LinearParseCount;
+
+            protected override void ParseLinear(LinearInterpolationCmd cmd)
+            {
+                LinearParseCount++;
+                base.ParseLinear(cmd);
+            }
+        }
+
+        // Tests writer extension of example command by introducing a new subclass, overriding a move helper.
+        private sealed class MarkingGCodeWriter : GCodeWriter
+        {
+            public const string Marker = "OVERRIDE_MARKER";
+
+            protected override LinearInterpolationCmd TravelMove(float x, float y, float? z = null)
+                => new LinearInterpolationCmd(PrepCode.G, 0, false, x, y, z, null, null, null, Marker);
+        }
+
+        // Tests reader extension of command handler by introducing a new subclass, overriding
+        [TestMethod]
+        public void TestGCodeReaderHandlerOverride()
+        {
+            FileInfo file = dir.GetFiles("*.gcode").First();
+
+            int baseVectorCount;
+            using (var baseReader = new GCodeReader())
+            {
+                baseReader.OpenJob(file.FullName, new FileReaderWriterFactory.FileReaderWriterProgress());
+                baseVectorCount = baseReader.CacheJobToMemory().VectorCount();
+            }
+
+            using (var reader = new CountingGCodeReader())
+            {
+                reader.OpenJob(file.FullName, new FileReaderWriterFactory.FileReaderWriterProgress());
+                Job job = reader.CacheJobToMemory();
+
+                // Make sure the overridden handler was called at least once.
+                Assert.IsTrue(reader.LinearParseCount > 0);
+
+                // Make sure extension commands do not alter vector count.
+                Assert.AreEqual(baseVectorCount, job.VectorCount()); 
+            }
+        }
+
+        [TestMethod]
+        public void TestGCodeWriterHandlerOverride()
+        {
+            Job job = TestJob();
+            string outFile = Path.Combine(Path.GetTempPath());
+
+            // Test that the base writer does not include the marker but the overridden writer does.
+            new GCodeWriter().SimpleJobWrite(job, outFile);
+            Assert.IsFalse(File.ReadAllText(outFile).Contains(MarkingGCodeWriter.Marker));
+
+            new MarkingGCodeWriter().SimpleJobWrite(job, outFile);
+            Assert.IsTrue(File.ReadAllText(outFile).Contains(MarkingGCodeWriter.Marker));
+        }
+
+        private static Job TestJob()
+        {
+            var job = new Job { NumWorkPlanes = 1 };
+            var wp = new WorkPlane { ZPosInMm = 1f, WorkPlaneNumber = 0, NumBlocks = 1 };
+            var vb = new VectorBlock { LineSequence = new VectorBlock.Types.LineSequence() };
+            vb.LineSequence.Points.Add(0f);
+            vb.LineSequence.Points.Add(0f);
+            vb.LineSequence.Points.Add(10f);
+            vb.LineSequence.Points.Add(10f);
+            wp.VectorBlocks.Add(vb);
+            job.WorkPlanes.Add(wp);
+            return job;
         }
     }
 }
