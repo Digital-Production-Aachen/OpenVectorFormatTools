@@ -41,7 +41,7 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             using var reader = new EOSFileReader();
 
             // Insert custom evb file location here
-            reader.OpenJob(@"C:\Users\adam-p1kr9vm1mf9abhn\Git-Projekte\eosvectorparser\VectorParser\input\20260401_ACAM-Sven_6_layers1-1025.evb");
+            reader.OpenJob(@"C:\Users\adam-jyotwh08tic1w4s\Desktop\sink\20260401_ACAM-Sven_6_layers1-1025.evb");
 
             // --- Example tests ---
             // Test if layer number equals the build jobs layer numbers.

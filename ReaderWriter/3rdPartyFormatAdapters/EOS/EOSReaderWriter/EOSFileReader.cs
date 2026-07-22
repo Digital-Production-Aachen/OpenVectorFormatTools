@@ -73,8 +73,8 @@ namespace OpenVectorFormat.EOSReaderWriter
             public double? PulsedWavePowerOnDelayUs;
         }
 
-        // --- Inerited abstract methods ---
-        // Need to be implemented.
+        // --- Inherited abstract methods ---
+        // Need to / must be implemented.
         public override Job JobShell
         {
             get
