@@ -95,6 +95,20 @@ namespace OpenVectorFormat.EOSReaderWriter
         public override Job CacheJobToMemory()
         {
             throw new NotImplementedException();
+
+            if (_cacheState == CacheState.CompleteJobCached)
+            {
+                return CompleteJob;
+            }
+            else if (File.Exists(_filename))
+            {
+                //*ParseEOSFile(); //TODO
+                return CompleteJob;
+            }
+            else
+            {
+                throw new InvalidDataException("No data loaded yet! Call OpenJob first!");
+            }
         }
 
         public override void Dispose()
@@ -105,16 +119,48 @@ namespace OpenVectorFormat.EOSReaderWriter
         public override VectorBlock GetVectorBlock(int i_workPlane, int i_vectorblock)
         {
             throw new NotImplementedException();
+
+            if (_cacheState == CacheState.CompleteJobCached)
+            {
+                return CompleteJob.WorkPlanes[i_workPlane].VectorBlocks[i_vectorblock];
+            }
+            else
+            {
+                throw new InvalidDataException("No data loaded yet! Call OpenJob first!");
+            }
         }
 
         public override WorkPlane GetWorkPlane(int i_workPlane)
         {
             throw new NotImplementedException();
+
+            if (_cacheState == CacheState.CompleteJobCached)
+            {
+                return CompleteJob.WorkPlanes[i_workPlane];
+            }
+            else
+            {
+                throw new InvalidDataException("No data loaded yet! Call OpenJob first!");
+            }
         }
 
         public override WorkPlane GetWorkPlaneShell(int i_workPlane)
         {
             throw new NotImplementedException();
+
+            if (CompleteJob.NumWorkPlanes < i_workPlane)
+            {
+                throw new ArgumentOutOfRangeException("i_workPlane " + i_workPlane.ToString() + " out of range for jobfile with " + CompleteJob.NumWorkPlanes.ToString() + " workPlanes!");
+            }
+
+            if (CacheState == CacheState.CompleteJobCached)
+            {
+                return CompleteJob.WorkPlanes[i_workPlane].CloneWithoutVectorData();
+            }
+            else
+            {
+                throw new InvalidDataException("No data loaded yet! Call OpenJob first!");
+            }
         }
 
         public override void OpenJob(string filename, IFileReaderWriterProgress progress = null)
