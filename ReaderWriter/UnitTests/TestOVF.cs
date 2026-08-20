@@ -24,11 +24,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 
 
+using Google.Protobuf;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OpenVectorFormat.AbstractReaderWriter;
 using OpenVectorFormat.OVFReaderWriter;
+using OVFReaderWriter;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
@@ -36,6 +40,22 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
     [TestClass]
     public class TestOVF
     {
+        public static DirectoryInfo dir = new DirectoryInfo(Path.Combine(Directory.GetCurrentDirectory(), "TestFiles"));
+
+        [TestMethod]
+        public void TestOVFSummary()
+        {
+            string fileName = Path.Combine(dir.FullName, "SupportPart.ovf");
+            StringBuilder sb = new();
+            int indent = 0;
+            using (OVFFileReader reader = new())
+            {
+                reader.OpenJob(fileName);
+                Console.WriteLine(OVFStatistics.CreateSummary(reader));
+                Console.WriteLine(OVFStatistics.GetJobShellInfoAsJSON(reader));
+            }
+        }
+
         [TestMethod]
         public void TestSimpleWriteSimpleReadAsync()
         {
