@@ -26,6 +26,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OpenVectorFormat.EOSReaderWriter;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -38,10 +39,11 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
         [TestMethod]
         public void TestReadEVB()
         {
+            string testfile = new DirectoryInfo(Path.Combine([Directory.GetCurrentDirectory(), "TestFiles", "ACAM_test.evb"])).FullName;
             using var reader = new EOSFileReader();
 
             // Insert custom evb file location here
-            reader.OpenJob(@"C:\Users\adam-jyotwh08tic1w4s\Desktop\sink\20260401_ACAM-Sven_6_layers1-1025.evb");
+            reader.OpenJob(testfile);
 
             // --- Example tests ---
             // Test if layer number equals the build jobs layer numbers.

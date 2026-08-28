@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ---- Copyright End ----
 */
 
+using Google.Protobuf;
 using OpenVectorFormat;
 using OpenVectorFormat.AbstractReaderWriter;
 using OpenVectorFormat.Utils;
@@ -87,22 +88,19 @@ namespace OpenVectorFormat.EOSReaderWriter
                 }
                 else
                 {
-                    throw new InvalidDataException("No data loaded yet! Call OpenJobAsync first!");
+                    throw new InvalidDataException("No data loaded yet! Call OpenJob first!");
                 }
             }
         }
 
         public override Job CacheJobToMemory()
         {
-            throw new NotImplementedException();
-
             if (_cacheState == CacheState.CompleteJobCached)
             {
                 return CompleteJob;
             }
             else if (File.Exists(_filename))
             {
-                //*ParseEOSFile(); //TODO
                 return CompleteJob;
             }
             else
@@ -118,8 +116,6 @@ namespace OpenVectorFormat.EOSReaderWriter
 
         public override VectorBlock GetVectorBlock(int i_workPlane, int i_vectorblock)
         {
-            throw new NotImplementedException();
-
             if (_cacheState == CacheState.CompleteJobCached)
             {
                 return CompleteJob.WorkPlanes[i_workPlane].VectorBlocks[i_vectorblock];
@@ -132,7 +128,10 @@ namespace OpenVectorFormat.EOSReaderWriter
 
         public override WorkPlane GetWorkPlane(int i_workPlane)
         {
-            throw new NotImplementedException();
+            if (CompleteJob.NumWorkPlanes < i_workPlane)
+            {
+                throw new ArgumentOutOfRangeException("i_workPlane " + i_workPlane.ToString() + " out of range for jobfile with " + CompleteJob.NumWorkPlanes.ToString() + " workPlanes!");
+            }
 
             if (_cacheState == CacheState.CompleteJobCached)
             {
@@ -146,8 +145,6 @@ namespace OpenVectorFormat.EOSReaderWriter
 
         public override WorkPlane GetWorkPlaneShell(int i_workPlane)
         {
-            throw new NotImplementedException();
-
             if (CompleteJob.NumWorkPlanes < i_workPlane)
             {
                 throw new ArgumentOutOfRangeException("i_workPlane " + i_workPlane.ToString() + " out of range for jobfile with " + CompleteJob.NumWorkPlanes.ToString() + " workPlanes!");
@@ -184,8 +181,67 @@ namespace OpenVectorFormat.EOSReaderWriter
             {
                 _evbReader = new BinaryReader(File.Open(filename, FileMode.Open, FileAccess.Read));
                 ReadEVBHeader();
-
                 Dictionary<uint, List<VectorData>> vectors = ReadAllEVBLayers();
+                MarkingParams markParams = new MarkingParams();
+                VectorData firstVector = vectors.First().Value.First();
+                int? exposureType = firstVector.ExposureType;
+                if (firstVector.LaserPowerW == null || firstVector.LaserScannerIndex == 255 || firstVector.LaserScannerIndex == null || firstVector.ExposureType == -1 || firstVector.ExposureType == null)
+                    throw new InvalidDataException("The first Vector cannot have placeholder values");
+
+                int?[] hatchExposureTypes = { 0, 1, 2, 3, 7, 8 };
+                int?[] contourExposureTypes = { 4, 5, 6, 10 };
+
+                // go through each layer
+                foreach (var paar in vectors)
+                {
+                    List<VectorData> vectorList = paar.Value;
+
+                    _workPlane = new WorkPlane();
+                    _currentVectorBlock = new VectorBlock();
+
+                    // set up the first vectorblock of each layer
+                    double? tmp = vectorList.First().LaserPowerW;
+                    if (tmp != null) markParams.LaserPowerInW = (float)tmp;
+                    tmp = vectorList.First().ScannerSpeedMmPerS;
+                    if (tmp != null) markParams.LaserSpeedInMmPerS = (float)tmp;
+
+                    CompleteJob.MarkingParamsMap.Add((int)paar.Key, markParams);
+                    
+                    // go through each Vector
+                    for (int i = 0; i < vectorList.Count; i++)
+                    {
+                        VectorData v = vectorList[i];
+
+                        if (vectorList.First().ExposureType != -1 && vectorList.First().ExposureType != null)
+                            exposureType = v.ExposureType;
+
+                        if (v.LaserScannerIndex != _currentVectorBlock.LaserIndex || v.LaserPowerW != markParams.LaserPowerInW || v.ExposureType == 11) // ExposureType 11 = jump vector
+                        {   // start a new Vectorblock
+                            _workPlane.VectorBlocks.Add(_currentVectorBlock);
+                            int? b = v.LaserScannerIndex;
+                            if (b == null || b == 255) b = _currentVectorBlock.LaserIndex;
+                            _currentVectorBlock = new VectorBlock();
+                            _currentVectorBlock.LaserIndex = b.Value;
+                        }
+
+                        if (hatchExposureTypes.Contains(exposureType))
+                        {
+                            if (_currentVectorBlock.Hatches == null) _currentVectorBlock.Hatches = new VectorBlock.Types.Hatches();
+                            _currentVectorBlock.Hatches.Points.Add((float)v.StartX);
+                            _currentVectorBlock.Hatches.Points.Add((float)v.StartY);
+                            _currentVectorBlock.Hatches.Points.Add((float)v.EndX);
+                            _currentVectorBlock.Hatches.Points.Add((float)v.EndY);
+                        }
+                        if (contourExposureTypes.Contains(exposureType)) {
+                            if (_currentVectorBlock.LineSequence == null) _currentVectorBlock.LineSequence = new VectorBlock.Types.LineSequence();
+                            _currentVectorBlock.LineSequence.Points.Add((float)v.StartX);
+                            _currentVectorBlock.LineSequence.Points.Add((float)v.StartY);
+                            _currentVectorBlock.LineSequence.Points.Add((float)v.EndX);
+                            _currentVectorBlock.LineSequence.Points.Add((float)v.EndY);
+                        }
+                    }
+                    CompleteJob.WorkPlanes.Add(_workPlane);
+                }
             }
             else if (fileExtension == ".openjz")
             {

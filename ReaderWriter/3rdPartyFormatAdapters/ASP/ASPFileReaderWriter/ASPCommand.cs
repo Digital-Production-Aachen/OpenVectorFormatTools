@@ -236,7 +236,7 @@ namespace OpenVectorFormat.ASPFileReaderWriter
     public class CommandList : List<Command>
     {
         /// <summary>
-        /// Parses the string representation of asp commands into an internal list. The generic typ of this list is of typ Command then.
+        /// Parses the string representation of asp commands into an internal list. The generic typ of this list is of type Command then.
         /// Commands in the string representation must be seperated by line breaks. Illegal commands shall be ignored.
         /// </summary>
         /// <param name="serializedCmds">The string representation of various asp commands seperated by line breaks.</param>

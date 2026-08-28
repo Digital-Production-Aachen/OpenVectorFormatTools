@@ -54,43 +54,43 @@ namespace OpenVectorFormat.Plausibility.UnitTests
 
             Job modJob = origTestJob.Clone();
             modJob.WorkPlanes[0].NumBlocks = 15;
-            await Assert.ThrowsExceptionAsync<IncoherentNumberOfVectorBlocksException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
+            await Assert.ThrowsAsync<IncoherentNumberOfVectorBlocksException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
 
             modJob = origTestJob.Clone();
             modJob.NumWorkPlanes = 0;
-            await Assert.ThrowsExceptionAsync<IncoherentNumberOfWorkPlanesException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
+            await Assert.ThrowsAsync<IncoherentNumberOfWorkPlanesException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
 
             modJob = origTestJob.Clone();
             modJob.WorkPlanes[0].WorkPlaneNumber = 10;
-            await Assert.ThrowsExceptionAsync<IncoherentWorkPlaneNumberingException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
+            await Assert.ThrowsAsync<IncoherentWorkPlaneNumberingException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
 
             modJob = origTestJob.Clone();
             modJob.WorkPlanes[0].VectorBlocks[0].LineSequence.Points[0] = 0;
-            await Assert.ThrowsExceptionAsync<LineSequenceNotClosedException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
+            await Assert.ThrowsAsync<LineSequenceNotClosedException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
 
             modJob = origTestJob.Clone();
             modJob.WorkPlanes[0].VectorBlocks[0].MarkingParamsKey = 10;
-            await Assert.ThrowsExceptionAsync<MarkingParamsKeyNotFoundException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
+            await Assert.ThrowsAsync<MarkingParamsKeyNotFoundException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
 
             modJob = origTestJob.Clone();
             modJob.WorkPlanes[0].VectorBlocks[0].MetaData.PartKey = 10;
-            await Assert.ThrowsExceptionAsync<PartKeyNotFoundException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
+            await Assert.ThrowsAsync<PartKeyNotFoundException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
 
             modJob = origTestJob.Clone();
             modJob.WorkPlanes[0].VectorBlocks[0].MetaData.PatchKey = 10;
-            await Assert.ThrowsExceptionAsync<PatchKeyNotFoundException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
+            await Assert.ThrowsAsync<PatchKeyNotFoundException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
 
             modJob = origTestJob.Clone();
             modJob.WorkPlanes[0].VectorBlocks[0].LineSequence.Points.Clear();
-            await Assert.ThrowsExceptionAsync<VectorBlockEmptyException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
+            await Assert.ThrowsAsync<VectorBlockEmptyException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
 
             modJob = origTestJob.Clone();
             modJob.WorkPlanes[0].VectorBlocks[0].ClearVectorData();
-            await Assert.ThrowsExceptionAsync<VectorBlockEmptyException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
+            await Assert.ThrowsAsync<VectorBlockEmptyException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
 
             modJob = origTestJob.Clone();
             modJob.WorkPlanes[0].NumBlocks = 0;
-            await Assert.ThrowsExceptionAsync<WorkPlaneEmptyException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
+            await Assert.ThrowsAsync<WorkPlaneEmptyException>(async () => await PlausibilityChecker.CheckJob(modJob, config));
         }
 
         private static Job SetupSquareTest(float x_length, float y_length)
