@@ -516,6 +516,7 @@ namespace OpenVectorFormat
                     return counter;
                 case VectorBlock.VectorDataOneofCase.None:
                 case VectorBlock.VectorDataOneofCase.ExposurePause:
+                //case VectorBlock.VectorDataOneofCase.SyncBlock:
                     return 0;
                 default:
                     throw new NotImplementedException($"unknown VectorDataCase: {vectorBlock.VectorDataCase}");

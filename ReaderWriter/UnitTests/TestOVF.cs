@@ -128,6 +128,115 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             testReader.Dispose();
         }
 
+        [TestMethod]
+        public void VectorCount_WithSynchronizationBlock_ReturnsZero()
+        {
+            var block = new VectorBlock
+            {
+                SyncBlock = new VectorBlock.Types.SynchronizationBlock
+                {
+                    VectorBlockIndexToWaitOn = 0
+                }
+            };
+
+            int count = block.VectorCount();
+
+            Assert.AreEqual(0, count);
+        }
+
+        [TestMethod]
+        public void SimpleJobWrite_WithSynchronizationBlock_WritesReadableFile()
+        {
+            /*
+             Create job in memory
+            → write OVF file
+            → close writer
+            → open file with OVF reader
+            → read blocks back
+            → verify SyncBlock and ExposurePause
+            → close reader
+            → delete file*/
+
+            string filePath = Path.Combine(Path.GetTempPath(), $"SynchronizationTest_{Guid.NewGuid():N}.ovf");
+            var job = new Job();
+
+            var workPlane = new WorkPlane
+            {
+                WorkPlaneNumber = 0
+            };
+
+            // Block 0: ordinary geometry.
+            var lineSequence = new VectorBlock.Types.LineSequence();
+            lineSequence.Points.Add(
+            new float[]
+            {
+                0f, 0f,
+                10f, 0f
+            });
+
+            workPlane.VectorBlocks.Add(new VectorBlock
+            {
+                LineSequence = lineSequence,
+                LaserIndex = 0
+            });
+
+            // Block 1: laser 1 waits for block 0.
+            workPlane.VectorBlocks.Add(new VectorBlock
+            {
+                SyncBlock = new VectorBlock.Types.SynchronizationBlock { VectorBlockIndexToWaitOn = 0 },
+                LaserIndex = 1
+            });
+
+            // Block 2: laser 1 waits another 250 ms.
+            workPlane.VectorBlocks.Add(new VectorBlock
+            {
+                ExposurePause = new VectorBlock.Types.ExposurePause
+                {
+                    PauseInUs = 250_000
+                },
+                LaserIndex = 1
+            });
+
+            workPlane.NumBlocks = workPlane.VectorBlocks.Count;
+
+            job.WorkPlanes.Add(workPlane);
+            job.NumWorkPlanes = job.WorkPlanes.Count;
+
+            // Act: write the complete OVF file.
+            using (var writer = new OVFFileWriter())
+            {
+                writer.SimpleJobWrite(job, filePath, new FileReaderWriterProgressDummy());
+            }
+
+            // Read the file back.
+            using (var reader = new OVFFileReader())
+            {
+                reader.OpenJob(filePath, new FileReaderWriterProgressDummy());
+
+                WorkPlane result = reader.GetWorkPlane(0);
+
+                Assert.AreEqual(3, result.VectorBlocks.Count);
+
+                VectorBlock geometryBlock = result.VectorBlocks[0];
+                VectorBlock synchronizationBlock = result.VectorBlocks[1];
+                VectorBlock pauseBlock = result.VectorBlocks[2];
+
+                Assert.AreEqual(VectorBlock.VectorDataOneofCase.LineSequence, geometryBlock.VectorDataCase);
+                Assert.AreEqual(VectorBlock.VectorDataOneofCase.SyncBlock, synchronizationBlock.VectorDataCase);
+
+                Assert.AreEqual(0, synchronizationBlock.SyncBlock.VectorBlockIndexToWaitOn);
+                Assert.AreEqual(1, synchronizationBlock.LaserIndex);
+                Assert.AreEqual(VectorBlock.VectorDataOneofCase.ExposurePause, pauseBlock.VectorDataCase);
+                Assert.AreEqual((ulong)250_000, pauseBlock.ExposurePause.PauseInUs);
+                Assert.AreEqual(1, pauseBlock.LaserIndex);
+            }
+
+            // Confirms that writer and reader released the file.
+            File.Delete(filePath);
+            Assert.IsFalse(File.Exists(filePath));
+        }
+
+
         // DEBUGGING
         //[TestMethod]
         //public void TestWPMetaDataNull()
