@@ -27,10 +27,13 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OpenVectorFormat.GCodeReaderWriter;
 using OpenVectorFormat.OVFReaderWriter;
 using OpenVectorFormat.Plausibility;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using UnitTests;
 
 namespace OpenVectorFormat.ReaderWriter.UnitTests
 {
@@ -173,6 +176,50 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             }
             return (IsValid: true, MovementCommandCount: movementCommandCount);
         }
+
+        //[TestMethod]
+        //public void TestGCodeOnBunny()
+        //{
+        //    var fileInfo = new FileInfo(Path.Combine(dir.FullName, "bunny.ovf"));
+        //    var converter = SetupConverter();
+        //    FileInfo gCodeOutputPath = new FileInfo(Path.Combine(Path.GetTempPath(), "writer_test.gcode"));
+
+        //    OVFFileReader ovf_reader = new OVFFileReader();
+        //    ovf_reader.OpenJob(fileInfo.FullName, new FileReaderWriterFactory.FileReaderWriterProgress());
+        //    Job originalJob = ovf_reader.CacheJobToMemory();
+
+        //    FileReaderWriterFactory.FileConverter.Convert(fileInfo, gCodeOutputPath, new FileReaderWriterFactory.FileReaderWriterProgress());
+
+        //    Assert.IsTrue(gCodeOutputPath.Exists, "G-code output file was not created.");
+        //    (bool isGCodeValid, int movementCommandCount) = CheckGCode(gCodeOutputPath);
+
+        //    Assert.IsTrue(isGCodeValid, "G-code output is not valid.");
+
+        //    OVFFileReader testReader = new OVFFileReader
+        //    {
+        //        AutomatedCachingThresholdBytes = 0
+        //    };
+        //    testReader.OpenJob(fileInfo.FullName, new FileReaderWriterProgressDummy());
+        //    Job testJob = testReader.CacheJobToMemory();
+
+        //    originalJob.JobMetaData.Bounds = null;
+        //    testJob.JobMetaData.Bounds = null;
+
+        //    originalJob.JobParameters = null;
+        //    foreach (var workplane in originalJob.WorkPlanes)
+        //    {
+        //        workplane.MetaData = null;
+        //    }
+
+        //    bool failed = false;
+        //    if (!originalJob.Equals(testJob))
+        //    {
+        //        var nonEqual = AbstractVectorFileHandlerUtils.NonEqualFieldsDebug(originalJob, testJob);
+        //        Debug.Print($"WorkPlaneStats differs:\r{String.Join("\r", nonEqual)}\r");
+        //        failed = true;
+        //    }
+        //    Assert.IsFalse(failed);
+        //}
 
         public static List<object[]> GCodeFiles
         {
