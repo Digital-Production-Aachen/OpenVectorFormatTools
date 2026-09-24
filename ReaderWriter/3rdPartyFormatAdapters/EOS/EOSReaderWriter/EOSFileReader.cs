@@ -30,7 +30,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace OpenVectorFormat.EOSReaderWriter
 {
@@ -188,7 +190,7 @@ namespace OpenVectorFormat.EOSReaderWriter
                 if (firstVector.LaserPowerW == null || firstVector.LaserScannerIndex == 255 || firstVector.LaserScannerIndex == null || firstVector.ExposureType == -1 || firstVector.ExposureType == null)
                     throw new InvalidDataException("The first Vector cannot have placeholder values");
 
-                int?[] hatchExposureTypes = { 0, 1, 2, 3, 7, 8 };
+                int?[] hatchExposureTypes = { 1, 2, 3, 7, 8 };
                 int?[] contourExposureTypes = { 4, 5, 6, 10 };
 
                 // go through each layer
@@ -205,7 +207,8 @@ namespace OpenVectorFormat.EOSReaderWriter
                     tmp = vectorList.First().ScannerSpeedMmPerS;
                     if (tmp != null) markParams.LaserSpeedInMmPerS = (float)tmp;
 
-                    CompleteJob.MarkingParamsMap.Add((int)paar.Key, markParams);
+                    if (!CompleteJob.MarkingParamsMap.ContainsKey((int)paar.Key))
+                        CompleteJob.MarkingParamsMap.Add((int)paar.Key, markParams);
                     
                     // go through each Vector
                     for (int i = 0; i < vectorList.Count; i++)
@@ -232,7 +235,8 @@ namespace OpenVectorFormat.EOSReaderWriter
                             _currentVectorBlock.Hatches.Points.Add((float)v.EndX);
                             _currentVectorBlock.Hatches.Points.Add((float)v.EndY);
                         }
-                        if (contourExposureTypes.Contains(exposureType)) {
+                        if (contourExposureTypes.Contains(exposureType))
+                        {
                             if (_currentVectorBlock.LineSequence == null) _currentVectorBlock.LineSequence = new VectorBlock.Types.LineSequence();
                             _currentVectorBlock.LineSequence.Points.Add((float)v.StartX);
                             _currentVectorBlock.LineSequence.Points.Add((float)v.StartY);
@@ -245,6 +249,16 @@ namespace OpenVectorFormat.EOSReaderWriter
             }
             else if (fileExtension == ".openjz")
             {
+                //* TODO: Fehler abfangen; ausserdem "unable to find entry point EOS_InitializeApi"
+                Wrap.EOS_InitialiseApi(null);
+                Wrap.EosTaskGen_LoadOpenJz(Wrap.DllName, "");
+                Wrap.Eos_DeinitializeApi();
+                /*using(ZipArchive archive = new ZipArchive(new FileStream(filename, FileMode.Open, FileAccess.Read)))
+                {
+                    var test = archive.Entries.Where(file => file.Name.Length > 8);
+                    var test2 = test.Where(file => file.Name.Substring((int)file.Length - 8).Equals(".openjob"));
+                    ZipArchiveEntry openjobFile = archive.Entries.Where(file => file.Name.Length > 8).Where(file => file.Name.Substring((int)file.Length - 8).Equals(".openjob")).First();
+                }*/
                 throw new NotImplementedException();
             }
         }
@@ -325,5 +339,24 @@ namespace OpenVectorFormat.EOSReaderWriter
 
         public Dictionary<uint, List<VectorData>> ReadAllEVBLayers()
         => _evbTable.Keys.ToDictionary(li => li, ReadEVBLayer);
+
+        public static class Wrap
+        {
+            internal const string DllName = "V:\\Transfer\\DAP_TRANSFER\\Erb\\EOS\\EOSPRINT 2_11 SDK\\bin\\x64\\release\\EosprintApi.dll";
+
+            public enum EosError
+            {
+                NoError = 0
+            }
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            public static extern EosError EOS_InitialiseApi(string logPath);
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            public static extern EosError Eos_DeinitializeApi();
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            public static extern EosError EosTaskGen_LoadOpenJz(string filePath, string tempExtractPath);
+        }
     }
 }

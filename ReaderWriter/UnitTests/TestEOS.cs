@@ -55,5 +55,15 @@ namespace OpenVectorFormat.ReaderWriter.UnitTests
             // Check the StartX of the 17th vector in layer 42.
             Assert.AreEqual(72.77269533081055, reader.ReadEVBLayer(42)[16].StartX);
         }
+
+        [TestMethod]
+        public void TestReadOpenjz()
+        {
+            string testfile = new DirectoryInfo(Path.Combine([Directory.GetCurrentDirectory(), "TestFiles", "ACAM_test.evb"])).FullName;
+            testfile = "C:\\Users\\adam-jyotwh08tic1w4s\\Desktop\\sink\\Testjob_BA_YB.openjz";
+            using var reader = new EOSFileReader();
+            reader.OpenJob(testfile);
+            throw new NotImplementedException();
+        }
     }
 }
