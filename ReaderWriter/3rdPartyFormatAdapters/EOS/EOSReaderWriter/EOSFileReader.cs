@@ -251,18 +251,19 @@ namespace OpenVectorFormat.EOSReaderWriter
             {
                 try
                 {
-                    string dir = Directory.GetCurrentDirectory();
+                    string dir = Directory.GetCurrentDirectory()+"\\temp";
                     Wrap.EosError[] error = new Wrap.EosError[8];
-                    error[0] = Wrap.Eos_InitializeApi(null);
-                    error[2] = Wrap.EosTaskGen_LoadMachineConfiguration("V:\\Transfer\\DAP_TRANSFER\\Erb\\EOS\\EOSPRINT 2_11 SDK\\DefaultMachineConfigs\\M291");
-                    error[1] = Wrap.EosTaskGen_LoadOpenJz(Wrap.DllName, null);
-                    error[3] = Wrap.EosTaskGen_BeginPreviewCreation(/*layerIndex, EOS_VECTORTYPES v ?*/);
+                    error[0] = Wrap.Eos_InitializeApi("V:\\Transfer\\DAP_TRANSFER\\Erb\\EOS\\EOSPRINT 2_11 SDK\\bin\\x64\\release\\EosprintApi.log.config");
+                    error[1] = Wrap.EosTaskGen_LoadMachineConfiguration("V:\\Transfer\\DAP_TRANSFER\\Erb\\EOS\\EOSPRINT 2_11 SDK\\DefaultMachineConfigs\\M291");
+                    error[2] = Wrap.EosTaskGen_LoadOpenJz(Wrap.DllName, null);
+                    error[3] = Wrap.EosTaskGen_BeginPreviewCreation(1/*, EOS_VECTORTYPES v*/);
                     error[4] = Wrap.EosTaskGen_WaitForPreviewCreation(/*EOS_INFINITE_DURATION*/);
                     error[5] = Wrap.EosTaskGen_GetPreviewCreationResult();
                     bool debugBool = false;
                     error[6] = Wrap.EosTaskGen_GetPreviewData2(ref debugBool, ref debugBool); //* pointers
                     error[7] = Wrap.Eos_DeinitializeApi();
-                    // TODO: delete the temporary directory
+                    // delete the temporary directory
+                    if (error[2] == Wrap.EosError.EOS_ERR_NO_ERROR) Directory.Delete(dir, true);
                     //* debug
                     for (int i = 0; i < error.Length; i++)
                         if (error[i] != Wrap.EosError.EOS_ERR_NO_ERROR) 
@@ -651,23 +652,24 @@ namespace OpenVectorFormat.EOSReaderWriter
             public static extern EosError Eos_DeinitializeApi();
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern EosError EosTaskGen_LoadOpenJz(string filePath, string tempExtractPath);
-
-            //* noch nicht getestet, ob parameter funktionieren
-            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern EosError EosTaskGen_LoadMachineConfiguration(string filePath);
+            public static extern EosError EosTaskGen_LoadOpenJz(string pathToOpenJz, string tempExtractPath);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern EosError EosTaskGen_BeginPreviewCreation();
+            public static extern EosError EosTaskGen_LoadMachineConfiguration(string configPath);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-            public static extern EosError EosTaskGen_WaitForPreviewCreation();
+            public static extern EosError EosTaskGen_BeginPreviewCreation(uint layerIndex/*, Vectortypes vectorTypes*/);
+            //* layerIndex fängt bei 1 an 
+
+            [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+            public static extern EosError EosTaskGen_WaitForPreviewCreation(double millisecWaitTime = double.PositiveInfinity);
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             public static extern EosError EosTaskGen_GetPreviewCreationResult();
 
             [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
             public static extern EosError EosTaskGen_GetPreviewData2(ref bool previewData, ref bool exposureData);
+            //* in C: GetPreviewData(EOS_EXPOSURE_VECTOR_ARRAY const **previewData, EOS_EXPOSURE_DATA_ARRAY const **exposureData)
         }
     }
 }
